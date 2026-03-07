@@ -9,9 +9,9 @@ const mongoose = require("mongoose");
 
 /* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
-const PORT = process.env.PORT || 3000;
+const PORT = process.env.PORT || 10000;
 const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/rickyy_chat";
+  process.env.MONGODB_URI || "mongodb+srv://buddishravan:chintu@cluster0.2i9cmmv.mongodb.net/?appName=Cluster0";
 
 /* ---------- MONGODB CONNECT ---------- */
 mongoose.connect(MONGODB_URI)
