@@ -1,0 +1,148 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>My Profile</title>
+
+<style>
+body{
+    margin:0;
+    font-family:Arial;
+    background:#ece5dd;
+    display:flex;
+    justify-content:center;
+    align-items:center;
+    height:100vh;
+}
+
+.profile-card{
+    background:white;
+    padding:30px;
+    border-radius:10px;
+    text-align:center;
+    width:300px;
+}
+
+.profile-card img{
+    width:120px;
+    height:120px;
+    border-radius:50%;
+    object-fit:cover;
+    cursor:pointer;
+}
+
+.profile-card h2{
+    margin-top:15px;
+}
+
+button{
+    margin-top:20px;
+    padding:10px 20px;
+    background:#075e54;
+    color:white;
+    border:none;
+    cursor:pointer;
+}
+</style>
+</head>
+<body>
+
+<div class="profile-card">
+
+<label for="dpInput">
+<img id="myDp" src="/default.png"
+onerror="this.src='/default.png'">
+</label>
+
+<input type="file" id="dpInput" name="dp" hidden>
+
+<h2 id="usernameText"></h2>
+
+<button onclick="goBack()">Back to Chat</button>
+
+</div>
+
+<script>
+
+const me = localStorage.getItem("user");
+
+document.getElementById("usernameText").innerText = me;
+
+/* ---------- LOAD MY DP ---------- */
+
+async function loadMyDp(){
+
+  try{
+
+    const res = await fetch("/users-data");
+    const users = await res.json();
+
+    users.forEach(u=>{
+
+      if(u.name === me && u.dp){
+        document.getElementById("myDp").src = u.dp;
+      }
+
+    });
+
+  }catch(err){
+
+    console.log("DP load error",err);
+
+  }
+
+}
+
+loadMyDp();
+
+/* ---------- DP UPLOAD ---------- */
+
+const dpInput = document.getElementById("dpInput");
+
+dpInput.addEventListener("change", async ()=>{
+
+  const file = dpInput.files[0];
+  if(!file) return;
+
+  const formData = new FormData();
+
+  formData.append("dp",file);
+  formData.append("username",me);
+
+  try{
+
+    const res = await fetch("/upload-dp",{
+      method:"POST",
+      body:formData
+    });
+
+    const data = await res.json();
+
+    if(data.dp){
+
+      document.getElementById("myDp").src = data.dp;
+
+      alert("DP Updated Successfully 🔥");
+
+    }
+
+  }catch(err){
+
+    console.log("Upload error",err);
+
+  }
+
+});
+
+/* ---------- BACK ---------- */
+
+function goBack(){
+
+  window.location.href="/chat.html";
+
+}
+
+</script>
+
+</body>
+</html>

@@ -1,0 +1,126 @@
+<!DOCTYPE html>
+<html>
+<head>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <title>Login • RickyY Chat</title>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
+  <style>
+    body{
+      margin:0;
+      font-family:Inter, sans-serif;
+      background:#ece5dd;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+    }
+
+    .card{
+      width:92%;
+      max-width:380px;
+      background:#fff;
+      border-radius:14px;
+      padding:22px;
+      box-shadow:0 8px 30px rgba(0,0,0,.12);
+    }
+
+    .title{
+      font-size:20px;
+      font-weight:800;
+      color:#075e54;
+      margin-bottom:6px;
+    }
+
+    .sub{
+      color:#666;
+      font-size:13px;
+      margin-bottom:16px;
+    }
+
+    input{
+      width:100%;
+      padding:12px;
+      border-radius:12px;
+      border:1px solid #ddd;
+      outline:none;
+      font-size:14px;
+      box-sizing:border-box;
+      margin-bottom:10px;
+    }
+
+    button{
+      width:100%;
+      margin-top:4px;
+      padding:12px;
+      border:none;
+      border-radius:12px;
+      background:#25d366;
+      color:#fff;
+      font-weight:800;
+      cursor:pointer;
+      font-size:15px;
+    }
+
+    .err{
+      margin-top:10px;
+      color:#ff3b30;
+      font-size:13px;
+      min-height:18px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="title">RickyY Chat</div>
+    <div class="sub">Enter username and 4 digit PIN to continue</div>
+
+    <input id="username" placeholder="Username" autocomplete="off">
+    <input id="pin" type="password" maxlength="4" placeholder="4 Digit PIN" inputmode="numeric">
+    <button onclick="login()">Continue</button>
+
+    <div id="error" class="err"></div>
+  </div>
+
+<script>
+async function login(){
+  const name = document.getElementById("username").value.trim();
+  const pin = document.getElementById("pin").value.trim();
+  const err = document.getElementById("error");
+
+  err.innerText = "";
+
+  if(!name || !pin){
+    err.innerText = "Enter username and pin";
+    return;
+  }
+
+  if(!/^\d{4}$/.test(pin)){
+    err.innerText = "PIN must be 4 digits";
+    return;
+  }
+
+  try{
+    const res = await fetch("/api/login", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, pin })
+    });
+
+    const data = await res.json();
+
+    if(!data.ok){
+      err.innerText = data.msg || "Login failed";
+      return;
+    }
+
+    localStorage.setItem("user", data.user.name);
+localStorage.setItem("role", data.user.role || "user");
+window.location.href = "/chat.html";
+  }catch(e){
+    err.innerText = "Server error";
+    console.log("LOGIN FRONTEND ERROR:", e);
+  }
+}
+</script>
+</body>
+</html>
