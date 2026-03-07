@@ -9,10 +9,15 @@ const mongoose = require("mongoose");
 const ADMIN_NAME = "shravan";
 
 
-mongoose.connect("mongodb+srv://buddishravan:chintu@cluster0.2i9cmmv.mongodb.net/?appName=Cluster0")
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log(err));
+const PORT = process.env.PORT || 3000;
 
+mongoose.connect(process.env.MONGODB_URI)
+  .then(() => console.log("MongoDB Connected"))
+  .catch(err => console.log("MongoDB Error:", err));
+
+server.listen(PORT, () => {
+  console.log(`Chat running on port ${PORT}`);
+});
 
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
