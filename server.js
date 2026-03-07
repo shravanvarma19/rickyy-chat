@@ -1,3 +1,5 @@
+require("dotenv").config();
+
 const multer = require("multer");
 const path = require("path");
 const express = require("express");
@@ -5,41 +7,38 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 
-
+/* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
-
-
 const PORT = process.env.PORT || 3000;
+const MONGODB_URI =
+  process.env.MONGODB_URI || "mongodb://127.0.0.1:27017/rickyy_chat";
 
-mongoose.connect(process.env.MONGODB_URI)
+/* ---------- MONGODB CONNECT ---------- */
+mongoose.connect(MONGODB_URI)
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log("MongoDB Error:", err));
 
-server.listen(PORT, () => {
-  console.log(`Chat running on port ${PORT}`);
-});
-
+/* ---------- USER SCHEMA ---------- */
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
   pin: String,
   online: { type: Boolean, default: false },
   lastSeen: String,
   dp: { type: String, default: "/default.png" },
-  role: { type: String, default: "user" },
-  approvalStatus: { type: String, default: "pending" },
+  role: { type: String, default: "user" }, // admin | user
+  approvalStatus: { type: String, default: "pending" }, // pending | approved | rejected
   blocked: { type: Boolean, default: false },
   muted: { type: Boolean, default: false }
 });
-
 const User = mongoose.model("User", userSchema);
 
-
+/* ---------- MESSAGE SCHEMA ---------- */
 const messageSchema = new mongoose.Schema({
   from: String,
   to: String,
   text: String,
   file: String,
-  fileType: String, 
+  fileType: String, // image | video | audio | doc | file
   replyTo: {
     messageId: String,
     from: String,
@@ -53,6 +52,33 @@ const messageSchema = new mongoose.Schema({
   reaction: String
 });
 const Message = mongoose.model("Message", messageSchema);
+
+/* ---------- CHAT META SCHEMA ---------- */
+const chatMetaSchema = new mongoose.Schema({
+  owner: String,
+  targetType: String, // user
+  targetId: String,   // username
+  pinned: { type: Boolean, default: false },
+  archived: { type: Boolean, default: false },
+  updatedAt: { type: Date, default: Date.now }
+});
+
+chatMetaSchema.index({ owner: 1, targetType: 1, targetId: 1 }, { unique: true });
+const ChatMeta = mongoose.model("ChatMeta", chatMetaSchema);
+
+/* ---------- GROUP SCHEMA ---------- */
+const groupSchema = new mongoose.Schema({
+  name: String,
+  icon: { type: String, default: "/default-group.png" },
+  description: String,
+  createdBy: String,
+  members: [String],
+  admins: [String],
+  mutedMembers: [String],
+  bannedUsers: [String],
+  announcementOnly: { type: Boolean, default: false }
+});
+const Group = mongoose.model("Group", groupSchema);
 
 /* ---------- CALL LOG SCHEMA ---------- */
 const callSchema = new mongoose.Schema({
@@ -72,7 +98,10 @@ const statusSchema = new mongoose.Schema({
   viewers: [String],
   reactions: [{ user: String, emoji: String }],
   createdAt: { type: Date, default: Date.now },
-  expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) }
+  expiresAt: {
+    type: Date,
+    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000)
+  }
 });
 statusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 const Status = mongoose.model("Status", statusSchema);
@@ -88,7 +117,7 @@ app.use("/uploads", express.static("public/uploads"));
 const server = http.createServer(app);
 const io = new Server(server);
 
-/* ---------- MULTER SETUP ---------- */
+/* ---------- MULTER ---------- */
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, "public/uploads/"),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
@@ -98,6 +127,14 @@ const upload = multer({ storage });
 /* ---------- HELPERS ---------- */
 async function getUsers() {
   return await User.find({ blocked: { $ne: true } });
+}
+
+async function getChatMeta(owner, targetType, targetId) {
+  let meta = await ChatMeta.findOne({ owner, targetType, targetId });
+  if (!meta) {
+    meta = await ChatMeta.create({ owner, targetType, targetId });
+  }
+  return meta;
 }
 
 async function calculateUnread(username) {
@@ -135,12 +172,16 @@ async function pushCallMessage(from, to, text) {
   io.to(from).emit("private-message", msg);
   io.to(to).emit("private-message", msg);
 }
-async function loadBlockedUsers(){
-  const admin = localStorage.getItem("user");
-  const res = await fetch("/admin/blocked-users?admin=" + encodeURIComponent(admin));
-  const data = await res.json();
-  console.log(data.users);
-}
+
+/* ---------- TEST ROUTES ---------- */
+app.get("/test", (req, res) => {
+  res.send("SERVER OK");
+});
+
+app.get("/api-check", (req, res) => {
+  res.json({ ok: true, msg: "API working" });
+});
+
 /* ---------- MEDIA UPLOAD ---------- */
 app.post("/upload-media", upload.single("file"), (req, res) => {
   try {
@@ -152,38 +193,6 @@ app.post("/upload-media", upload.single("file"), (req, res) => {
   }
 });
 
-app.get("/admin/blocked-users", async (req,res)=>{
-  try{
-    const admin = req.query.admin;
-
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, users:[] });
-    }
-
-    const users = await User.find({ blocked: true }).select("name dp blocked muted");
-    res.json({ ok:true, users });
-  }catch(err){
-    console.log(err);
-    res.status(500).json({ ok:false, users:[] });
-  }
-});
-app.get("/admin/muted-users", async (req,res)=>{
-  try{
-    const admin = req.query.admin;
-
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, users:[] });
-    }
-
-    const users = await User.find({ muted: true, blocked: { $ne: true } })
-      .select("name dp muted");
-
-    res.json({ ok:true, users });
-  }catch(err){
-    console.log(err);
-    res.status(500).json({ ok:false, users:[] });
-  }
-});
 /* ---------- DP UPLOAD ---------- */
 app.post("/upload-dp", upload.single("dp"), async (req, res) => {
   try {
@@ -312,11 +321,84 @@ app.post("/status-delete", async (req, res) => {
 
 /* ---------- USERS ---------- */
 app.get("/users-data", async (req, res) => {
-  const allUsers = await getUsers();
-  res.json(allUsers);
+  try {
+    const allUsers = await getUsers();
+    res.json(allUsers);
+  } catch (err) {
+    console.log(err);
+    res.status(500).json([]);
+  }
 });
 
-/* ---------- ADMIN APPROVAL ROUTES ---------- */
+/* ---------- CHAT META ROUTES ---------- */
+app.get("/chat/meta", async (req, res) => {
+  try {
+    const owner = req.query.owner;
+    const list = await ChatMeta.find({ owner, targetType: "user" });
+    res.json({ ok: true, list });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false, list: [] });
+  }
+});
+
+app.post("/chat/pin", async (req, res) => {
+  try {
+    const { owner, targetId, targetType } = req.body;
+    const meta = await getChatMeta(owner, targetType || "user", targetId);
+    meta.pinned = true;
+    meta.updatedAt = new Date();
+    await meta.save();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.post("/chat/unpin", async (req, res) => {
+  try {
+    const { owner, targetId, targetType } = req.body;
+    const meta = await getChatMeta(owner, targetType || "user", targetId);
+    meta.pinned = false;
+    meta.updatedAt = new Date();
+    await meta.save();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.post("/chat/archive", async (req, res) => {
+  try {
+    const { owner, targetId, targetType } = req.body;
+    const meta = await getChatMeta(owner, targetType || "user", targetId);
+    meta.archived = true;
+    meta.updatedAt = new Date();
+    await meta.save();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.post("/chat/unarchive", async (req, res) => {
+  try {
+    const { owner, targetId, targetType } = req.body;
+    const meta = await getChatMeta(owner, targetType || "user", targetId);
+    meta.archived = false;
+    meta.updatedAt = new Date();
+    await meta.save();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+/* ---------- ADMIN ROUTES ---------- */
 app.get("/admin/pending-users", async (req, res) => {
   try {
     const admin = req.query.admin;
@@ -328,6 +410,40 @@ app.get("/admin/pending-users", async (req, res) => {
       approvalStatus: "pending",
       name: { $ne: ADMIN_NAME }
     }).select("name dp role approvalStatus");
+
+    res.json({ ok: true, users });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false, users: [] });
+  }
+});
+
+app.get("/admin/blocked-users", async (req, res) => {
+  try {
+    const admin = req.query.admin;
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, users: [] });
+    }
+
+    const users = await User.find({ blocked: true }).select("name dp blocked muted");
+    res.json({ ok: true, users });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false, users: [] });
+  }
+});
+
+app.get("/admin/muted-users", async (req, res) => {
+  try {
+    const admin = req.query.admin;
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, users: [] });
+    }
+
+    const users = await User.find({
+      muted: true,
+      blocked: { $ne: true }
+    }).select("name dp muted");
 
     res.json({ ok: true, users });
   } catch (err) {
@@ -357,7 +473,6 @@ app.post("/admin/approve-user", async (req, res) => {
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
-
     res.json({ ok: true });
   } catch (err) {
     console.log(err);
@@ -386,19 +501,19 @@ app.post("/admin/reject-user", async (req, res) => {
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
-
     res.json({ ok: true });
   } catch (err) {
     console.log(err);
     res.status(500).json({ ok: false });
   }
 });
-app.post("/admin/block-user", async (req,res)=>{
-  try{
+
+app.post("/admin/block-user", async (req, res) => {
+  try {
     const { admin, username } = req.body;
 
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, msg:"Only admin allowed" });
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, msg: "Only admin allowed" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -407,32 +522,28 @@ app.post("/admin/block-user", async (req,res)=>{
       { new: true }
     );
 
-    if(!user){
-      return res.json({ ok:false, msg:"User not found" });
-    }
+    if (!user) return res.json({ ok: false, msg: "User not found" });
 
-    // instant ban event to blocked user
     io.to(username).emit("force-logout", {
       msg: "Admin blocked your account"
     });
 
-    // refresh user list everywhere
     const allUsers = await getUsers();
     io.emit("users", allUsers);
 
-    return res.json({ ok:true });
-
-  }catch(err){
+    return res.json({ ok: true });
+  } catch (err) {
     console.log(err);
-    res.status(500).json({ ok:false });
+    res.status(500).json({ ok: false });
   }
 });
-app.post("/admin/unblock-user", async (req,res)=>{
-  try{
+
+app.post("/admin/unblock-user", async (req, res) => {
+  try {
     const { admin, username } = req.body;
 
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, msg:"Only admin allowed" });
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, msg: "Only admin allowed" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -441,9 +552,7 @@ app.post("/admin/unblock-user", async (req,res)=>{
       { new: true }
     );
 
-    if(!user){
-      return res.json({ ok:false, msg:"User not found" });
-    }
+    if (!user) return res.json({ ok: false, msg: "User not found" });
 
     io.to(username).emit("unblocked", {
       msg: "Admin unblocked your account"
@@ -452,18 +561,19 @@ app.post("/admin/unblock-user", async (req,res)=>{
     const allUsers = await getUsers();
     io.emit("users", allUsers);
 
-    return res.json({ ok:true });
-  }catch(err){
+    return res.json({ ok: true });
+  } catch (err) {
     console.log(err);
-    res.status(500).json({ ok:false });
+    res.status(500).json({ ok: false });
   }
 });
-app.post("/admin/mute-user", async (req,res)=>{
-  try{
+
+app.post("/admin/mute-user", async (req, res) => {
+  try {
     const { admin, username } = req.body;
 
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, msg:"Only admin allowed" });
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, msg: "Only admin allowed" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -472,9 +582,7 @@ app.post("/admin/mute-user", async (req,res)=>{
       { new: true }
     );
 
-    if(!user){
-      return res.json({ ok:false, msg:"User not found" });
-    }
+    if (!user) return res.json({ ok: false, msg: "User not found" });
 
     io.to(username).emit("muted-by-admin", {
       msg: "Admin muted your account"
@@ -483,19 +591,19 @@ app.post("/admin/mute-user", async (req,res)=>{
     const allUsers = await getUsers();
     io.emit("users", allUsers);
 
-    return res.json({ ok:true });
-  }catch(err){
+    return res.json({ ok: true });
+  } catch (err) {
     console.log(err);
-    res.status(500).json({ ok:false });
+    res.status(500).json({ ok: false });
   }
 });
 
-app.post("/admin/unmute-user", async (req,res)=>{
-  try{
+app.post("/admin/unmute-user", async (req, res) => {
+  try {
     const { admin, username } = req.body;
 
-    if(admin !== ADMIN_NAME){
-      return res.status(403).json({ ok:false, msg:"Only admin allowed" });
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, msg: "Only admin allowed" });
     }
 
     const user = await User.findOneAndUpdate(
@@ -504,9 +612,7 @@ app.post("/admin/unmute-user", async (req,res)=>{
       { new: true }
     );
 
-    if(!user){
-      return res.json({ ok:false, msg:"User not found" });
-    }
+    if (!user) return res.json({ ok: false, msg: "User not found" });
 
     io.to(username).emit("unmuted-by-admin", {
       msg: "Admin unmuted your account"
@@ -515,19 +621,11 @@ app.post("/admin/unmute-user", async (req,res)=>{
     const allUsers = await getUsers();
     io.emit("users", allUsers);
 
-    return res.json({ ok:true });
-  }catch(err){
+    return res.json({ ok: true });
+  } catch (err) {
     console.log(err);
-    res.status(500).json({ ok:false });
+    res.status(500).json({ ok: false });
   }
-});
-/* ---------- TEST ROUTES ---------- */
-app.get("/test", (req, res) => {
-  res.send("SERVER OK");
-});
-
-app.get("/api-check", (req, res) => {
-  res.json({ ok: true, msg: "API working" });
 });
 
 /* ---------- AUTH ---------- */
@@ -545,7 +643,6 @@ app.post("/api/login", async (req, res) => {
 
     let user = await User.findOne({ name });
 
-    // New user
     if (!user) {
       const isAdmin = name === ADMIN_NAME;
 
@@ -580,7 +677,6 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    // Existing user without pin
     if (!user.pin) {
       user.pin = pin;
       await user.save();
@@ -589,14 +685,11 @@ app.post("/api/login", async (req, res) => {
     if (user.pin !== pin) {
       return res.json({ ok: false, msg: "Wrong PIN" });
     }
-    if(user.blocked){
-  return res.json({
-    ok:false,
-    msg:"Admin blocked your account"
-  });
-}
 
-    // Admin
+    if (user.blocked) {
+      return res.json({ ok: false, msg: "Admin blocked your account" });
+    }
+
     if (user.name === ADMIN_NAME || user.role === "admin") {
       if (user.role !== "admin" || user.approvalStatus !== "approved") {
         user.role = "admin";
@@ -610,7 +703,6 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    // Normal user approval
     if (user.approvalStatus === "pending") {
       return res.json({
         ok: false,
@@ -618,12 +710,7 @@ app.post("/api/login", async (req, res) => {
         msg: "Still waiting for admin approval."
       });
     }
-    if(user.blocked){
-  return res.json({
-    ok:false,
-    msg:"Admin blocked your account"
-  });
-}
+
     if (user.approvalStatus === "rejected") {
       return res.json({
         ok: false,
@@ -662,11 +749,9 @@ app.post("/api/logout", async (req, res) => {
   }
 });
 
-/* ---------- SOCKET USERS STORE ---------- */
-let sockets = {};          // socket.id -> username
-let userSocketIds = {};    // username -> Set(socket.id)
-
-/* ---------- CALL STATE ---------- */
+/* ---------- SOCKET STATE ---------- */
+let sockets = {};
+let userSocketIds = {};
 let callState = {};
 
 function isBusy(user) {
@@ -694,7 +779,6 @@ function clearCall(user) {
 /* ---------- SOCKET ---------- */
 io.on("connection", socket => {
 
-  /* JOIN */
   socket.on("join", async username => {
     try {
       sockets[socket.id] = username;
@@ -753,15 +837,16 @@ io.on("connection", socket => {
   });
 
   socket.on("private-message", async data => {
-    const senderUser = await User.findOne({ name: data.from });
-
-if(senderUser && senderUser.muted){
-  io.to(data.from).emit("user-muted", {
-    msg: "Admin muted you. You cannot send messages."
-  });
-  return;
-}
     try {
+      const senderUser = await User.findOne({ name: data.from });
+
+      if (senderUser && senderUser.muted) {
+        io.to(data.from).emit("user-muted", {
+          msg: "Admin muted you. You cannot send messages."
+        });
+        return;
+      }
+
       const newMsg = new Message({
         from: data.from,
         to: data.to,
@@ -957,7 +1042,6 @@ if(senderUser && senderUser.muted){
     }
   });
 
-  /* DISCONNECT */
   socket.on("disconnect", async () => {
     try {
       const username = sockets[socket.id];
@@ -974,10 +1058,14 @@ if(senderUser && senderUser.muted){
           clearCall(username);
         }
 
-        await User.findOneAndUpdate(
-          { name: username },
-          { online: false, lastSeen: new Date().toLocaleString() }
-        );
+        const stillOnline = !!(userSocketIds[username] && userSocketIds[username].size > 0);
+
+        if (!stillOnline) {
+          await User.findOneAndUpdate(
+            { name: username },
+            { online: false, lastSeen: new Date().toLocaleString() }
+          );
+        }
 
         delete sockets[socket.id];
 
@@ -992,5 +1080,5 @@ if(senderUser && senderUser.muted){
 
 /* ---------- START SERVER ---------- */
 server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Chat running on port ${PORT}`);
+  console.log(`Server running on port ${PORT}`);
 });
