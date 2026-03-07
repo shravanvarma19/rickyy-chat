@@ -5,36 +5,36 @@ const http = require("http");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 
-/* ---------- CONFIG ---------- */
+
 const ADMIN_NAME = "shravan";
 
-/* ---------- MONGODB CONNECT ---------- */
-mongoose.connect("mongodb://127.0.0.1:27017/rickyy_chat")
+
+mongoose.connect("mongodb+srv://buddishravan:chintu@cluster0.2i9cmmv.mongodb.net/?appName=Cluster0")
   .then(() => console.log("MongoDB Connected"))
   .catch(err => console.log(err));
 
-/* ---------- USER SCHEMA ---------- */
+
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
   pin: String,
   online: { type: Boolean, default: false },
   lastSeen: String,
   dp: { type: String, default: "/default.png" },
-  role: { type: String, default: "user" }, // admin | user
-  approvalStatus: { type: String, default: "pending" },// pending | approved | rejected
+  role: { type: String, default: "user" },
+  approvalStatus: { type: String, default: "pending" },
   blocked: { type: Boolean, default: false },
   muted: { type: Boolean, default: false }
 });
 
 const User = mongoose.model("User", userSchema);
 
-/* ---------- MESSAGE SCHEMA ---------- */
+
 const messageSchema = new mongoose.Schema({
   from: String,
   to: String,
   text: String,
   file: String,
-  fileType: String, // image | video | audio | doc | file
+  fileType: String, 
   replyTo: {
     messageId: String,
     from: String,
