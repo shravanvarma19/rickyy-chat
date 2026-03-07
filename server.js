@@ -1,35 +1,61 @@
 require("dotenv").config();
 
+const fs = require("fs");
 const multer = require("multer");
 const path = require("path");
 const express = require("express");
 const http = require("http");
+const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 
 /* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
-const PORT = process.env.PORT || 10000;
-const MONGODB_URI =
-  process.env.MONGODB_URI || "mongodb+srv://buddishravan:chintu@cluster0.2i9cmmv.mongodb.net/?appName=Cluster0";
+
+/* ---------- EXPRESS APP ---------- */
+const app = express();
+const server = http.createServer(app);
+
+app.use(cors({
+  origin: process.env.CLIENT_URL || "*",
+  methods: ["GET", "POST"],
+  credentials: true
+}));
+
+app.use(express.json());
+app.use(express.urlencoded({ extended: true }));
+app.use(express.static("public"));
+app.use("/uploads", express.static("public/uploads"));
+app.use(express.static(path.join(__dirname, "public")));
+
+/* ---------- ENSURE UPLOADS FOLDER ---------- */
+const uploadDir = path.join(__dirname, "public", "uploads");
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+}
 
 /* ---------- MONGODB CONNECT ---------- */
-mongoose.connect(MONGODB_URI)
-  .then(() => console.log("MongoDB Connected"))
-  .catch(err => console.log("MongoDB Error:", err));
+if (!process.env.MONGODB_URI) {
+  console.log("MongoDB Error: MONGODB_URI is missing in .env file");
+} else {
+  mongoose.connect(process.env.MONGODB_URI)
+    .then(() => console.log("MongoDB Connected"))
+    .catch(err => console.log("MongoDB Error:", err));
+}
 
 /* ---------- USER SCHEMA ---------- */
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
   pin: String,
   online: { type: Boolean, default: false },
-  lastSeen: String,
+  lastSeen: { type: Date, default: null },
   dp: { type: String, default: "/default.png" },
-  role: { type: String, default: "user" }, // admin | user
-  approvalStatus: { type: String, default: "pending" }, // pending | approved | rejected
+  role: { type: String, default: "user" },
+  approvalStatus: { type: String, default: "pending" },
   blocked: { type: Boolean, default: false },
   muted: { type: Boolean, default: false }
 });
+
 const User = mongoose.model("User", userSchema);
 
 /* ---------- MESSAGE SCHEMA ---------- */
@@ -38,7 +64,7 @@ const messageSchema = new mongoose.Schema({
   to: String,
   text: String,
   file: String,
-  fileType: String, // image | video | audio | doc | file
+  fileType: String,
   replyTo: {
     messageId: String,
     from: String,
@@ -51,90 +77,76 @@ const messageSchema = new mongoose.Schema({
   status: String,
   reaction: String
 });
+
 const Message = mongoose.model("Message", messageSchema);
-
-/* ---------- CHAT META SCHEMA ---------- */
-const chatMetaSchema = new mongoose.Schema({
-  owner: String,
-  targetType: String, // user
-  targetId: String,   // username
-  pinned: { type: Boolean, default: false },
-  archived: { type: Boolean, default: false },
-  updatedAt: { type: Date, default: Date.now }
-});
-
-chatMetaSchema.index({ owner: 1, targetType: 1, targetId: 1 }, { unique: true });
-const ChatMeta = mongoose.model("ChatMeta", chatMetaSchema);
-
-/* ---------- GROUP SCHEMA ---------- */
-const groupSchema = new mongoose.Schema({
-  name: String,
-  icon: { type: String, default: "/default-group.png" },
-  description: String,
-  createdBy: String,
-  members: [String],
-  admins: [String],
-  mutedMembers: [String],
-  bannedUsers: [String],
-  announcementOnly: { type: Boolean, default: false }
-});
-const Group = mongoose.model("Group", groupSchema);
 
 /* ---------- CALL LOG SCHEMA ---------- */
 const callSchema = new mongoose.Schema({
   from: String,
   to: String,
-  type: String,   // voice | video
-  status: String, // missed | completed | rejected | ended
+  type: String,
+  status: String,
   time: String
 });
+
 const Call = mongoose.model("Call", callSchema);
 
 /* ---------- STATUS SCHEMA (24h TTL) ---------- */
 const statusSchema = new mongoose.Schema({
   user: String,
   file: String,
-  fileType: String, // image | video
+  fileType: String,
   viewers: [String],
   reactions: [{ user: String, emoji: String }],
   createdAt: { type: Date, default: Date.now },
-  expiresAt: {
-    type: Date,
-    default: () => new Date(Date.now() + 24 * 60 * 60 * 1000)
-  }
+  expiresAt: { type: Date, default: () => new Date(Date.now() + 24 * 60 * 60 * 1000) }
 });
+
 statusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 const Status = mongoose.model("Status", statusSchema);
 
-/* ---------- EXPRESS APP ---------- */
-const app = express();
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
-app.use(express.static("public"));
-app.use("/uploads", express.static("public/uploads"));
-
+/* ---------- HOME ROUTE ---------- */
+app.get("/", (req, res) => {
+  res.sendFile(path.join(__dirname, "public", "chat.html"));
+});
+app.get("/debug-files", (req, res) => {
+  fs.readdir(uploadDir, (err, files) => {
+    if (err) {
+      return res.status(500).json({ ok: false, error: err.message });
+    }
+    res.json({ ok: true, files });
+  });
+});
 /* ---------- SERVER + SOCKET ---------- */
-const server = http.createServer(app);
-const io = new Server(server);
+const io = new Server(server, {
+  cors: {
+    origin: process.env.CLIENT_URL || "*",
+    methods: ["GET", "POST"]
+  }
+});
 
-/* ---------- MULTER ---------- */
+/* ---------- MULTER SETUP ---------- */
 const storage = multer.diskStorage({
-  destination: (req, file, cb) => cb(null, "public/uploads/"),
+  destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => cb(null, Date.now() + path.extname(file.originalname))
 });
+
 const upload = multer({ storage });
 
 /* ---------- HELPERS ---------- */
-async function getUsers() {
-  return await User.find({ blocked: { $ne: true } });
+function formatTime(date = new Date()) {
+  let hours = date.getHours();
+  const minutes = String(date.getMinutes()).padStart(2, "0");
+  const ampm = hours >= 12 ? "PM" : "AM";
+
+  hours = hours % 12;
+  hours = hours === 0 ? 12 : hours;
+
+  return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
 }
 
-async function getChatMeta(owner, targetType, targetId) {
-  let meta = await ChatMeta.findOne({ owner, targetType, targetId });
-  if (!meta) {
-    meta = await ChatMeta.create({ owner, targetType, targetId });
-  }
-  return meta;
+async function getUsers() {
+  return await User.find({ blocked: { $ne: true } });
 }
 
 async function calculateUnread(username) {
@@ -148,6 +160,7 @@ async function calculateUnread(username) {
     if (!counts[m.from]) counts[m.from] = 0;
     counts[m.from]++;
   });
+
   return counts;
 }
 
@@ -163,7 +176,7 @@ async function pushCallMessage(from, to, text) {
     text,
     file: null,
     fileType: null,
-    time: new Date().toLocaleTimeString(),
+    time: formatTime(),
     status: "sent",
     reaction: null
   });
@@ -173,23 +186,54 @@ async function pushCallMessage(from, to, text) {
   io.to(to).emit("private-message", msg);
 }
 
-/* ---------- TEST ROUTES ---------- */
-app.get("/test", (req, res) => {
-  res.send("SERVER OK");
-});
-
-app.get("/api-check", (req, res) => {
-  res.json({ ok: true, msg: "API working" });
-});
-
 /* ---------- MEDIA UPLOAD ---------- */
 app.post("/upload-media", upload.single("file"), (req, res) => {
   try {
-    if (!req.file) return res.status(400).json({ status: "no_file" });
+    if (!req.file) {
+      return res.status(400).json({ status: "no_file" });
+    }
+
     res.json({ status: "ok", filePath: "/uploads/" + req.file.filename });
   } catch (err) {
     console.log(err);
     res.status(500).json({ status: "error" });
+  }
+});
+
+/* ---------- ADMIN ROUTES ---------- */
+app.get("/admin/blocked-users", async (req, res) => {
+  try {
+    const admin = req.query.admin;
+
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, users: [] });
+    }
+
+    const users = await User.find({ blocked: true }).select("name dp blocked muted");
+    res.json({ ok: true, users });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false, users: [] });
+  }
+});
+
+app.get("/admin/muted-users", async (req, res) => {
+  try {
+    const admin = req.query.admin;
+
+    if (admin !== ADMIN_NAME) {
+      return res.status(403).json({ ok: false, users: [] });
+    }
+
+    const users = await User.find({
+      muted: true,
+      blocked: { $ne: true }
+    }).select("name dp muted");
+
+    res.json({ ok: true, users });
+  } catch (err) {
+    console.log(err);
+    res.status(500).json({ ok: false, users: [] });
   }
 });
 
@@ -221,7 +265,10 @@ app.post("/upload-dp", upload.single("dp"), async (req, res) => {
 app.post("/upload-status", upload.single("file"), async (req, res) => {
   try {
     const username = req.body.username;
-    if (!req.file) return res.status(400).json({ status: "no_file" });
+
+    if (!req.file) {
+      return res.status(400).json({ status: "no_file" });
+    }
 
     const filePath = "/uploads/" + req.file.filename;
     const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
@@ -287,7 +334,7 @@ app.post("/status-reply", async (req, res) => {
       text,
       file: null,
       fileType: null,
-      time: new Date().toLocaleTimeString(),
+      time: formatTime(),
       status: "sent",
       reaction: null
     });
@@ -303,15 +350,19 @@ app.post("/status-reply", async (req, res) => {
 app.post("/status-delete", async (req, res) => {
   try {
     const { statusId, user } = req.body;
-    if (!statusId || !user) return res.status(400).json({ ok: false });
+
+    if (!statusId || !user) {
+      return res.status(400).json({ ok: false });
+    }
 
     const st = await Status.findById(statusId);
+
     if (!st) return res.json({ ok: false, msg: "not_found" });
     if (st.user !== user) return res.status(403).json({ ok: false, msg: "not_owner" });
 
     await Status.deleteOne({ _id: statusId });
-
     io.emit("status-update");
+
     return res.json({ ok: true });
   } catch (err) {
     console.log(err);
@@ -321,87 +372,15 @@ app.post("/status-delete", async (req, res) => {
 
 /* ---------- USERS ---------- */
 app.get("/users-data", async (req, res) => {
-  try {
-    const allUsers = await getUsers();
-    res.json(allUsers);
-  } catch (err) {
-    console.log(err);
-    res.status(500).json([]);
-  }
+  const allUsers = await getUsers();
+  res.json(allUsers);
 });
 
-/* ---------- CHAT META ROUTES ---------- */
-app.get("/chat/meta", async (req, res) => {
-  try {
-    const owner = req.query.owner;
-    const list = await ChatMeta.find({ owner, targetType: "user" });
-    res.json({ ok: true, list });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false, list: [] });
-  }
-});
-
-app.post("/chat/pin", async (req, res) => {
-  try {
-    const { owner, targetId, targetType } = req.body;
-    const meta = await getChatMeta(owner, targetType || "user", targetId);
-    meta.pinned = true;
-    meta.updatedAt = new Date();
-    await meta.save();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false });
-  }
-});
-
-app.post("/chat/unpin", async (req, res) => {
-  try {
-    const { owner, targetId, targetType } = req.body;
-    const meta = await getChatMeta(owner, targetType || "user", targetId);
-    meta.pinned = false;
-    meta.updatedAt = new Date();
-    await meta.save();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false });
-  }
-});
-
-app.post("/chat/archive", async (req, res) => {
-  try {
-    const { owner, targetId, targetType } = req.body;
-    const meta = await getChatMeta(owner, targetType || "user", targetId);
-    meta.archived = true;
-    meta.updatedAt = new Date();
-    await meta.save();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false });
-  }
-});
-
-app.post("/chat/unarchive", async (req, res) => {
-  try {
-    const { owner, targetId, targetType } = req.body;
-    const meta = await getChatMeta(owner, targetType || "user", targetId);
-    meta.archived = false;
-    meta.updatedAt = new Date();
-    await meta.save();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false });
-  }
-});
-
-/* ---------- ADMIN ROUTES ---------- */
+/* ---------- ADMIN APPROVAL ROUTES ---------- */
 app.get("/admin/pending-users", async (req, res) => {
   try {
     const admin = req.query.admin;
+
     if (admin !== ADMIN_NAME) {
       return res.status(403).json({ ok: false, msg: "Only admin allowed" });
     }
@@ -410,40 +389,6 @@ app.get("/admin/pending-users", async (req, res) => {
       approvalStatus: "pending",
       name: { $ne: ADMIN_NAME }
     }).select("name dp role approvalStatus");
-
-    res.json({ ok: true, users });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false, users: [] });
-  }
-});
-
-app.get("/admin/blocked-users", async (req, res) => {
-  try {
-    const admin = req.query.admin;
-    if (admin !== ADMIN_NAME) {
-      return res.status(403).json({ ok: false, users: [] });
-    }
-
-    const users = await User.find({ blocked: true }).select("name dp blocked muted");
-    res.json({ ok: true, users });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false, users: [] });
-  }
-});
-
-app.get("/admin/muted-users", async (req, res) => {
-  try {
-    const admin = req.query.admin;
-    if (admin !== ADMIN_NAME) {
-      return res.status(403).json({ ok: false, users: [] });
-    }
-
-    const users = await User.find({
-      muted: true,
-      blocked: { $ne: true }
-    }).select("name dp muted");
 
     res.json({ ok: true, users });
   } catch (err) {
@@ -473,6 +418,7 @@ app.post("/admin/approve-user", async (req, res) => {
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
+
     res.json({ ok: true });
   } catch (err) {
     console.log(err);
@@ -501,6 +447,7 @@ app.post("/admin/reject-user", async (req, res) => {
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
+
     res.json({ ok: true });
   } catch (err) {
     console.log(err);
@@ -522,7 +469,9 @@ app.post("/admin/block-user", async (req, res) => {
       { new: true }
     );
 
-    if (!user) return res.json({ ok: false, msg: "User not found" });
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
 
     io.to(username).emit("force-logout", {
       msg: "Admin blocked your account"
@@ -552,7 +501,9 @@ app.post("/admin/unblock-user", async (req, res) => {
       { new: true }
     );
 
-    if (!user) return res.json({ ok: false, msg: "User not found" });
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
 
     io.to(username).emit("unblocked", {
       msg: "Admin unblocked your account"
@@ -582,7 +533,9 @@ app.post("/admin/mute-user", async (req, res) => {
       { new: true }
     );
 
-    if (!user) return res.json({ ok: false, msg: "User not found" });
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
 
     io.to(username).emit("muted-by-admin", {
       msg: "Admin muted your account"
@@ -612,7 +565,9 @@ app.post("/admin/unmute-user", async (req, res) => {
       { new: true }
     );
 
-    if (!user) return res.json({ ok: false, msg: "User not found" });
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
 
     io.to(username).emit("unmuted-by-admin", {
       msg: "Admin unmuted your account"
@@ -626,6 +581,15 @@ app.post("/admin/unmute-user", async (req, res) => {
     console.log(err);
     res.status(500).json({ ok: false });
   }
+});
+
+/* ---------- TEST ROUTES ---------- */
+app.get("/test", (req, res) => {
+  res.send("SERVER OK");
+});
+
+app.get("/api-check", (req, res) => {
+  res.json({ ok: true, msg: "API working" });
 });
 
 /* ---------- AUTH ---------- */
@@ -687,7 +651,10 @@ app.post("/api/login", async (req, res) => {
     }
 
     if (user.blocked) {
-      return res.json({ ok: false, msg: "Admin blocked your account" });
+      return res.json({
+        ok: false,
+        msg: "Admin blocked your account"
+      });
     }
 
     if (user.name === ADMIN_NAME || user.role === "admin") {
@@ -722,7 +689,6 @@ app.post("/api/login", async (req, res) => {
       ok: true,
       user: { name: user.name, dp: user.dp, role: user.role }
     });
-
   } catch (err) {
     console.log("LOGIN ERROR:", err);
     return res.status(500).json({ ok: false, msg: "Server error" });
@@ -732,11 +698,12 @@ app.post("/api/login", async (req, res) => {
 app.post("/api/logout", async (req, res) => {
   try {
     const { name } = req.body;
+
     if (!name) return res.json({ ok: false });
 
     await User.findOneAndUpdate(
       { name },
-      { online: false, lastSeen: new Date().toLocaleString() }
+      { online: false, lastSeen: new Date() }
     );
 
     const allUsers = await getUsers();
@@ -749,9 +716,11 @@ app.post("/api/logout", async (req, res) => {
   }
 });
 
-/* ---------- SOCKET STATE ---------- */
+/* ---------- SOCKET USERS STORE ---------- */
 let sockets = {};
 let userSocketIds = {};
+
+/* ---------- CALL STATE ---------- */
 let callState = {};
 
 function isBusy(user) {
@@ -765,6 +734,7 @@ function setCall(userA, userB, status, type) {
 
 function clearCall(user) {
   if (!user) return;
+
   const st = callState[user];
   if (!st) return;
 
@@ -778,13 +748,15 @@ function clearCall(user) {
 
 /* ---------- SOCKET ---------- */
 io.on("connection", socket => {
-
   socket.on("join", async username => {
     try {
       sockets[socket.id] = username;
       socket.join(username);
 
-      if (!userSocketIds[username]) userSocketIds[username] = new Set();
+      if (!userSocketIds[username]) {
+        userSocketIds[username] = new Set();
+      }
+
       userSocketIds[username].add(socket.id);
 
       let user = await User.findOne({ name: username });
@@ -798,6 +770,7 @@ io.on("connection", socket => {
           role: username === ADMIN_NAME ? "admin" : "user",
           approvalStatus: username === ADMIN_NAME ? "approved" : "pending"
         });
+
         await user.save();
       } else {
         user.online = true;
@@ -854,7 +827,7 @@ io.on("connection", socket => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
-        time: new Date().toLocaleTimeString(),
+        time: formatTime(),
         status: "sent",
         reaction: null
       });
@@ -864,6 +837,7 @@ io.on("connection", socket => {
       io.to(data.from).emit("private-message", newMsg);
 
       const receiver = await User.findOne({ name: data.to });
+
       if (receiver && receiver.online) {
         await Message.findByIdAndUpdate(newMsg._id, { status: "delivered" });
         const updatedMsg = await Message.findById(newMsg._id);
@@ -924,7 +898,6 @@ io.on("connection", socket => {
     io.to(data.to).emit("stop-typing", data.from);
   });
 
-  /* ---------- CALLS ---------- */
   socket.on("call-user", async ({ to, from, type }) => {
     try {
       const callType = type === "video" ? "video" : "voice";
@@ -960,7 +933,7 @@ io.on("connection", socket => {
               to,
               type: callType,
               status: "missed",
-              time: new Date().toLocaleTimeString()
+              time: formatTime()
             });
 
             await pushCallMessage(
@@ -973,7 +946,6 @@ io.on("connection", socket => {
           console.log(err);
         }
       }, 25000);
-
     } catch (e) {
       console.log("call-user error", e);
       socket.emit("call-unavailable", { to, reason: "error" });
@@ -982,6 +954,7 @@ io.on("connection", socket => {
 
   socket.on("call-offer", ({ to, from, offer, type }) => {
     if (!callState[from] || callState[from].peer !== to) return;
+
     const callType = callState[from].type || (type === "video" ? "video" : "voice");
     io.to(to).emit("call-offer", { from, offer, type: callType });
   });
@@ -994,7 +967,6 @@ io.on("connection", socket => {
       if (callState[to]) callState[to].status = "in_call";
 
       const callType = callState[from].type || (type === "video" ? "video" : "voice");
-
       io.to(to).emit("call-answer", { from, answer, type: callType });
 
       await Call.create({
@@ -1002,7 +974,7 @@ io.on("connection", socket => {
         to: from,
         type: callType,
         status: "completed",
-        time: new Date().toLocaleTimeString()
+        time: formatTime()
       });
     } catch (err) {
       console.log(err);
@@ -1011,6 +983,7 @@ io.on("connection", socket => {
 
   socket.on("call-ice", ({ to, from, candidate, type }) => {
     if (!callState[from] || callState[from].peer !== to) return;
+
     const callType = callState[from].type || (type === "video" ? "video" : "voice");
     io.to(to).emit("call-ice", { from, candidate, type: callType });
   });
@@ -1029,7 +1002,7 @@ io.on("connection", socket => {
         to,
         type: callType,
         status: "ended",
-        time: new Date().toLocaleTimeString()
+        time: formatTime()
       });
 
       await pushCallMessage(
@@ -1049,7 +1022,10 @@ io.on("connection", socket => {
       if (username) {
         if (userSocketIds[username]) {
           userSocketIds[username].delete(socket.id);
-          if (userSocketIds[username].size === 0) delete userSocketIds[username];
+
+          if (userSocketIds[username].size === 0) {
+            delete userSocketIds[username];
+          }
         }
 
         if (callState[username]) {
@@ -1058,14 +1034,10 @@ io.on("connection", socket => {
           clearCall(username);
         }
 
-        const stillOnline = !!(userSocketIds[username] && userSocketIds[username].size > 0);
-
-        if (!stillOnline) {
-          await User.findOneAndUpdate(
-            { name: username },
-            { online: false, lastSeen: new Date().toLocaleString() }
-          );
-        }
+        await User.findOneAndUpdate(
+          { name: username },
+          { online: false, lastSeen: new Date() }
+        );
 
         delete sockets[socket.id];
 
@@ -1079,6 +1051,7 @@ io.on("connection", socket => {
 });
 
 /* ---------- START SERVER ---------- */
-server.listen(PORT, "0.0.0.0", () => {
+const PORT = process.env.PORT || 5000;
+server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
 });
