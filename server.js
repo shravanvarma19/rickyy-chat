@@ -9,7 +9,7 @@ const http = require("http");
 const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
-
+const crypto = require("crypto");
 /* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -55,7 +55,9 @@ function formatTime(date = new Date()) {
   hours = hours === 0 ? 12 : hours;
   return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
 }
-
+function generateAuthToken(){
+  return crypto.randomBytes(32).toString("hex");
+}
 function isValidUsername(name) {
   return typeof name === "string" && /^[a-zA-Z0-9_ ]{3,20}$/.test(name.trim());
 }
@@ -86,7 +88,8 @@ const userSchema = new mongoose.Schema({
   bio: { type: String, default: "" },
   about: { type: String, default: "" },
   loginAttempts: { type: Number, default: 0 },
-  lockUntil: { type: Date, default: null }
+  lockUntil: { type: Date, default: null },
+   authToken: { type: String, default: null }
 });
 
 const groupSchema = new mongoose.Schema({
@@ -474,7 +477,66 @@ app.get("/statuses", async (req, res) => {
     res.status(500).json([]);
   }
 });
+app.post("/api/logout", async (req, res) => {
+  try {
+    const { name } = req.body;
+    const token = String(req.headers.authorization || "").replace("Bearer ", "");
 
+    if (name) {
+      await User.findOneAndUpdate(
+        { name },
+        {
+          online: false,
+          lastSeen: new Date()
+        }
+      );
+    }
+
+    if (token) {
+      await User.findOneAndUpdate(
+        { authToken: token },
+        { $unset: { authToken: 1 } }
+      );
+    }
+
+    await emitUsersToAll();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log("LOGOUT ERROR:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+app.get("/api/me", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "No token" });
+    }
+
+    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked");
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Invalid token" });
+    }
+
+    if (user.blocked) {
+      return res.status(403).json({ ok: false, msg: "Blocked user" });
+    }
+
+    return res.json({
+      ok: true,
+      user: {
+        name: user.name,
+        dp: user.dp,
+        role: user.role || "user"
+      }
+    });
+  } catch (err) {
+    console.log("API ME ERROR:", err);
+    res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
 app.post("/status-view", async (req, res) => {
   try {
     const { statusId, viewer } = req.body;
@@ -1480,7 +1542,8 @@ app.post("/api/login", async (req, res) => {
         role: isAdmin ? "admin" : "user",
         approvalStatus: isAdmin ? "approved" : "pending",
         loginAttempts: 0,
-        lockUntil: null
+        lockUntil: null,
+        authToken: null
       });
 
       await user.save();
@@ -1498,9 +1561,18 @@ app.post("/api/login", async (req, res) => {
         });
       }
 
+      const token = generateAuthToken();
+      user.authToken = token;
+      await user.save();
+
       return res.json({
         ok: true,
-        user: { name: user.name, dp: user.dp, role: user.role }
+        user: {
+          name: user.name,
+          dp: user.dp,
+          role: user.role
+        },
+        token
       });
     }
 
@@ -1545,9 +1617,9 @@ app.post("/api/login", async (req, res) => {
 
     user.loginAttempts = 0;
     user.lockUntil = null;
-    await user.save();
 
     if (user.blocked) {
+      await user.save();
       return res.json({
         ok: false,
         msg: "Admin blocked your account"
@@ -1558,16 +1630,25 @@ app.post("/api/login", async (req, res) => {
       if (user.role !== "admin" || user.approvalStatus !== "approved") {
         user.role = "admin";
         user.approvalStatus = "approved";
-        await user.save();
       }
+
+      const token = generateAuthToken();
+      user.authToken = token;
+      await user.save();
 
       return res.json({
         ok: true,
-        user: { name: user.name, dp: user.dp, role: user.role }
+        user: {
+          name: user.name,
+          dp: user.dp,
+          role: user.role
+        },
+        token
       });
     }
 
     if (user.approvalStatus === "pending") {
+      await user.save();
       return res.json({
         ok: false,
         pending: true,
@@ -1576,15 +1657,25 @@ app.post("/api/login", async (req, res) => {
     }
 
     if (user.approvalStatus === "rejected") {
+      await user.save();
       return res.json({
         ok: false,
         msg: "Admin rejected your request."
       });
     }
 
+    const token = generateAuthToken();
+    user.authToken = token;
+    await user.save();
+
     return res.json({
       ok: true,
-      user: { name: user.name, dp: user.dp, role: user.role }
+      user: {
+        name: user.name,
+        dp: user.dp,
+        role: user.role
+      },
+      token
     });
   } catch (err) {
     console.log("LOGIN ERROR:", err);
@@ -1599,7 +1690,7 @@ app.post("/api/logout", async (req, res) => {
 
     await User.findOneAndUpdate(
       { name },
-      { online: false, lastSeen: new Date() }
+      { online: false, lastSeen: new Date(), authToken: null }
     );
 
     await emitUsersToAll();
@@ -1610,6 +1701,42 @@ app.post("/api/logout", async (req, res) => {
   }
 });
 
+app.get("/api/me", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "")
+      .replace("Bearer ", "")
+      .trim();
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "No token" });
+    }
+
+    const user = await User.findOne({
+      authToken: token,
+      blocked: { $ne: true }
+    }).select("name dp role approvalStatus blocked");
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Invalid token" });
+    }
+
+    if (user.approvalStatus === "rejected") {
+      return res.status(403).json({ ok: false, msg: "Rejected user" });
+    }
+
+    return res.json({
+      ok: true,
+      user: {
+        name: user.name,
+        dp: user.dp,
+        role: user.role
+      }
+    });
+  } catch (err) {
+    console.log("API ME ERROR:", err);
+    res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
 /* ---------- SOCKET USERS STORE ---------- */
 let sockets = {};
 let userSocketIds = {};

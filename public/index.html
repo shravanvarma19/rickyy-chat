@@ -613,10 +613,10 @@ async function login(e){
       return;
     }
 
-    localStorage.setItem("user", data.user.name);
-    localStorage.setItem("role", data.user.role || "user");
-
-    window.location.href = "/chat.html";
+   localStorage.setItem("user", data.user.name);
+localStorage.setItem("role", data.user.role || "user");
+localStorage.setItem("authToken", data.token || "");
+window.location.href = "/chat.html";
   }catch(e){
     errorBox.innerText = "Server error";
     console.log("LOGIN FRONTEND ERROR:", e);
@@ -644,6 +644,29 @@ if ("serviceWorker" in navigator) {
       .catch(err => console.log("SW error:", err));
   });
 }
+(async function autoLoginRedirect(){
+  const token = localStorage.getItem("authToken");
+  if(!token) return;
+
+  try{
+    const res = await fetch("/api/me", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(data && data.ok){
+      localStorage.setItem("user", data.user.name);
+      localStorage.setItem("role", data.user.role || "user");
+      localStorage.setItem("authToken", data.token || "");
+      window.location.href = "/chat.html";
+    }
+  }catch(err){
+    console.log(err);
+  }
+})();
 </script>
 </body>
 </html>

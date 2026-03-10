@@ -1694,7 +1694,7 @@ body.dark .history-loader{
       <button onclick="enableNotifications()">🔔</button>
       <button onclick="openProfile()">👤</button>
       
-      <span title="Logout" onclick="logout()">🚪</span>
+      
       <button onclick="openMenu()">⋮</button>
     </div>
   </div>
@@ -1976,6 +1976,8 @@ let oldestPrivateMessageDate = null;
 let oldestGroupMessageDate = null;
 let privateNoMoreShown = false;
 let groupNoMoreShown = false;
+let hasOpenedUserFromUrl = false;
+let hasOpenedGroupFromUrl = false;
 
 const WALLPAPERS = [
   "linear-gradient(135deg, #ece5dd, #d9fdd3)",
@@ -1993,7 +1995,8 @@ let appSettings = {
 };
 
 const socket = io();
-const me = localStorage.getItem("user");
+
+let me = localStorage.getItem("user");
 if(!me){
   location.href = "/index.html";
 }
@@ -2001,6 +2004,46 @@ if(!me){
 const pageParams = new URLSearchParams(window.location.search);
 const openUserFromUrl = pageParams.get("user");
 const openGroupFromUrl = pageParams.get("group");
+
+/* =========================
+   AUTH / SESSION
+========================= */
+async function verifyLogin(){
+  const token = localStorage.getItem("authToken");
+
+  if(!token){
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    location.href = "/index.html";
+    return false;
+  }
+
+  try{
+    const res = await fetch("/api/me", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      localStorage.removeItem("authToken");
+      location.href = "/index.html";
+      return false;
+    }
+
+    localStorage.setItem("user", data.user.name);
+    localStorage.setItem("role", data.user.role || "user");
+    me = data.user.name;
+    return true;
+  }catch(err){
+    console.log("VERIFY LOGIN ERROR:", err);
+    return true;
+  }
+}
 
 /* =========================
    HELPERS
@@ -2016,10 +2059,10 @@ function escapeHtml(str){
     })[m];
   });
 }
+
 function updateFloatingButtonsVisibility(){
   const groupBtn = document.getElementById("groupFab");
   const soundBtn = document.getElementById("soundUnlock");
-
   const shouldShow = !currentChat && !currentGroup;
 
   if(groupBtn){
@@ -2030,6 +2073,7 @@ function updateFloatingButtonsVisibility(){
     soundBtn.style.display = shouldShow ? "flex" : "none";
   }
 }
+
 function openChatWallpaperModal(){
   if(!currentChat && !currentGroup){
     alert("Open a chat or group first");
@@ -2148,7 +2192,6 @@ function prependMessagesToHistory(olderMessages){
   const fresh = olderMessages.filter(m => !existingIds.has(String(m._id || "")));
 
   if(!fresh.length) return;
-
   currentHistory = [...fresh, ...currentHistory];
 }
 
@@ -2203,6 +2246,147 @@ function renderFullCurrentHistory(){
   }
 
   box.scrollTop = box.scrollHeight;
+}
+
+function downloadFile(url, filename = ""){
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || url.split("/").pop() || "file";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
+
+/* =========================
+   NOTIFICATIONS / SERVICE WORKER
+========================= */
+async function registerServiceWorkerSafe(){
+  if(!("serviceWorker" in navigator)) return null;
+  try{
+    const reg = await navigator.serviceWorker.getRegistration();
+    if(reg) return reg;
+    const newReg = await navigator.serviceWorker.register("/service-worker.js");
+    return newReg;
+  }catch(err){
+    console.log("SW REGISTER ERROR:", err);
+    return null;
+  }
+}
+
+async function initNotifications(){
+  try{
+    await registerServiceWorkerSafe();
+  }catch(e){}
+
+  if(!("Notification" in window)) return;
+  if(Notification.permission === "default"){
+    try{
+      await Notification.requestPermission();
+    }catch(e){}
+  }
+}
+
+async function enableNotifications() {
+  if (!("Notification" in window)) {
+    alert("This browser does not support notifications");
+    return;
+  }
+
+  const permission = await Notification.requestPermission();
+  if (permission === "granted") {
+    alert("Notifications enabled ✅");
+  } else {
+    alert("Notifications are blocked ❌");
+  }
+}
+
+function showNotification(title, body, target = {}){
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+
+  navigator.serviceWorker.getRegistration().then(reg => {
+    const notifData = {
+      url: target.group
+        ? `/chat.html?group=${encodeURIComponent(target.group)}`
+        : `/chat.html?user=${encodeURIComponent(target.user || "")}`
+    };
+
+    if(reg){
+      reg.showNotification(title, {
+        body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        data: notifData
+      }).catch(()=>{});
+    } else {
+      const n = new Notification(title, {
+        body,
+        icon: "/icons/icon-192.png"
+      });
+      n.onclick = () => {
+        window.location.href = notifData.url;
+        window.focus();
+      };
+    }
+  }).catch(()=>{});
+}
+
+function showNotify(title, body, target = {}){
+  if(!("Notification" in window) || Notification.permission !== "granted") return;
+
+  const url = target.group
+    ? `/chat.html?group=${encodeURIComponent(target.group)}`
+    : `/chat.html?user=${encodeURIComponent(target.user || "")}`;
+
+  const n = new Notification(title, { body });
+  n.onclick = () => {
+    window.location.href = url;
+    window.focus();
+  };
+}
+
+/* =========================
+   SOUND
+========================= */
+async function tryUnlockSounds(){
+  if(soundUnlocked) return true;
+  const m = document.getElementById("msgSound");
+  const ring = document.getElementById("ringSound");
+  const ringback = document.getElementById("ringingSound");
+  const ra = document.getElementById("remoteAudio");
+
+  try{
+    if(m){ m.muted = true; await m.play(); m.pause(); m.currentTime = 0; m.muted = false; }
+    if(ring){ ring.muted = true; await ring.play(); ring.pause(); ring.currentTime = 0; ring.muted = false; }
+    if(ringback){ ringback.muted = true; await ringback.play(); ringback.pause(); ringback.currentTime = 0; ringback.muted = false; }
+    if(ra){
+      ra.muted = true;
+      await ra.play().catch(()=>{});
+      ra.pause();
+      ra.currentTime = 0;
+      ra.muted = false;
+    }
+
+    soundUnlocked = true;
+    const btn = document.getElementById("soundUnlock");
+    if(btn) btn.style.display = "none";
+    return true;
+  }catch(e){
+    const btn = document.getElementById("soundUnlock");
+    if(btn) btn.style.display = "block";
+    return false;
+  }
+}
+
+window.addEventListener("load", ()=>{ tryUnlockSounds(); });
+["pointerdown","click","touchstart","keydown"].forEach(evt=>{
+  document.addEventListener(evt, ()=>{ tryUnlockSounds(); }, { once:true, passive:true });
+});
+
+function playMsgSound(){
+  const a = document.getElementById("msgSound");
+  if(!a) return;
+  a.currentTime = 0;
+  a.play().catch(()=>{});
 }
 
 /* =========================
@@ -2356,9 +2540,10 @@ async function loadGroups(){
     await loadGroupLastMessages();
     renderGroups(groups);
 
-    if(openGroupFromUrl && !currentGroup){
+    if(openGroupFromUrl && !currentGroup && !hasOpenedGroupFromUrl){
       const foundGroup = groups.find(g => String(g._id) === String(openGroupFromUrl));
       if(foundGroup){
+        hasOpenedGroupFromUrl = true;
         openGroup(foundGroup);
       }
     }
@@ -2459,6 +2644,7 @@ function openGroup(group){
   currentGroup = group._id;
   currentChat = null;
   isGroupChat = true;
+  hasOpenedGroupFromUrl = true;
 
   groupHasMore = true;
   groupLoadingOld = false;
@@ -2488,7 +2674,9 @@ function openGroup(group){
     document.querySelector(".sidebar").style.display = "none";
     document.querySelector(".back-btn").style.display = "inline-block";
   }
-
+  setTimeout(() => {
+  loadGroupMessages(true);
+}, 0);
   updateCurrentChatMuteText();
   applyAppSettings();
   updateFloatingButtonsVisibility();
@@ -3106,98 +3294,22 @@ function jumpToMessageResult(index, q){
 }
 
 /* =========================
-   GENERAL HELPERS
-========================= */
-async function enableNotifications() {
-  if (!("Notification" in window)) {
-    alert("This browser does not support notifications");
-    return;
-  }
-
-  const permission = await Notification.requestPermission();
-  if (permission === "granted") {
-    alert("Notifications enabled ✅");
-  } else {
-    alert("Notifications are blocked ❌");
-  }
-}
-
-function showNotification(title, body, target = {}){
-  if("Notification" in window && Notification.permission === "granted"){
-    navigator.serviceWorker.getRegistration().then(reg => {
-      const notifData = {
-        url: target.group
-          ? `/chat.html?group=${encodeURIComponent(target.group)}`
-          : `/chat.html?user=${encodeURIComponent(target.user || "")}`
-      };
-
-      if(reg){
-        reg.showNotification(title, {
-          body: body,
-          icon: "/icons/icon-192.png",
-          badge: "/icons/icon-192.png",
-          data: notifData
-        });
-      } else {
-        new Notification(title, {
-          body: body,
-          icon: "/icons/icon-192.png"
-        });
-      }
-    });
-  }
-}
-
-/* =========================
-   SOUND
-========================= */
-async function tryUnlockSounds(){
-  if(soundUnlocked) return true;
-  const m = document.getElementById("msgSound");
-  const ring = document.getElementById("ringSound");
-  const ringback = document.getElementById("ringingSound");
-  const ra = document.getElementById("remoteAudio");
-
-  try{
-    if(m){ m.muted=true; await m.play(); m.pause(); m.currentTime=0; m.muted=false; }
-    if(ring){ ring.muted=true; await ring.play(); ring.pause(); ring.currentTime=0; ring.muted=false; }
-    if(ringback){ ringback.muted=true; await ringback.play(); ringback.pause(); ringback.currentTime=0; ringback.muted=false; }
-    if(ra){
-      ra.muted = true;
-      await ra.play().catch(()=>{});
-      ra.pause();
-      ra.currentTime = 0;
-      ra.muted = false;
-    }
-
-    soundUnlocked = true;
-    const btn = document.getElementById("soundUnlock");
-    if(btn) btn.style.display = "none";
-    return true;
-  }catch(e){
-    const btn = document.getElementById("soundUnlock");
-    if(btn) btn.style.display = "block";
-    return false;
-  }
-}
-
-window.addEventListener("load", ()=>{ tryUnlockSounds(); });
-["pointerdown","click","touchstart","keydown"].forEach(evt=>{
-  document.addEventListener(evt, ()=>{ tryUnlockSounds(); }, { once:true, passive:true });
-});
-
-function playMsgSound(){
-  const a = document.getElementById("msgSound");
-  if(!a) return;
-  a.currentTime = 0;
-  a.play().catch(()=>{});
-}
-
-/* =========================
    SOCKET INIT
 ========================= */
-socket.emit("join", me);
-socket.emit("get-unread", me);
+(async function initApp(){
+  const ok = await verifyLogin();
+  if(!ok) return;
+
+  await initNotifications();
+  await loadGroups();
+  updateFloatingButtonsVisibility();
+  applyAppSettings();
+  showNoChatUI();
+  loadStatuses();
+
+  socket.emit("join", me);
+  socket.emit("get-unread", me);
+})();
 
 document.addEventListener("visibilitychange",()=>{
   pageActive = !document.hidden;
@@ -3206,6 +3318,8 @@ document.addEventListener("visibilitychange",()=>{
 socket.on("force-logout", (data)=>{
   alert(data.msg || "You are blocked by admin");
   localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("authToken");
   location.href = "/index.html";
 });
 
@@ -3221,16 +3335,17 @@ socket.on("users", async users => {
       : "";
   }
 
-  if(openUserFromUrl && !currentChat){
+  if(openUserFromUrl && !currentChat && !hasOpenedUserFromUrl){
     const found = usersList.find(x => x.name === openUserFromUrl);
     if(found){
+      hasOpenedUserFromUrl = true;
       openChat(openUserFromUrl);
     }
   }
 });
 
 socket.on("unread-counts", counts => {
-  unread = counts;
+  unread = counts || {};
   renderUsers();
 });
 
@@ -3278,7 +3393,7 @@ function renderUsers(){
     const isMutedChat = isChatMuted(u.name);
 
     const row = document.createElement("div");
-    row.className = "user " + (currentChat===u.name ? "active" : "");
+    row.className = "user " + (currentChat === u.name ? "active" : "");
 
     row.innerHTML = `
       <div style="display:flex;align-items:center;width:100%">
@@ -3369,6 +3484,7 @@ function openChat(name){
   currentChat = name;
   currentGroup = null;
   isGroupChat = false;
+  hasOpenedUserFromUrl = true;
 
   privateHasMore = true;
   privateLoadingOld = false;
@@ -3381,9 +3497,10 @@ function openChat(name){
 
   document.getElementById("chatName").innerText = name;
 
-  const u = usersList.find(x=>x.name===name);
-  document.getElementById("chatDp").src = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name="+encodeURIComponent(name));
- document.getElementById("chatName").onclick = null;
+  const u = usersList.find(x => x.name === name);
+  document.getElementById("chatDp").src = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name=" + encodeURIComponent(name));
+  document.getElementById("chatName").onclick = () => openUserProfile(name);
+  document.getElementById("chatDp").onclick = () => openUserProfile(name);
   document.getElementById("typing").innerText = u
     ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
     : "";
@@ -3394,21 +3511,23 @@ function openChat(name){
   renderUsers();
 
   loadPrivateMessages(true);
-  socket.emit("get-unread",me);
+  socket.emit("get-unread", me);
 
   if(pageActive){
-    socket.emit("seen",{from:name,to:me});
+    socket.emit("seen", { from:name, to:me });
   }
 
   if(window.innerWidth <= 768){
-    document.querySelector(".sidebar").style.display="none";
-    document.querySelector(".back-btn").style.display="inline-block";
+    document.querySelector(".sidebar").style.display = "none";
+    document.querySelector(".back-btn").style.display = "inline-block";
   }
+  setTimeout(() => {
+  loadPrivateMessages(true);
+}, 0);
 
   updateCurrentChatMuteText();
   applyAppSettings();
   updateFloatingButtonsVisibility();
-  
 }
 
 function goBack(){
@@ -3615,7 +3734,7 @@ document.getElementById("fileInput").addEventListener("change", async (e)=>{
         group: currentGroup,
         text: null,
         file: data.filePath,
-        fileType: fileType,
+        fileType,
         replyTo: replyDraft || null
       });
     }else{
@@ -3624,7 +3743,7 @@ document.getElementById("fileInput").addEventListener("change", async (e)=>{
         to: currentChat,
         text: null,
         file: data.filePath,
-        fileType: fileType,
+        fileType,
         replyTo: replyDraft || null
       });
     }
@@ -3638,43 +3757,73 @@ document.getElementById("fileInput").addEventListener("change", async (e)=>{
   }
 });
 
+function buildMessageContent(m){
+  if(!m.file){
+    return `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+  }
+
+  const mediaUrl = getMediaUrl(m.file);
+
+  if(m.fileType === "image"){
+    return `
+      <div>
+        <img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if(m.fileType === "video"){
+    return `
+      <div>
+        <video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+        </div>
+      </div>
+    `;
+  }
+
+  if(m.fileType === "audio"){
+    return `
+      <div>
+        <audio src="${mediaUrl}" controls></audio>
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+        </div>
+      </div>
+    `;
+  }
+
+  const filename = mediaUrl.split("/").pop();
+  return `
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div style="font-size:22px;">📄</div>
+      <div>
+        <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+        <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open</a>
+        <button class="small-btn" style="margin-left:8px;" onclick="downloadFile('${mediaUrl}','${escapeHtml(filename)}')">Download</button>
+      </div>
+    </div>
+  `;
+}
+
 function showMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
   const div = document.createElement("div");
-  div.className = "message " + (m.from===me ? "me" : "other");
+  div.className = "message " + (m.from === me ? "me" : "other");
   div.setAttribute("data-msg-index", index);
 
   let ticks = "";
-  if(m.from===me){
-    if(m.status==="sent") ticks="✓";
-    else if(m.status==="delivered") ticks="✓✓";
-    else if(m.status==="seen") ticks="<span style='color:#34b7f1'>✓✓</span>";
+  if(m.from === me){
+    if(m.status === "sent") ticks = "✓";
+    else if(m.status === "delivered") ticks = "✓✓";
+    else if(m.status === "seen") ticks = "<span style='color:#34b7f1'>✓✓</span>";
   }
 
-  let content = "";
-  if(m.file && m.fileType==="image"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
-  } else if(m.file && m.fileType==="video"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
-  } else if(m.file && m.fileType==="audio"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls></audio>`;
-  } else if(m.file && (m.fileType==="doc" || m.fileType==="file")){
-    const mediaUrl = getMediaUrl(m.file);
-    const filename = mediaUrl.split("/").pop();
-    content = `
-  <div>
-    <img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />
-    <div style="margin-top:6px;">
-      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-    </div>
-  </div>
-`;
-  } else {
-    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
-  }
+  const content = buildMessageContent(m);
 
   let replyHtml = "";
   if(m.replyTo){
@@ -3690,7 +3839,7 @@ function showMessage(m, index, scrollToBottom = true){
   div.innerHTML = `
     ${replyHtml}
     ${content}
-    <div class="time">${escapeHtml(m.time||"")} ${ticks}</div>
+    <div class="time">${escapeHtml(m.time || "")} ${ticks}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -3729,46 +3878,8 @@ function showGroupMessage(m, index, scrollToBottom = true){
     senderName = `<div style="font-size:12px;font-weight:700;color:#075e54;margin-bottom:4px;">${escapeHtml(m.from)}</div>`;
   }
 
-  let content = "";
-  if(m.file && m.fileType === "image"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
-  } else if(m.file && m.fileType === "video"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
-  } else if(m.file && m.fileType === "audio"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls></audio>`;
-  } else if(m.file && (m.fileType === "doc" || m.fileType === "file")){
-    const mediaUrl = getMediaUrl(m.file);
-    const filename = mediaUrl.split("/").pop();
-   content = `
-  <div>
-    <video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>
-    <div style="margin-top:6px;">
-      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-    </div>
-  </div>
-`;
-  } else {
-    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
-  }
-  content = `
-  <div>
-    <audio src="${mediaUrl}" controls></audio>
-    <div style="margin-top:6px;">
-      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-    </div>
-  </div>
-`;
-content = `
-  <div>
-    <audio src="${mediaUrl}" controls></audio>
-    <div style="margin-top:6px;">
-      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-    </div>
-  </div>
-`;
+  const content = buildMessageContent(m);
+
   let replyHtml = "";
   if(m.replyTo){
     const t = m.replyTo.text ? m.replyTo.text : (m.replyTo.fileType ? `Attachment: ${m.replyTo.fileType}` : "");
@@ -3950,7 +4061,7 @@ async function loadGroupMessages(initial = false){
 }
 
 /* =========================
-   REPLY / NOTIFY
+   REPLY / REACTIONS / TYPING
 ========================= */
 function setReply(msg){
   replyDraft = {
@@ -3972,31 +4083,6 @@ function cancelReply(){
   document.getElementById("replyBox").style.display = "none";
 }
 
-async function initNotifications(){
-  if(!("Notification" in window)) return;
-  if(Notification.permission === "default"){
-    try{ await Notification.requestPermission(); }catch(e){}
-  }
-}
-initNotifications();
-
-function showNotify(title, body, target = {}){
-  if(!("Notification" in window)) return;
-  if(Notification.permission !== "granted") return;
-
-  const n = new Notification(title, { body });
-  n.onclick = () => {
-    const url = target.group
-      ? `/chat.html?group=${encodeURIComponent(target.group)}`
-      : `/chat.html?user=${encodeURIComponent(target.user || "")}`;
-    window.location.href = url;
-    window.focus();
-  };
-}
-
-/* =========================
-   REACTIONS / TYPING
-========================= */
 function showReactionMenu(messageObj, event){
   const old = document.querySelector(".reaction-menu");
   if(old) old.remove();
@@ -4029,11 +4115,11 @@ function showReactionMenu(messageObj, event){
     span.innerText = e;
     span.onclick = ()=>{
       socket.emit("reaction",{
-        from:me,
-        to:currentChat,
-        group:currentGroup,
-        messageId:messageObj._id,
-        emoji:e
+        from: me,
+        to: currentChat,
+        group: currentGroup,
+        messageId: messageObj._id,
+        emoji: e
       });
       menu.remove();
     };
@@ -4059,7 +4145,7 @@ function showReactionMenu(messageObj, event){
 socket.on("reaction-update",(data)=>{
   if(isGroupChat){
     loadGroupMessages(true);
-  }else if(currentChat===data.from || currentChat===data.to){
+  }else if(currentChat === data.from || currentChat === data.to){
     socket.emit("load-history",{from:me,to:currentChat});
   }
 });
@@ -4077,13 +4163,13 @@ inputBox.addEventListener("input",()=>{
 });
 
 socket.on("typing",user=>{
-  if(user===currentChat){
+  if(user === currentChat){
     document.getElementById("typing").innerText = "typing...";
   }
 });
 
 socket.on("stop-typing",user=>{
-  if(user===currentChat){
+  if(user === currentChat){
     const u = usersList.find(x => x.name === currentChat);
     document.getElementById("typing").innerText = u
       ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
@@ -4094,13 +4180,10 @@ socket.on("stop-typing",user=>{
 /* =========================
    VIEWER / GALLERY
 ========================= */
-function openProfile(){ window.location.href="/profile.html"; }
+function openProfile(){ window.location.href = "/profile.html"; }
 function searchUsers(){ document.getElementById("userSearch").focus(); }
 function openMenu(){ openSettingsModal(); }
 
-/* =========================
-   SETTINGS / THEME / WALLPAPER
-========================= */
 function saveAppSettings(){
   localStorage.setItem("theme", appSettings.theme || "light");
   localStorage.setItem("mutedChats", JSON.stringify(appSettings.mutedChats || []));
@@ -4186,8 +4269,6 @@ function setWallpaper(value){
   saveAppSettings();
   applyAppSettings();
   renderWallpaperOptions();
-
-  console.log("Wallpaper saved for:", key);
 }
 
 document.addEventListener("change", function(e){
@@ -4294,8 +4375,6 @@ function toggleMuteCurrentChat(){
   updateCurrentChatMuteText();
 }
 
-applyAppSettings();
-
 function filterUsers(){
   const input = document.getElementById("userSearch").value.toLowerCase();
   const userNodes = document.querySelectorAll("#users .user");
@@ -4311,7 +4390,7 @@ function openViewer(src,type){
   const content = document.getElementById("viewerContent");
   content.innerHTML = "";
 
-  if(type==="image"){
+  if(type === "image"){
     content.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
         <img src="${src}">
@@ -4320,7 +4399,7 @@ function openViewer(src,type){
     `;
   }
 
-  if(type==="video"){
+  if(type === "video"){
     content.innerHTML = `
       <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
         <video src="${src}" controls autoplay></video>
@@ -4329,11 +4408,11 @@ function openViewer(src,type){
     `;
   }
 
-  viewer.style.display="flex";
+  viewer.style.display = "flex";
 }
 
 function closeViewer(){
-  document.getElementById("mediaViewer").style.display="none";
+  document.getElementById("mediaViewer").style.display = "none";
 }
 
 function extractLinks(text){
@@ -4346,9 +4425,9 @@ function setActiveTab(tab){
   document.getElementById("tabMedia").classList.remove("active");
   document.getElementById("tabLinks").classList.remove("active");
   document.getElementById("tabDocs").classList.remove("active");
-  if(tab==="media") document.getElementById("tabMedia").classList.add("active");
-  if(tab==="links") document.getElementById("tabLinks").classList.add("active");
-  if(tab==="docs") document.getElementById("tabDocs").classList.add("active");
+  if(tab === "media") document.getElementById("tabMedia").classList.add("active");
+  if(tab === "links") document.getElementById("tabLinks").classList.add("active");
+  if(tab === "docs") document.getElementById("tabDocs").classList.add("active");
 }
 
 function setGalleryTab(tab){
@@ -4375,7 +4454,7 @@ function renderGallery(tab){
   const grid = document.getElementById("galleryGrid");
   grid.innerHTML = "";
 
-  if(tab==="media"){
+  if(tab === "media"){
     grid.style.display = "grid";
     const mediaMsgs = currentHistory.filter(m => m.file && (m.fileType === "image" || m.fileType === "video")).slice().reverse();
 
@@ -4401,7 +4480,7 @@ function renderGallery(tab){
     return;
   }
 
-  if(tab==="links"){
+  if(tab === "links"){
     grid.style.display = "block";
     let allLinks = [];
     currentHistory.forEach(m=>{
@@ -4429,7 +4508,7 @@ function renderGallery(tab){
     return;
   }
 
-  if(tab==="docs"){
+  if(tab === "docs"){
     grid.style.display = "block";
     const docs = currentHistory.filter(m => m.file && (m.fileType === "doc" || m.fileType === "file")).slice().reverse();
 
@@ -4651,13 +4730,13 @@ async function openMyStatuses(){
   }catch(e){ console.log(e); }
 }
 
-function openStatusViewer(list, startIndex=0, editable=false){
+function openStatusViewer(list, startIndex = 0, editable = false){
   statusList = list;
   currentStatusIndex = startIndex;
   statusEditable = editable;
 
   document.getElementById("statusReply").value = "";
-  document.getElementById("statusViewer").style.display="flex";
+  document.getElementById("statusViewer").style.display = "flex";
   document.getElementById("statusDelBtn").style.display = statusEditable ? "inline-block" : "none";
   document.getElementById("statusMetaBox").style.display = statusEditable ? "block" : "none";
 
@@ -4725,7 +4804,7 @@ function renderStatus(){
     progress.appendChild(bar);
   });
 
-  if(status.fileType==="image"){
+  if(status.fileType === "image"){
     content.innerHTML = `<img class="status-media" src="${statusUrl}">`;
   }else{
     content.innerHTML = `<video class="status-media" src="${statusUrl}" autoplay muted playsinline controls></video>`;
@@ -4745,7 +4824,7 @@ function renderStatus(){
 }
 
 function closeStatusViewer(){
-  document.getElementById("statusViewer").style.display="none";
+  document.getElementById("statusViewer").style.display = "none";
   clearTimeout(statusTimer);
 }
 
@@ -5353,7 +5432,7 @@ async function switchCamera(){
 }
 
 /* =========================
-   DP / LOGOUT
+   DP / PROFILE / LOGOUT
 ========================= */
 function openDpPreview(src, name){
   const modal = document.getElementById("dpModal");
@@ -5375,25 +5454,62 @@ function openChatDpPreview(){
   }
 
   if(!currentChat) return;
-  const u = usersList.find(x=>x.name===currentChat);
+  const u = usersList.find(x => x.name === currentChat);
   const dp = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name="+encodeURIComponent(currentChat));
   openDpPreview(dp, currentChat);
 }
 
+function closeUserProfileModal(){
+  document.getElementById("userProfileModal").style.display = "none";
+}
+
+async function openUserProfile(username){
+  if(!username) return;
+
+  try{
+    const res = await fetch("/profile/" + encodeURIComponent(username));
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok || !data.user){
+      showToast((data && data.msg) || "Failed to load profile", "error");
+      return;
+    }
+
+    const user = data.user;
+
+    document.getElementById("userProfileDp").src = user.dp || "/default.png";
+    document.getElementById("userProfileName").innerText = user.name || username;
+    document.getElementById("userProfileBio").innerText = user.bio || "No bio";
+    document.getElementById("userProfileStatus").innerText =
+      user.online ? "online" : formatLastSeenSmart(user.lastSeen);
+
+    document.getElementById("userProfileModal").style.display = "flex";
+  }catch(err){
+    console.log(err);
+    showToast("Server error", "error");
+  }
+}
+
 async function logout(){
   const username = localStorage.getItem("user");
+  const token = localStorage.getItem("authToken");
+
   localStorage.removeItem("user");
   localStorage.removeItem("role");
+  localStorage.removeItem("authToken");
 
   try{
     await fetch("/api/logout",{
       method:"POST",
-      headers:{ "Content-Type":"application/json" },
+      headers:{
+        "Content-Type":"application/json",
+        "Authorization":"Bearer " + token
+      },
       body: JSON.stringify({ name: username })
     });
   }catch(e){}
 
-  location.href="/index.html";
+  location.href = "/index.html";
 }
 
 /* =========================
@@ -5436,14 +5552,7 @@ function setAdminTab(tab){
   if(tab === "blocked") loadBlockedUsersForAdmin();
   if(tab === "muted") loadMutedUsers();
 }
-function downloadFile(url, filename = ""){
-  const a = document.createElement("a");
-  a.href = url;
-  a.download = filename || url.split("/").pop() || "file";
-  document.body.appendChild(a);
-  a.click();
-  a.remove();
-}
+
 async function loadPendingUsers(){
   const box = document.getElementById("adminList");
   if(!box) return;
@@ -5820,16 +5929,16 @@ async function loadBlockedUsersModal(){
 }
 
 socket.on("approval-request-added", ()=>{
-  if(localStorage.getItem("user")==="shravan" && currentAdminTab==="pending"){
+  if(localStorage.getItem("user") === "shravan" && currentAdminTab === "pending"){
     loadPendingUsers();
   }
 });
 
 socket.on("approval-list-updated", ()=>{
-  if(localStorage.getItem("user")==="shravan"){
-    if(currentAdminTab==="pending") loadPendingUsers();
-    if(currentAdminTab==="blocked") loadBlockedUsersForAdmin();
-    if(currentAdminTab==="muted") loadMutedUsers();
+  if(localStorage.getItem("user") === "shravan"){
+    if(currentAdminTab === "pending") loadPendingUsers();
+    if(currentAdminTab === "blocked") loadBlockedUsersForAdmin();
+    if(currentAdminTab === "muted") loadMutedUsers();
   }
 });
 
@@ -5841,7 +5950,9 @@ socket.on("approval-approved", (data)=>{
 socket.on("approval-rejected", (data)=>{
   alert(data.msg || "Rejected by admin");
   localStorage.removeItem("user");
-  location.href="/index.html";
+  localStorage.removeItem("role");
+  localStorage.removeItem("authToken");
+  location.href = "/index.html";
 });
 
 socket.on("user-muted", (data)=>{
@@ -5928,9 +6039,9 @@ if(videoBtn){
   });
 }
 
-loadGroups();
-updateFloatingButtonsVisibility();
-
+/* =========================
+   TOAST / POPUP
+========================= */
 let centerPopupTimer = null;
 
 function showToast(message, type = "info", duration = 2200){
@@ -6032,42 +6143,10 @@ async function openSeenInfo(messageId){
     showToast("Server error", "error");
   }
 }
-function closeUserProfileModal(){
-  document.getElementById("userProfileModal").style.display = "none";
-}
 
-async function openUserProfile(username){
-  if(!username) return;
-
-  try{
-    const res = await fetch("/profile/" + encodeURIComponent(username));
-    const data = await res.json().catch(() => null);
-
-    if(!data || !data.ok || !data.user){
-      showToast((data && data.msg) || "Failed to load profile", "error");
-      return;
-    }
-
-    const user = data.user;
-
-    document.getElementById("userProfileDp").src = user.dp || "/default.png";
-    document.getElementById("userProfileName").innerText = user.name || username;
-    document.getElementById("userProfileBio").innerText = user.bio || "No bio";
-    document.getElementById("userProfileStatus").innerText =
-      user.online ? "online" : formatLastSeenSmart(user.lastSeen);
-
-    document.getElementById("userProfileModal").style.display = "flex";
-  }catch(err){
-    console.log(err);
-    showToast("Server error", "error");
-  }
-}
-window.addEventListener("resize", () => {
-  const box = document.getElementById("messages");
-  if(box){
-    box.scrollTop = box.scrollHeight;
-  }
-});
+/* =========================
+   MOBILE RESIZE FIX
+========================= */
 window.addEventListener("resize", () => {
   const box = document.getElementById("messages");
   if(box && (currentChat || currentGroup)){

@@ -5,6 +5,8 @@
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>My Profile</title>
 
+<script src="/socket.io/socket.io.js"></script>
+
 <style>
 *{
   box-sizing:border-box;
@@ -179,15 +181,6 @@ body{
   background:#1f2c34;
 }
 
-.helper-text{
-  width:100%;
-  max-width:420px;
-  color:#8696a0;
-  font-size:14px;
-  line-height:1.5;
-  margin-top:4px;
-}
-
 .action-btn{
   margin-top:18px;
   width:100%;
@@ -281,38 +274,90 @@ body{
       <div class="info-row">
         <div class="suggestion-title">Suggestions</div>
         <div class="suggestion-wrap">
-          <button class="suggestion-chip" onclick="setBioSuggestion('Busy')">Busy</button>
-          <button class="suggestion-chip" onclick="setBioSuggestion('At work')">At work</button>
-          <button class="suggestion-chip" onclick="setBioSuggestion('Sleeping')">Sleeping</button>
-          <button class="suggestion-chip" onclick="setBioSuggestion('Available')">Available</button>
-          <button class="suggestion-chip" onclick="setBioSuggestion('In a meeting')">In a meeting</button>
-          <button class="suggestion-chip" onclick="setBioSuggestion('Battery low')">Battery low</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Busy')">Busy</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('At work')">At work</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Sleeping')">Sleeping</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Available')">Available</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('In a meeting')">In a meeting</button>
+          <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Battery low')">Battery low</button>
         </div>
       </div>
     </div>
 
     <button class="action-btn" onclick="saveProfile()">Save Profile</button>
     <button class="secondary-btn" onclick="document.getElementById('dpInput').click()">Change Profile Photo</button>
+    <button class="secondary-btn" onclick="logout()">Logout</button>
   </div>
 </div>
 
 <script>
-const me = localStorage.getItem("user");
+const socket = typeof io !== "undefined" ? io() : null;
 
+let me = localStorage.getItem("user");
 if(!me){
-  window.location.href = "/index.html";
+  location.href = "/index.html";
 }
 
-document.getElementById("usernameText").innerText = me;
+let bioInput = null;
+let bioCount = null;
+let dpInput = null;
+let usernameText = null;
 
-const bioInput = document.getElementById("bioInput");
-const bioCount = document.getElementById("bioCount");
+async function verifyProfileLogin(){
+  const token = localStorage.getItem("authToken");
 
-bioInput.addEventListener("input", () => {
-  bioCount.innerText = bioInput.value.length;
-});
+  if(!token){
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    location.href = "/index.html";
+    return false;
+  }
 
-/* ---------- LOAD PROFILE ---------- */
+  try{
+    const res = await fetch("/api/me", {
+      headers: {
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      localStorage.removeItem("authToken");
+      location.href = "/index.html";
+      return false;
+    }
+
+    me = data.user.name;
+    localStorage.setItem("user", data.user.name);
+    localStorage.setItem("role", data.user.role || "user");
+    return true;
+  }catch(err){
+    console.log("PROFILE VERIFY LOGIN ERROR:", err);
+    return true;
+  }
+}
+
+async function logout(){
+  const username = localStorage.getItem("user");
+
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("authToken");
+
+  try{
+    await fetch("/api/logout", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({ name: username })
+    });
+  }catch(e){}
+
+  location.href = "/index.html";
+}
+
 async function loadProfile(){
   try{
     const res = await fetch("/profile/" + encodeURIComponent(me));
@@ -323,44 +368,57 @@ async function loadProfile(){
         document.getElementById("myDp").src = data.user.dp;
       }
 
-      bioInput.value = data.user.bio || "";
-      bioCount.innerText = bioInput.value.length;
+      if(usernameText){
+        usernameText.innerText = data.user.name || me;
+      }
+
+      if(bioInput){
+        bioInput.value = data.user.bio || "";
+      }
+
+      if(bioCount){
+        bioCount.innerText = (data.user.bio || "").length;
+      }
     }else{
-      loadMyDp();
+      await loadMyDp();
+      if(usernameText){
+        usernameText.innerText = me;
+      }
     }
   }catch(err){
     console.log("Profile load error", err);
-    loadMyDp();
+    await loadMyDp();
+    if(usernameText){
+      usernameText.innerText = me;
+    }
   }
 }
 
-/* ---------- LOAD ONLY DP FALLBACK ---------- */
 async function loadMyDp(){
   try{
     const res = await fetch("/users-data");
     const users = await res.json();
 
-    users.forEach(u => {
-      if(u.name === me && u.dp){
-        document.getElementById("myDp").src = u.dp;
-      }
-    });
+    if(Array.isArray(users)){
+      users.forEach(u => {
+        if(u.name === me && u.dp){
+          document.getElementById("myDp").src = u.dp;
+        }
+      });
+    }
   }catch(err){
     console.log("DP load error", err);
   }
 }
 
-loadProfile();
-
-/* ---------- BIO SUGGESTIONS ---------- */
 function setBioSuggestion(text){
+  if(!bioInput || !bioCount) return;
   bioInput.value = text;
   bioCount.innerText = bioInput.value.length;
 }
 
-/* ---------- SAVE PROFILE ---------- */
 async function saveProfile(){
-  const bio = bioInput.value.trim();
+  const bio = bioInput ? bioInput.value.trim() : "";
 
   try{
     const res = await fetch("/update-profile", {
@@ -386,41 +444,63 @@ async function saveProfile(){
   }
 }
 
-/* ---------- DP UPLOAD ---------- */
-const dpInput = document.getElementById("dpInput");
-
-dpInput.addEventListener("change", async ()=>{
-  const file = dpInput.files[0];
-  if(!file) return;
-
-  const formData = new FormData();
-  formData.append("dp", file);
-  formData.append("username", me);
-
-  try{
-    const res = await fetch("/upload-dp", {
-      method:"POST",
-      body:formData
-    });
-
-    const data = await res.json();
-
-    if(data.dp){
-      document.getElementById("myDp").src = data.dp;
-      alert("DP Updated Successfully 🔥");
-    }else{
-      alert(data.msg || "DP update failed");
-    }
-  }catch(err){
-    console.log("Upload error", err);
-    alert("Upload error");
-  }
-});
-
-/* ---------- BACK ---------- */
 function goBack(){
   window.location.href = "/chat.html";
 }
+
+(async function initProfile(){
+  const ok = await verifyProfileLogin();
+  if(!ok) return;
+
+  bioInput = document.getElementById("bioInput");
+  bioCount = document.getElementById("bioCount");
+  dpInput = document.getElementById("dpInput");
+  usernameText = document.getElementById("usernameText");
+
+  if(usernameText){
+    usernameText.innerText = me;
+  }
+
+  if(bioInput && bioCount){
+    bioCount.innerText = bioInput.value.length;
+
+    bioInput.addEventListener("input", () => {
+      bioCount.innerText = bioInput.value.length;
+    });
+  }
+
+  if(dpInput){
+    dpInput.addEventListener("change", async () => {
+      const file = dpInput.files[0];
+      if(!file) return;
+
+      const formData = new FormData();
+      formData.append("dp", file);
+      formData.append("username", me);
+
+      try{
+        const res = await fetch("/upload-dp", {
+          method:"POST",
+          body: formData
+        });
+
+        const data = await res.json().catch(() => null);
+
+        if(data && data.dp){
+          document.getElementById("myDp").src = data.dp;
+          alert("DP Updated Successfully 🔥");
+        }else{
+          alert((data && data.msg) || "DP update failed");
+        }
+      }catch(err){
+        console.log("Upload error", err);
+        alert("Upload error");
+      }
+    });
+  }
+
+  await loadProfile();
+})();
 </script>
 
 </body>
