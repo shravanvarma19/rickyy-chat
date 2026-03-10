@@ -2,146 +2,294 @@
 <html>
 <head>
 <meta charset="UTF-8">
-<title>My Profile</title>
-
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>My Profile • RickyY Chat</title>
+<link rel="icon" type="image" href="./default.png">
 <style>
+*{box-sizing:border-box}
 body{
-    margin:0;
-    font-family:Arial;
-    background:#ece5dd;
-    display:flex;
-    justify-content:center;
-    align-items:center;
-    height:100vh;
+  margin:0;
+  font-family:Inter, Arial, sans-serif;
+  background:#ece5dd;
+  display:flex;
+  justify-content:center;
+  align-items:center;
+  min-height:100vh;
+  padding:16px;
 }
-
 .profile-card{
-    background:white;
-    padding:30px;
-    border-radius:10px;
-    text-align:center;
-    width:300px;
+  background:white;
+  padding:28px;
+  border-radius:16px;
+  width:100%;
+  max-width:420px;
+  box-shadow:0 10px 30px rgba(0,0,0,.12);
 }
-
+.top{
+  text-align:center;
+}
 .profile-card img{
-    width:120px;
-    height:120px;
-    border-radius:50%;
-    object-fit:cover;
-    cursor:pointer;
+  width:120px;
+  height:120px;
+  border-radius:50%;
+  object-fit:cover;
+  cursor:pointer;
+  border:4px solid #f1f1f1;
 }
-
 .profile-card h2{
-    margin-top:15px;
+  margin:15px 0 6px;
+  color:#075e54;
 }
-
+.profile-sub{
+  color:#666;
+  font-size:13px;
+  margin-bottom:18px;
+}
+.label{
+  font-size:13px;
+  font-weight:700;
+  color:#075e54;
+  margin:14px 0 6px;
+}
+input[type="text"],
+textarea{
+  width:100%;
+  padding:12px;
+  border:1px solid #ddd;
+  border-radius:12px;
+  outline:none;
+  font-size:14px;
+  font-family:inherit;
+  resize:none;
+}
+input[type="text"]:focus,
+textarea:focus{
+  border-color:#25d366;
+  box-shadow:0 0 0 3px rgba(37,211,102,.12);
+}
+.counter{
+  margin-top:6px;
+  font-size:12px;
+  color:gray;
+  text-align:right;
+}
+.actions{
+  display:flex;
+  gap:10px;
+  margin-top:20px;
+}
 button{
-    margin-top:20px;
-    padding:10px 20px;
-    background:#075e54;
-    color:white;
-    border:none;
-    cursor:pointer;
+  flex:1;
+  padding:12px;
+  background:#075e54;
+  color:white;
+  border:none;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:700;
+}
+button.secondary{
+  background:#f1f1f1;
+  color:#222;
+}
+button:disabled{
+  opacity:.7;
+  cursor:not-allowed;
+}
+.status{
+  margin-top:12px;
+  font-size:13px;
+  color:gray;
+  min-height:18px;
+  text-align:center;
 }
 </style>
 </head>
 <body>
 
 <div class="profile-card">
+  <div class="top">
+    <label for="dpInput">
+      <img id="myDp" src="/default.png" onerror="this.src='/default.png'">
+    </label>
 
-<label for="dpInput">
-<img id="myDp" src="/default.png"
-onerror="this.src='/default.png'">
-</label>
+    <input type="file" id="dpInput" name="dp" hidden accept="image/*">
 
-<input type="file" id="dpInput" name="dp" hidden>
+    <h2 id="usernameText"></h2>
+    <div class="profile-sub">Tap profile photo to change display picture</div>
+  </div>
 
-<h2 id="usernameText"></h2>
+  <div class="label">Bio</div>
+  <input
+    type="text"
+    id="bioInput"
+    maxlength="120"
+    placeholder="Short bio..."
+  >
+  <div class="counter"><span id="bioCount">0</span>/120</div>
 
-<button onclick="goBack()">Back to Chat</button>
+  <div class="label">About</div>
+  <textarea
+    id="aboutInput"
+    rows="4"
+    maxlength="250"
+    placeholder="Write something about yourself..."
+  ></textarea>
+  <div class="counter"><span id="aboutCount">0</span>/250</div>
 
+  <div class="actions">
+    <button class="secondary" onclick="goBack()">Back</button>
+    <button id="saveBtn" onclick="saveProfile()">Save Profile</button>
+  </div>
+
+  <div id="statusText" class="status"></div>
 </div>
 
 <script>
-
 const me = localStorage.getItem("user");
+const usernameText = document.getElementById("usernameText");
+const myDp = document.getElementById("myDp");
+const dpInput = document.getElementById("dpInput");
+const statusText = document.getElementById("statusText");
+const bioInput = document.getElementById("bioInput");
+const aboutInput = document.getElementById("aboutInput");
+const bioCount = document.getElementById("bioCount");
+const aboutCount = document.getElementById("aboutCount");
+const saveBtn = document.getElementById("saveBtn");
 
-document.getElementById("usernameText").innerText = me;
-
-/* ---------- LOAD MY DP ---------- */
-
-async function loadMyDp(){
-
-  try{
-
-    const res = await fetch("/users-data");
-    const users = await res.json();
-
-    users.forEach(u=>{
-
-      if(u.name === me && u.dp){
-        document.getElementById("myDp").src = u.dp;
-      }
-
-    });
-
-  }catch(err){
-
-    console.log("DP load error",err);
-
-  }
-
+if(!me){
+  window.location.href = "/index.html";
 }
 
-loadMyDp();
+usernameText.innerText = me || "";
 
-/* ---------- DP UPLOAD ---------- */
+function setStatus(text, isError = false){
+  statusText.innerText = text || "";
+  statusText.style.color = isError ? "#ff3b30" : "gray";
+}
 
-const dpInput = document.getElementById("dpInput");
+function updateCounters(){
+  bioCount.innerText = bioInput.value.length;
+  aboutCount.innerText = aboutInput.value.length;
+}
+
+function setSaving(isSaving){
+  saveBtn.disabled = isSaving;
+  saveBtn.innerText = isSaving ? "Saving..." : "Save Profile";
+}
+
+async function loadProfile(){
+  try{
+    const res = await fetch("/profile/" + encodeURIComponent(me));
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok || !data.user){
+      setStatus("Failed to load profile", true);
+      return;
+    }
+
+    const user = data.user;
+
+    if(user.dp){
+      myDp.src = user.dp;
+    }
+
+    bioInput.value = user.bio || "";
+    aboutInput.value = user.about || "";
+    updateCounters();
+  }catch(err){
+    console.log("Profile load error", err);
+    setStatus("Failed to load profile", true);
+  }
+}
+
+loadProfile();
 
 dpInput.addEventListener("change", async ()=>{
-
   const file = dpInput.files[0];
   if(!file) return;
 
-  const formData = new FormData();
-
-  formData.append("dp",file);
-  formData.append("username",me);
-
-  try{
-
-    const res = await fetch("/upload-dp",{
-      method:"POST",
-      body:formData
-    });
-
-    const data = await res.json();
-
-    if(data.dp){
-
-      document.getElementById("myDp").src = data.dp;
-
-      alert("DP Updated Successfully 🔥");
-
-    }
-
-  }catch(err){
-
-    console.log("Upload error",err);
-
+  if(!file.type.startsWith("image/")){
+    alert("Only image files are allowed");
+    dpInput.value = "";
+    return;
   }
 
+  if(file.size > 5 * 1024 * 1024){
+    alert("Image size must be below 5MB");
+    dpInput.value = "";
+    return;
+  }
+
+  const formData = new FormData();
+  formData.append("dp", file);
+  formData.append("username", me);
+
+  setStatus("Uploading display picture...");
+
+  try{
+    const res = await fetch("/upload-dp", {
+      method: "POST",
+      body: formData
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(data && data.status === "ok" && data.dp){
+      myDp.src = data.dp;
+      setStatus("DP updated successfully ✅");
+    } else {
+      setStatus((data && data.msg) || "Upload failed", true);
+    }
+  }catch(err){
+    console.log("Upload error", err);
+    setStatus("Upload error", true);
+  } finally {
+    dpInput.value = "";
+  }
 });
 
-/* ---------- BACK ---------- */
+async function saveProfile(){
+  const bio = bioInput.value.trim();
+  const about = aboutInput.value.trim();
 
-function goBack(){
+  setSaving(true);
+  setStatus("Saving profile...");
 
-  window.location.href="/chat.html";
+  try{
+    const res = await fetch("/update-profile", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        username: me,
+        bio,
+        about
+      })
+    });
 
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      setStatus((data && data.msg) || "Profile save failed", true);
+      setSaving(false);
+      return;
+    }
+
+    setStatus("Profile updated successfully ✅");
+  }catch(err){
+    console.log("Save profile error", err);
+    setStatus("Server error while saving profile", true);
+  } finally {
+    setSaving(false);
+  }
 }
 
+bioInput.addEventListener("input", updateCounters);
+aboutInput.addEventListener("input", updateCounters);
+
+function goBack(){
+  window.location.href = "/chat.html";
+}
 </script>
 
 </body>
