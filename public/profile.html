@@ -1,292 +1,423 @@
 <!DOCTYPE html>
-<html>
+<html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
-<title>My Profile • RickyY Chat</title>
-<link rel="icon" type="image" href="./default.png">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>My Profile</title>
+
 <style>
-*{box-sizing:border-box}
+*{
+  box-sizing:border-box;
+}
+
 body{
   margin:0;
-  font-family:Inter, Arial, sans-serif;
-  background:#ece5dd;
-  display:flex;
-  justify-content:center;
-  align-items:center;
+  font-family:Arial,sans-serif;
+  background:#0b141a;
+  color:#e9edef;
   min-height:100vh;
-  padding:16px;
 }
-.profile-card{
-  background:white;
-  padding:28px;
-  border-radius:16px;
+
+.profile-page{
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+
+.topbar{
+  height:64px;
+  background:#202c33;
+  display:flex;
+  align-items:center;
+  padding:0 16px;
+  gap:14px;
+  box-shadow:0 1px 0 rgba(255,255,255,.04);
+}
+
+.back-btn{
+  border:none;
+  background:none;
+  color:#e9edef;
+  font-size:24px;
+  cursor:pointer;
+  padding:0;
+}
+
+.topbar-title{
+  font-size:20px;
+  font-weight:600;
+}
+
+.profile-content{
+  flex:1;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  padding:34px 20px 24px;
+}
+
+.dp-wrap{
+  position:relative;
+  width:170px;
+  height:170px;
+  margin-bottom:28px;
+}
+
+.dp-wrap label{
+  display:block;
   width:100%;
-  max-width:420px;
-  box-shadow:0 10px 30px rgba(0,0,0,.12);
+  height:100%;
+  cursor:pointer;
 }
-.top{
-  text-align:center;
-}
-.profile-card img{
-  width:120px;
-  height:120px;
+
+.dp-wrap img{
+  width:100%;
+  height:100%;
   border-radius:50%;
   object-fit:cover;
-  cursor:pointer;
-  border:4px solid #f1f1f1;
+  display:block;
+  background:#111b21;
+  border:4px solid #202c33;
 }
-.profile-card h2{
-  margin:15px 0 6px;
-  color:#075e54;
+
+.dp-edit{
+  position:absolute;
+  right:10px;
+  bottom:8px;
+  width:46px;
+  height:46px;
+  border-radius:50%;
+  background:#00a884;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:20px;
+  box-shadow:0 4px 12px rgba(0,0,0,.28);
+  pointer-events:none;
 }
-.profile-sub{
-  color:#666;
-  font-size:13px;
-  margin-bottom:18px;
+
+.hidden-input{
+  display:none;
 }
-.label{
-  font-size:13px;
-  font-weight:700;
-  color:#075e54;
-  margin:14px 0 6px;
-}
-input[type="text"],
-textarea{
+
+.info-card{
   width:100%;
-  padding:12px;
-  border:1px solid #ddd;
+  max-width:420px;
+  background:#202c33;
+  border-radius:14px;
+  overflow:hidden;
+  margin-bottom:14px;
+}
+
+.info-row{
+  padding:18px 18px 16px;
+  border-bottom:1px solid rgba(255,255,255,.05);
+}
+
+.info-row:last-child{
+  border-bottom:none;
+}
+
+.info-label{
+  font-size:13px;
+  color:#8696a0;
+  margin-bottom:8px;
+}
+
+.info-value{
+  font-size:19px;
+  color:#e9edef;
+  word-break:break-word;
+}
+
+.bio-input{
+  width:100%;
+  background:#111b21;
+  border:1px solid rgba(255,255,255,.06);
+  color:#e9edef;
   border-radius:12px;
+  padding:14px 14px;
+  font-size:15px;
   outline:none;
-  font-size:14px;
-  font-family:inherit;
-  resize:none;
 }
-input[type="text"]:focus,
-textarea:focus{
-  border-color:#25d366;
-  box-shadow:0 0 0 3px rgba(37,211,102,.12);
+
+.bio-input::placeholder{
+  color:#6f7f88;
 }
-.counter{
-  margin-top:6px;
+
+.bio-count{
+  margin-top:8px;
   font-size:12px;
-  color:gray;
+  color:#8696a0;
   text-align:right;
 }
-.actions{
-  display:flex;
-  gap:10px;
-  margin-top:20px;
-}
-button{
-  flex:1;
-  padding:12px;
-  background:#075e54;
-  color:white;
-  border:none;
-  border-radius:12px;
-  cursor:pointer;
-  font-weight:700;
-}
-button.secondary{
-  background:#f1f1f1;
-  color:#222;
-}
-button:disabled{
-  opacity:.7;
-  cursor:not-allowed;
-}
-.status{
-  margin-top:12px;
+
+.suggestion-title{
   font-size:13px;
-  color:gray;
-  min-height:18px;
-  text-align:center;
+  color:#8696a0;
+  margin-bottom:10px;
+}
+
+.suggestion-wrap{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+}
+
+.suggestion-chip{
+  border:none;
+  background:#111b21;
+  color:#e9edef;
+  padding:10px 14px;
+  border-radius:999px;
+  cursor:pointer;
+  font-size:14px;
+}
+
+.suggestion-chip:hover{
+  background:#1f2c34;
+}
+
+.helper-text{
+  width:100%;
+  max-width:420px;
+  color:#8696a0;
+  font-size:14px;
+  line-height:1.5;
+  margin-top:4px;
+}
+
+.action-btn{
+  margin-top:18px;
+  width:100%;
+  max-width:420px;
+  height:48px;
+  border:none;
+  border-radius:999px;
+  background:#00a884;
+  color:#fff;
+  font-size:16px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.action-btn:hover{
+  background:#019270;
+}
+
+.secondary-btn{
+  margin-top:12px;
+  width:100%;
+  max-width:420px;
+  height:46px;
+  border:none;
+  border-radius:999px;
+  background:#202c33;
+  color:#e9edef;
+  font-size:15px;
+  font-weight:600;
+  cursor:pointer;
+}
+
+.secondary-btn:hover{
+  background:#24333c;
+}
+
+@media(max-width:600px){
+  .profile-content{
+    padding:26px 16px 20px;
+  }
+
+  .dp-wrap{
+    width:150px;
+    height:150px;
+  }
+
+  .info-value{
+    font-size:18px;
+  }
 }
 </style>
 </head>
 <body>
 
-<div class="profile-card">
-  <div class="top">
-    <label for="dpInput">
-      <img id="myDp" src="/default.png" onerror="this.src='/default.png'">
-    </label>
-
-    <input type="file" id="dpInput" name="dp" hidden accept="image/*">
-
-    <h2 id="usernameText"></h2>
-    <div class="profile-sub">Tap profile photo to change display picture</div>
+<div class="profile-page">
+  <div class="topbar">
+    <button class="back-btn" onclick="goBack()">←</button>
+    <div class="topbar-title">Profile</div>
   </div>
 
-  <div class="label">Bio</div>
-  <input
-    type="text"
-    id="bioInput"
-    maxlength="120"
-    placeholder="Short bio..."
-  >
-  <div class="counter"><span id="bioCount">0</span>/120</div>
+  <div class="profile-content">
+    <div class="dp-wrap">
+      <label for="dpInput">
+        <img id="myDp" src="/default.png" onerror="this.src='/default.png'">
+      </label>
+      <div class="dp-edit">📷</div>
+    </div>
 
-  <div class="label">About</div>
-  <textarea
-    id="aboutInput"
-    rows="4"
-    maxlength="250"
-    placeholder="Write something about yourself..."
-  ></textarea>
-  <div class="counter"><span id="aboutCount">0</span>/250</div>
+    <input type="file" id="dpInput" name="dp" class="hidden-input" accept="image/*">
 
-  <div class="actions">
-    <button class="secondary" onclick="goBack()">Back</button>
-    <button id="saveBtn" onclick="saveProfile()">Save Profile</button>
+    <div class="info-card">
+      <div class="info-row">
+        <div class="info-label">Name</div>
+        <div class="info-value" id="usernameText"></div>
+      </div>
+    </div>
+
+    <div class="info-card">
+      <div class="info-row">
+        <div class="info-label">Bio</div>
+        <input
+          id="bioInput"
+          class="bio-input"
+          type="text"
+          maxlength="120"
+          placeholder="Write your bio..."
+        >
+        <div class="bio-count"><span id="bioCount">0</span>/120</div>
+      </div>
+
+      <div class="info-row">
+        <div class="suggestion-title">Suggestions</div>
+        <div class="suggestion-wrap">
+          <button class="suggestion-chip" onclick="setBioSuggestion('Busy')">Busy</button>
+          <button class="suggestion-chip" onclick="setBioSuggestion('At work')">At work</button>
+          <button class="suggestion-chip" onclick="setBioSuggestion('Sleeping')">Sleeping</button>
+          <button class="suggestion-chip" onclick="setBioSuggestion('Available')">Available</button>
+          <button class="suggestion-chip" onclick="setBioSuggestion('In a meeting')">In a meeting</button>
+          <button class="suggestion-chip" onclick="setBioSuggestion('Battery low')">Battery low</button>
+        </div>
+      </div>
+    </div>
+
+    <button class="action-btn" onclick="saveProfile()">Save Profile</button>
+    <button class="secondary-btn" onclick="document.getElementById('dpInput').click()">Change Profile Photo</button>
   </div>
-
-  <div id="statusText" class="status"></div>
 </div>
 
 <script>
 const me = localStorage.getItem("user");
-const usernameText = document.getElementById("usernameText");
-const myDp = document.getElementById("myDp");
-const dpInput = document.getElementById("dpInput");
-const statusText = document.getElementById("statusText");
-const bioInput = document.getElementById("bioInput");
-const aboutInput = document.getElementById("aboutInput");
-const bioCount = document.getElementById("bioCount");
-const aboutCount = document.getElementById("aboutCount");
-const saveBtn = document.getElementById("saveBtn");
 
 if(!me){
   window.location.href = "/index.html";
 }
 
-usernameText.innerText = me || "";
+document.getElementById("usernameText").innerText = me;
 
-function setStatus(text, isError = false){
-  statusText.innerText = text || "";
-  statusText.style.color = isError ? "#ff3b30" : "gray";
-}
+const bioInput = document.getElementById("bioInput");
+const bioCount = document.getElementById("bioCount");
 
-function updateCounters(){
+bioInput.addEventListener("input", () => {
   bioCount.innerText = bioInput.value.length;
-  aboutCount.innerText = aboutInput.value.length;
-}
+});
 
-function setSaving(isSaving){
-  saveBtn.disabled = isSaving;
-  saveBtn.innerText = isSaving ? "Saving..." : "Save Profile";
-}
-
+/* ---------- LOAD PROFILE ---------- */
 async function loadProfile(){
   try{
     const res = await fetch("/profile/" + encodeURIComponent(me));
     const data = await res.json().catch(() => null);
 
-    if(!data || !data.ok || !data.user){
-      setStatus("Failed to load profile", true);
-      return;
+    if(data && data.ok && data.user){
+      if(data.user.dp){
+        document.getElementById("myDp").src = data.user.dp;
+      }
+
+      bioInput.value = data.user.bio || "";
+      bioCount.innerText = bioInput.value.length;
+    }else{
+      loadMyDp();
     }
-
-    const user = data.user;
-
-    if(user.dp){
-      myDp.src = user.dp;
-    }
-
-    bioInput.value = user.bio || "";
-    aboutInput.value = user.about || "";
-    updateCounters();
   }catch(err){
     console.log("Profile load error", err);
-    setStatus("Failed to load profile", true);
+    loadMyDp();
+  }
+}
+
+/* ---------- LOAD ONLY DP FALLBACK ---------- */
+async function loadMyDp(){
+  try{
+    const res = await fetch("/users-data");
+    const users = await res.json();
+
+    users.forEach(u => {
+      if(u.name === me && u.dp){
+        document.getElementById("myDp").src = u.dp;
+      }
+    });
+  }catch(err){
+    console.log("DP load error", err);
   }
 }
 
 loadProfile();
 
-dpInput.addEventListener("change", async ()=>{
-  const file = dpInput.files[0];
-  if(!file) return;
+/* ---------- BIO SUGGESTIONS ---------- */
+function setBioSuggestion(text){
+  bioInput.value = text;
+  bioCount.innerText = bioInput.value.length;
+}
 
-  if(!file.type.startsWith("image/")){
-    alert("Only image files are allowed");
-    dpInput.value = "";
-    return;
-  }
-
-  if(file.size > 5 * 1024 * 1024){
-    alert("Image size must be below 5MB");
-    dpInput.value = "";
-    return;
-  }
-
-  const formData = new FormData();
-  formData.append("dp", file);
-  formData.append("username", me);
-
-  setStatus("Uploading display picture...");
-
-  try{
-    const res = await fetch("/upload-dp", {
-      method: "POST",
-      body: formData
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if(data && data.status === "ok" && data.dp){
-      myDp.src = data.dp;
-      setStatus("DP updated successfully ✅");
-    } else {
-      setStatus((data && data.msg) || "Upload failed", true);
-    }
-  }catch(err){
-    console.log("Upload error", err);
-    setStatus("Upload error", true);
-  } finally {
-    dpInput.value = "";
-  }
-});
-
+/* ---------- SAVE PROFILE ---------- */
 async function saveProfile(){
   const bio = bioInput.value.trim();
-  const about = aboutInput.value.trim();
-
-  setSaving(true);
-  setStatus("Saving profile...");
 
   try{
     const res = await fetch("/update-profile", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({
         username: me,
-        bio,
-        about
+        bio: bio,
+        about: ""
       })
     });
 
     const data = await res.json().catch(() => null);
 
-    if(!data || !data.ok){
-      setStatus((data && data.msg) || "Profile save failed", true);
-      setSaving(false);
-      return;
+    if(data && data.ok){
+      alert("Profile updated ✅");
+    }else{
+      alert((data && data.msg) || "Profile update failed");
     }
-
-    setStatus("Profile updated successfully ✅");
   }catch(err){
-    console.log("Save profile error", err);
-    setStatus("Server error while saving profile", true);
-  } finally {
-    setSaving(false);
+    console.log("Profile save error", err);
+    alert("Server error");
   }
 }
 
-bioInput.addEventListener("input", updateCounters);
-aboutInput.addEventListener("input", updateCounters);
+/* ---------- DP UPLOAD ---------- */
+const dpInput = document.getElementById("dpInput");
 
+dpInput.addEventListener("change", async ()=>{
+  const file = dpInput.files[0];
+  if(!file) return;
+
+  const formData = new FormData();
+  formData.append("dp", file);
+  formData.append("username", me);
+
+  try{
+    const res = await fetch("/upload-dp", {
+      method:"POST",
+      body:formData
+    });
+
+    const data = await res.json();
+
+    if(data.dp){
+      document.getElementById("myDp").src = data.dp;
+      alert("DP Updated Successfully 🔥");
+    }else{
+      alert(data.msg || "DP update failed");
+    }
+  }catch(err){
+    console.log("Upload error", err);
+    alert("Upload error");
+  }
+});
+
+/* ---------- BACK ---------- */
 function goBack(){
   window.location.href = "/chat.html";
 }

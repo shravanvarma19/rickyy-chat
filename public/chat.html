@@ -51,7 +51,12 @@ body{
   flex-direction:column;
   overflow:hidden;
 }
-
+#groupFab,
+#soundUnlock{
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 .sidebar-header{
   display:flex;
   justify-content:space-between;
@@ -1055,7 +1060,7 @@ body{
 ========================= */
 body.dark{
   background:#0f1720;
-  color:#e5e7eb;
+  color:hsl(0, 0%, 3%);
 }
 
 body.dark .sidebar{
@@ -1735,7 +1740,20 @@ function escapeHtml(str){
     })[m];
   });
 }
+function updateFloatingButtonsVisibility(){
+  const groupBtn = document.getElementById("groupFab");
+  const soundBtn = document.getElementById("soundUnlock");
 
+  const shouldShow = !currentChat && !currentGroup;
+
+  if(groupBtn){
+    groupBtn.style.display = shouldShow ? "flex" : "none";
+  }
+
+  if(soundBtn){
+    soundBtn.style.display = shouldShow ? "flex" : "none";
+  }
+}
 function openChatWallpaperModal(){
   if(!currentChat && !currentGroup){
     alert("Open a chat or group first");
@@ -2197,6 +2215,7 @@ function openGroup(group){
 
   updateCurrentChatMuteText();
   applyAppSettings();
+  updateFloatingButtonsVisibility();
 }
 
 async function openGroupInfo(groupId){
@@ -2992,7 +3011,7 @@ function renderUsers(){
         <div class="user-info">
           <div class="user-name">${escapeHtml(u.name)}</div>
           <div class="user-status">
-            ${u.online ? "online" : formatLastSeenSmart(u.lastSeen)}${u.muted ? " • muted" : ""}
+            ${u.bio ? escapeHtml(u.bio) : (u.online ? "online" : formatLastSeenSmart(u.lastSeen))}${u.muted ? " • muted" : ""}
           </div>
         </div>
         <div class="user-actions">
@@ -3088,8 +3107,7 @@ function openChat(name){
 
   const u = usersList.find(x=>x.name===name);
   document.getElementById("chatDp").src = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name="+encodeURIComponent(name));
-  document.getElementById("chatName").onclick = null;
-  document.getElementById("chatDp").onclick = () => openChatDpPreview();
+ document.getElementById("chatName").onclick = null;
   document.getElementById("typing").innerText = u
     ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
     : "";
@@ -3113,6 +3131,8 @@ function openChat(name){
 
   updateCurrentChatMuteText();
   applyAppSettings();
+  updateFloatingButtonsVisibility();
+  
 }
 
 function goBack(){
@@ -3143,6 +3163,7 @@ function goBack(){
   showNoChatUI();
   updateCurrentChatMuteText();
   applyAppSettings();
+  updateFloatingButtonsVisibility();
 }
 
 /* =========================
@@ -3368,14 +3389,13 @@ function showMessage(m, index, scrollToBottom = true){
     const mediaUrl = getMediaUrl(m.file);
     const filename = mediaUrl.split("/").pop();
     content = `
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">📄</div>
-        <div>
-          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
-        </div>
-      </div>
-    `;
+  <div>
+    <img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />
+    <div style="margin-top:6px;">
+      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+    </div>
+  </div>
+`;
   } else {
     content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
   }
@@ -3446,19 +3466,33 @@ function showGroupMessage(m, index, scrollToBottom = true){
   } else if(m.file && (m.fileType === "doc" || m.fileType === "file")){
     const mediaUrl = getMediaUrl(m.file);
     const filename = mediaUrl.split("/").pop();
-    content = `
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">📄</div>
-        <div>
-          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
-        </div>
-      </div>
-    `;
+   content = `
+  <div>
+    <video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>
+    <div style="margin-top:6px;">
+      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+    </div>
+  </div>
+`;
   } else {
     content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
   }
-
+  content = `
+  <div>
+    <audio src="${mediaUrl}" controls></audio>
+    <div style="margin-top:6px;">
+      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+    </div>
+  </div>
+`;
+content = `
+  <div>
+    <audio src="${mediaUrl}" controls></audio>
+    <div style="margin-top:6px;">
+      <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+    </div>
+  </div>
+`;
   let replyHtml = "";
   if(m.replyTo){
     const t = m.replyTo.text ? m.replyTo.text : (m.replyTo.fileType ? `Attachment: ${m.replyTo.fileType}` : "");
@@ -4001,8 +4035,24 @@ function openViewer(src,type){
   const content = document.getElementById("viewerContent");
   content.innerHTML = "";
 
-  if(type==="image") content.innerHTML=`<img src="${src}">`;
-  if(type==="video") content.innerHTML=`<video src="${src}" controls autoplay></video>`;
+  if(type==="image"){
+    content.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <img src="${src}">
+        <button class="small-btn" onclick="downloadFile('${src}')">Download</button>
+      </div>
+    `;
+  }
+
+  if(type==="video"){
+    content.innerHTML = `
+      <div style="display:flex;flex-direction:column;align-items:center;gap:12px;">
+        <video src="${src}" controls autoplay></video>
+        <button class="small-btn" onclick="downloadFile('${src}')">Download</button>
+      </div>
+    `;
+  }
+
   viewer.style.display="flex";
 }
 
@@ -5110,7 +5160,14 @@ function setAdminTab(tab){
   if(tab === "blocked") loadBlockedUsersForAdmin();
   if(tab === "muted") loadMutedUsers();
 }
-
+function downloadFile(url, filename = ""){
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = filename || url.split("/").pop() || "file";
+  document.body.appendChild(a);
+  a.click();
+  a.remove();
+}
 async function loadPendingUsers(){
   const box = document.getElementById("adminList");
   if(!box) return;
@@ -5596,6 +5653,7 @@ if(videoBtn){
 }
 
 loadGroups();
+updateFloatingButtonsVisibility();
 
 let centerPopupTimer = null;
 
@@ -5693,6 +5751,36 @@ async function openSeenInfo(messageId){
     renderSeenInfoList("deliveredToList", data.deliveredTo || [], "Not delivered yet");
 
     document.getElementById("seenInfoModal").style.display = "flex";
+  }catch(err){
+    console.log(err);
+    showToast("Server error", "error");
+  }
+}
+function closeUserProfileModal(){
+  document.getElementById("userProfileModal").style.display = "none";
+}
+
+async function openUserProfile(username){
+  if(!username) return;
+
+  try{
+    const res = await fetch("/profile/" + encodeURIComponent(username));
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok || !data.user){
+      showToast((data && data.msg) || "Failed to load profile", "error");
+      return;
+    }
+
+    const user = data.user;
+
+    document.getElementById("userProfileDp").src = user.dp || "/default.png";
+    document.getElementById("userProfileName").innerText = user.name || username;
+    document.getElementById("userProfileBio").innerText = user.bio || "No bio";
+    document.getElementById("userProfileStatus").innerText =
+      user.online ? "online" : formatLastSeenSmart(user.lastSeen);
+
+    document.getElementById("userProfileModal").style.display = "flex";
   }catch(err){
     console.log(err);
     showToast("Server error", "error");
@@ -5959,6 +6047,31 @@ z-index:99999;
 
       <div style="font-size:13px;font-weight:800;color:#075e54;margin-bottom:8px;">Delivered To</div>
       <div id="deliveredToList"></div>
+    </div>
+  </div>
+</div>
+<div id="userProfileModal" class="gallery-modal" style="display:none;">
+  <div class="gallery-box" style="max-width:420px;height:auto;max-height:85vh;">
+    <div class="gallery-top">
+      <span>User Profile</span>
+      <span class="gallery-close" onclick="closeUserProfileModal()">✕</span>
+    </div>
+
+    <div style="padding:18px;text-align:center;">
+      <img id="userProfileDp" src="/default.png"
+           style="width:110px;height:110px;border-radius:50%;object-fit:cover;margin-bottom:14px;border:3px solid #25d366;">
+
+      <div id="userProfileName" style="font-size:22px;font-weight:700;margin-bottom:12px;"></div>
+
+      <div style="text-align:left;background:#f8f8f8;padding:14px;border-radius:12px;margin-bottom:12px;">
+        <div style="font-size:12px;color:gray;margin-bottom:6px;">Bio</div>
+        <div id="userProfileBio" style="font-size:15px;color:#222;word-break:break-word;">No bio</div>
+      </div>
+
+      <div style="text-align:left;background:#f8f8f8;padding:14px;border-radius:12px;">
+        <div style="font-size:12px;color:gray;margin-bottom:6px;">Status</div>
+        <div id="userProfileStatus" style="font-size:15px;color:#222;">-</div>
+      </div>
     </div>
   </div>
 </div>
