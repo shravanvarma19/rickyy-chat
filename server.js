@@ -412,16 +412,11 @@ app.post("/upload-media", (req, res) => {
       }
 
       const fullPath = path.join(uploadDir, req.file.filename);
-      const exists = fs.existsSync(fullPath);
 
-      console.log("UPLOADED FILE:", req.file);
-      console.log("FULL PATH:", fullPath);
-      console.log("FILE EXISTS AFTER SAVE:", exists);
-
-      if (!exists) {
+      if (!fs.existsSync(fullPath)) {
         return res.status(500).json({
           status: "error",
-          msg: "File saved failed"
+          msg: "File not saved properly"
         });
       }
 

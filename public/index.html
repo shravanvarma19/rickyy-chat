@@ -572,15 +572,15 @@ if ("serviceWorker" in navigator) {
     if(data && data.ok){
       localStorage.setItem("user", data.user.name);
       localStorage.setItem("role", data.user.role || "user");
+      localStorage.setItem("authToken", token);
       window.location.href = "/chat.html";
-      return;
+    } else {
+      localStorage.removeItem("user");
+      localStorage.removeItem("role");
+      localStorage.removeItem("authToken");
     }
-
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-    localStorage.removeItem("authToken");
   }catch(err){
-    console.log("AUTO LOGIN ERROR:", err);
+    console.log(err);
   }
 })();
 </script>
