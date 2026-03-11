@@ -10,6 +10,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+
 /* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -55,9 +56,11 @@ function formatTime(date = new Date()) {
   hours = hours === 0 ? 12 : hours;
   return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
 }
-function generateAuthToken(){
+
+function generateAuthToken() {
   return crypto.randomBytes(32).toString("hex");
 }
+
 function isValidUsername(name) {
   return typeof name === "string" && /^[a-zA-Z0-9_ ]{3,20}$/.test(name.trim());
 }
@@ -89,7 +92,7 @@ const userSchema = new mongoose.Schema({
   about: { type: String, default: "" },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
-   authToken: { type: String, default: null }
+  authToken: { type: String, default: null }
 });
 
 const groupSchema = new mongoose.Schema({
@@ -230,8 +233,7 @@ async function getUsers() {
 }
 
 async function isUserOnline(username) {
-  const u = await User.findOne({ name: username });
-  return !!(u && u.online);
+  return !!(userSocketIds[username] && userSocketIds[username].size > 0);
 }
 
 async function calculateUnread(username) {
@@ -388,13 +390,37 @@ function isGroupOwner(group, username) {
 /* ---------- MEDIA UPLOAD ---------- */
 app.post("/upload-media", (req, res) => {
   upload.single("file")(req, res, err => {
-    if (err) return sendUploadError(res, err);
+    if (err) {
+      console.log("UPLOAD ERROR:", err);
+      return sendUploadError(res, err);
+    }
+
     try {
-      if (!req.file) return res.status(400).json({ status: "no_file" });
-      res.json({ status: "ok", filePath: "/uploads/" + req.file.filename });
+      if (!req.file) {
+        return res.status(400).json({ status: "no_file" });
+      }
+
+      const fullPath = path.join(uploadDir, req.file.filename);
+      const exists = fs.existsSync(fullPath);
+
+      console.log("UPLOADED FILE:", req.file);
+      console.log("FULL PATH:", fullPath);
+      console.log("FILE EXISTS AFTER SAVE:", exists);
+
+      if (!exists) {
+        return res.status(500).json({
+          status: "error",
+          msg: "File saved failed"
+        });
+      }
+
+      return res.json({
+        status: "ok",
+        filePath: "/uploads/" + req.file.filename
+      });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ status: "error" });
+      console.log("UPLOAD ROUTE ERROR:", e);
+      return res.status(500).json({ status: "error", msg: "Upload failed" });
     }
   });
 });
@@ -477,66 +503,7 @@ app.get("/statuses", async (req, res) => {
     res.status(500).json([]);
   }
 });
-app.post("/api/logout", async (req, res) => {
-  try {
-    const { name } = req.body;
-    const token = String(req.headers.authorization || "").replace("Bearer ", "");
 
-    if (name) {
-      await User.findOneAndUpdate(
-        { name },
-        {
-          online: false,
-          lastSeen: new Date()
-        }
-      );
-    }
-
-    if (token) {
-      await User.findOneAndUpdate(
-        { authToken: token },
-        { $unset: { authToken: 1 } }
-      );
-    }
-
-    await emitUsersToAll();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log("LOGOUT ERROR:", err);
-    res.status(500).json({ ok: false });
-  }
-});
-app.get("/api/me", async (req, res) => {
-  try {
-    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
-
-    if (!token) {
-      return res.status(401).json({ ok: false, msg: "No token" });
-    }
-
-    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked");
-
-    if (!user) {
-      return res.status(401).json({ ok: false, msg: "Invalid token" });
-    }
-
-    if (user.blocked) {
-      return res.status(403).json({ ok: false, msg: "Blocked user" });
-    }
-
-    return res.json({
-      ok: true,
-      user: {
-        name: user.name,
-        dp: user.dp,
-        role: user.role || "user"
-      }
-    });
-  } catch (err) {
-    console.log("API ME ERROR:", err);
-    res.status(500).json({ ok: false, msg: "Server error" });
-  }
-});
 app.post("/status-view", async (req, res) => {
   try {
     const { statusId, viewer } = req.body;
@@ -615,6 +582,73 @@ app.post("/status-delete", async (req, res) => {
   } catch (err) {
     console.log(err);
     res.status(500).json({ ok: false });
+  }
+});
+
+/* ---------- AUTH ROUTES ---------- */
+app.post("/api/logout", async (req, res) => {
+  try {
+    const { name } = req.body;
+    const token = String(req.headers.authorization || "").replace("Bearer ", "");
+
+    if (name) {
+      await User.findOneAndUpdate(
+        { name },
+        {
+          online: false,
+          lastSeen: new Date()
+        }
+      );
+    }
+
+    if (token) {
+      await User.findOneAndUpdate(
+        { authToken: token },
+        { $unset: { authToken: 1 } }
+      );
+    }
+
+    await emitUsersToAll();
+    res.json({ ok: true });
+  } catch (err) {
+    console.log("LOGOUT ERROR:", err);
+    res.status(500).json({ ok: false });
+  }
+});
+
+app.get("/api/me", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "No token" });
+    }
+
+    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked");
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Invalid token" });
+    }
+
+    if (user.blocked) {
+      return res.status(403).json({ ok: false, msg: "Blocked user" });
+    }
+
+    if (user.approvalStatus === "rejected") {
+      return res.status(403).json({ ok: false, msg: "Rejected user" });
+    }
+
+    return res.json({
+      ok: true,
+      user: {
+        name: user.name,
+        dp: user.dp,
+        role: user.role || "user"
+      }
+    });
+  } catch (err) {
+    console.log("API ME ERROR:", err);
+    res.status(500).json({ ok: false, msg: "Server error" });
   }
 });
 
@@ -1683,60 +1717,6 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-app.post("/api/logout", async (req, res) => {
-  try {
-    const { name } = req.body;
-    if (!name) return res.json({ ok: false });
-
-    await User.findOneAndUpdate(
-      { name },
-      { online: false, lastSeen: new Date(), authToken: null }
-    );
-
-    await emitUsersToAll();
-    res.json({ ok: true });
-  } catch (err) {
-    console.log(err);
-    res.status(500).json({ ok: false });
-  }
-});
-
-app.get("/api/me", async (req, res) => {
-  try {
-    const token = String(req.headers.authorization || "")
-      .replace("Bearer ", "")
-      .trim();
-
-    if (!token) {
-      return res.status(401).json({ ok: false, msg: "No token" });
-    }
-
-    const user = await User.findOne({
-      authToken: token,
-      blocked: { $ne: true }
-    }).select("name dp role approvalStatus blocked");
-
-    if (!user) {
-      return res.status(401).json({ ok: false, msg: "Invalid token" });
-    }
-
-    if (user.approvalStatus === "rejected") {
-      return res.status(403).json({ ok: false, msg: "Rejected user" });
-    }
-
-    return res.json({
-      ok: true,
-      user: {
-        name: user.name,
-        dp: user.dp,
-        role: user.role
-      }
-    });
-  } catch (err) {
-    console.log("API ME ERROR:", err);
-    res.status(500).json({ ok: false, msg: "Server error" });
-  }
-});
 /* ---------- SOCKET USERS STORE ---------- */
 let sockets = {};
 let userSocketIds = {};
@@ -1782,7 +1762,7 @@ io.on("connection", socket => {
         user = new User({
           name: username,
           online: true,
-          lastSeen: null,
+          lastSeen: new Date(),
           dp: "/default.png",
           role: username === ADMIN_NAME ? "admin" : "user",
           approvalStatus: username === ADMIN_NAME ? "approved" : "pending"
@@ -1790,7 +1770,7 @@ io.on("connection", socket => {
         await user.save();
       } else {
         user.online = true;
-        user.lastSeen = null;
+        user.lastSeen = new Date();
         await user.save();
       }
 
@@ -1801,6 +1781,22 @@ io.on("connection", socket => {
       await emitGroupUnreadForUser(username);
     } catch (err) {
       console.log("JOIN ERROR:", err);
+    }
+  });
+
+  socket.on("heartbeat", async username => {
+    try {
+      if (!isValidUsername(username)) return;
+
+      await User.findOneAndUpdate(
+        { name: username },
+        {
+          online: true,
+          lastSeen: new Date()
+        }
+      );
+    } catch (err) {
+      console.log("HEARTBEAT ERROR:", err);
     }
   });
 
@@ -1870,9 +1866,13 @@ io.on("connection", socket => {
       const senderUser = await User.findOne({ name: data.from });
 
       if (senderUser && senderUser.muted) {
-        io.to(data.from).emit("user-muted", { msg: "Admin muted you. You cannot send messages." });
+        io.to(data.from).emit("user-muted", {
+          msg: "Admin muted you. You cannot send messages."
+        });
         return;
       }
+
+      const receiverOnline = !!userSocketIds[data.to]?.size;
 
       const newMsg = new Message({
         from: data.from,
@@ -1882,32 +1882,24 @@ io.on("connection", socket => {
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
         time: formatTime(),
-        status: "sent",
+        status: receiverOnline ? "delivered" : "sent",
         reaction: null,
         seenBy: [],
-        deliveredTo: [],
+        deliveredTo: receiverOnline ? [data.to] : [],
         createdAt: new Date()
       });
 
       await newMsg.save();
+
       io.to(data.from).emit("private-message", newMsg);
+      io.to(data.to).emit("private-message", newMsg);
 
-      const receiver = await User.findOne({ name: data.to });
-      if (receiver && receiver.online) {
-        await Message.findByIdAndUpdate(newMsg._id, {
-          status: "delivered",
-          $addToSet: { deliveredTo: data.to }
-        });
-
-        const updatedMsg = await Message.findById(newMsg._id);
-        io.to(data.to).emit("private-message", updatedMsg);
-        io.to(data.from).emit("private-message", updatedMsg);
-
+      if (receiverOnline) {
         const counts = await calculateUnread(data.to);
         io.to(data.to).emit("unread-counts", counts);
       }
     } catch (err) {
-      console.log(err);
+      console.log("PRIVATE MESSAGE ERROR:", err);
     }
   });
 
@@ -2155,10 +2147,12 @@ io.on("connection", socket => {
           clearCall(username);
         }
 
-        await User.findOneAndUpdate(
-          { name: username },
-          { online: false, lastSeen: new Date() }
-        );
+        if (!userSocketIds[username] || userSocketIds[username].size === 0) {
+          await User.findOneAndUpdate(
+            { name: username },
+            { online: false, lastSeen: new Date() }
+          );
+        }
 
         delete sockets[socket.id];
         await emitUsersToAll();

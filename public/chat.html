@@ -1950,6 +1950,8 @@ let groups = [];
 let currentGroup = null;
 let isGroupChat = false;
 let groupLastMessages = {};
+let renderedPrivateMessageIds = new Set();
+let heartbeatTimer = null;
 
 let replyDraft = null;
 let currentHistory = [];
@@ -2041,7 +2043,11 @@ async function verifyLogin(){
     return true;
   }catch(err){
     console.log("VERIFY LOGIN ERROR:", err);
-    return true;
+    localStorage.removeItem("user");
+    localStorage.removeItem("role");
+    localStorage.removeItem("authToken");
+    location.href = "/index.html";
+    return false;
   }
 }
 
@@ -2115,7 +2121,19 @@ function getMessagePreview(m){
   if(m.fileType === "doc" || m.fileType === "file") return "📄 Document";
   return "Message";
 }
+function startHeartbeat(){
+  if(heartbeatTimer) clearInterval(heartbeatTimer);
 
+  if(me){
+    socket.emit("heartbeat", me);
+  }
+
+  heartbeatTimer = setInterval(() => {
+    if(me){
+      socket.emit("heartbeat", me);
+    }
+  }, 25000);
+}
 function showChatUI(){
   document.getElementById("noChat").style.display = "none";
   document.getElementById("messages").style.display = "flex";
@@ -2674,9 +2692,7 @@ function openGroup(group){
     document.querySelector(".sidebar").style.display = "none";
     document.querySelector(".back-btn").style.display = "inline-block";
   }
-  setTimeout(() => {
-  loadGroupMessages(true);
-}, 0);
+
   updateCurrentChatMuteText();
   applyAppSettings();
   updateFloatingButtonsVisibility();
@@ -3309,10 +3325,15 @@ function jumpToMessageResult(index, q){
 
   socket.emit("join", me);
   socket.emit("get-unread", me);
+  startHeartbeat();
 })();
 
-document.addEventListener("visibilitychange",()=>{
+document.addEventListener("visibilitychange", () => {
   pageActive = !document.hidden;
+
+  if (!document.hidden && me) {
+    socket.emit("heartbeat", me);
+  }
 });
 
 socket.on("force-logout", (data)=>{
@@ -3507,6 +3528,7 @@ function openChat(name){
 
   document.getElementById("messages").innerHTML = "";
   currentHistory = [];
+  renderedPrivateMessageIds.clear();
   unread[name] = 0;
   renderUsers();
 
@@ -3521,9 +3543,7 @@ function openChat(name){
     document.querySelector(".sidebar").style.display = "none";
     document.querySelector(".back-btn").style.display = "inline-block";
   }
-  setTimeout(() => {
-  loadPrivateMessages(true);
-}, 0);
+  
 
   updateCurrentChatMuteText();
   applyAppSettings();
@@ -3553,6 +3573,7 @@ function goBack(){
   privateNoMoreShown = false;
   groupNoMoreShown = false;
   currentHistory = [];
+  renderedPrivateMessageIds.clear();
   removeHistoryLoader();
 
   showNoChatUI();
@@ -3567,6 +3588,7 @@ function goBack(){
 socket.on("history", msgs=>{
   currentHistory = msgs || [];
   oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
+  renderedPrivateMessageIds.clear();
 
   const box = document.getElementById("messages");
   box.innerHTML = "";
@@ -3626,6 +3648,9 @@ socket.on("private-message", (m) => {
     renderUsers();
     socket.emit("get-unread", me);
   }
+
+  const alreadyExists = currentHistory.some(x => String(x._id) === String(m._id));
+  if(alreadyExists) return;
 
   currentHistory.push(m);
   oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
@@ -3764,27 +3789,45 @@ function buildMessageContent(m){
 
   const mediaUrl = getMediaUrl(m.file);
 
-  if(m.fileType === "image"){
-    return `
-      <div>
-        <img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />
-        <div style="margin-top:6px;">
-          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-        </div>
+ if(m.fileType === "image"){
+  return `
+    <div>
+      <img
+        class="msg-media"
+        src="${mediaUrl}"
+        onclick="openViewer('${mediaUrl}','image')"
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+      />
+      <div style="display:none;background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
+        Image not available
       </div>
-    `;
-  }
+      <div style="margin-top:6px;">
+        <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+      </div>
+    </div>
+  `;
+}
 
-  if(m.fileType === "video"){
-    return `
-      <div>
-        <video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>
-        <div style="margin-top:6px;">
-          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
-        </div>
+ if(m.fileType === "video"){
+  return `
+    <div>
+      <video
+        class="msg-media"
+        src="${mediaUrl}"
+        onclick="openViewer('${mediaUrl}','video')"
+        preload="metadata"
+        controls
+        onerror="this.style.display='none'; this.nextElementSibling.style.display='block';"
+      ></video>
+      <div style="display:none;background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
+        Video not available
       </div>
-    `;
-  }
+      <div style="margin-top:6px;">
+        <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
+      </div>
+    </div>
+  `;
+}
 
   if(m.fileType === "audio"){
     return `
@@ -3812,6 +3855,14 @@ function buildMessageContent(m){
 
 function showMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
+
+  if (m._id && renderedPrivateMessageIds.has(m._id)) {
+    return;
+  }
+  if (m._id) {
+    renderedPrivateMessageIds.add(m._id);
+  }
+
   const div = document.createElement("div");
   div.className = "message " + (m.from === me ? "me" : "other");
   div.setAttribute("data-msg-index", index);
@@ -3955,31 +4006,33 @@ async function loadPrivateMessages(initial = false){
     privateHasMore = !!data.hasMore;
 
     if(initial){
-      currentHistory = messages;
-      oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
-      privateNoMoreShown = false;
+  currentHistory = messages;
+  oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
+  privateNoMoreShown = false;
+  renderedPrivateMessageIds.clear();
 
-      const msgBox = document.getElementById("messages");
-      msgBox.innerHTML = "";
-      currentHistory.forEach((m, i) => showMessage(m, i, false));
-      msgBox.scrollTop = msgBox.scrollHeight;
-    } else {
-      prependMessagesToHistory(messages);
-      oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
+  const msgBox = document.getElementById("messages");
+  msgBox.innerHTML = "";
+  currentHistory.forEach((m, i) => showMessage(m, i, false));
+  msgBox.scrollTop = msgBox.scrollHeight;
+} else {
+  prependMessagesToHistory(messages);
+  oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
 
-      box.innerHTML = "";
-      currentHistory.forEach((m, i) => showMessage(m, i, false));
+  renderedPrivateMessageIds.clear();
+  box.innerHTML = "";
+  currentHistory.forEach((m, i) => showMessage(m, i, false));
 
-      const newScrollHeight = box.scrollHeight;
-      box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
+  const newScrollHeight = box.scrollHeight;
+  box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
 
-      if(!privateHasMore && !privateNoMoreShown){
-        privateNoMoreShown = true;
-        showNoMoreHistory("No more private messages");
-      } else {
-        removeHistoryLoader();
-      }
-    }
+  if(!privateHasMore && !privateNoMoreShown){
+    privateNoMoreShown = true;
+    showNoMoreHistory("No more private messages");
+  } else {
+    removeHistoryLoader();
+  }
+}
   }catch(err){
     console.log(err);
     removeHistoryLoader();
