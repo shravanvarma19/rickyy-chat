@@ -10,6 +10,7 @@ const cors = require("cors");
 const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
+const webpush = require("web-push");
 
 /* ---------- CONFIG ---------- */
 const ADMIN_NAME = "shravan";
@@ -46,6 +47,19 @@ if (!process.env.MONGODB_URI) {
   })
     .then(() => console.log("MongoDB Connected"))
     .catch(err => console.log("MongoDB Error:", err));
+}
+if (
+  process.env.VAPID_PUBLIC_KEY &&
+  process.env.VAPID_PRIVATE_KEY &&
+  process.env.VAPID_SUBJECT
+) {
+  webpush.setVapidDetails(
+    process.env.VAPID_SUBJECT,
+    process.env.VAPID_PUBLIC_KEY,
+    process.env.VAPID_PRIVATE_KEY
+  );
+} else {
+  console.log("WEB PUSH WARNING: VAPID keys missing");
 }
 
 function formatTime(date = new Date()) {
@@ -92,8 +106,10 @@ const userSchema = new mongoose.Schema({
   about: { type: String, default: "" },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
-  authToken: { type: String, default: null }
+  authToken: { type: String, default: null },
+  pushSubscriptions: { type: [Object], default: [] }
 });
+
 
 const groupSchema = new mongoose.Schema({
   name: String,
@@ -362,7 +378,43 @@ function isAllowedExt(filename, allowedExts = []) {
   const ext = path.extname(filename || "").toLowerCase();
   return allowedExts.includes(ext);
 }
+function safeNotificationBody(msg) {
+  if (msg?.text) return String(msg.text).slice(0, 120);
+  if (msg?.fileType === "image") return "📷 Photo";
+  if (msg?.fileType === "video") return "🎥 Video";
+  if (msg?.fileType === "audio") return "🎤 Voice message";
+  if (msg?.fileType === "doc" || msg?.fileType === "file") return "📄 Document";
+  return "New message";
+}
 
+async function sendPushToUser(username, payload) {
+  try {
+    const user = await User.findOne({ name: username }).select("pushSubscriptions");
+    if (!user || !Array.isArray(user.pushSubscriptions) || !user.pushSubscriptions.length) return;
+
+    const validSubs = [];
+
+    for (const sub of user.pushSubscriptions) {
+      try {
+        await webpush.sendNotification(sub, JSON.stringify(payload));
+        validSubs.push(sub);
+      } catch (err) {
+        const status = err?.statusCode;
+        if (status !== 404 && status !== 410) {
+          validSubs.push(sub);
+        }
+        console.log("PUSH SEND ERROR:", username, status || "", err?.message || err);
+      }
+    }
+
+    await User.updateOne(
+      { name: username },
+      { $set: { pushSubscriptions: validSubs } }
+    );
+  } catch (err) {
+    console.log("sendPushToUser ERROR:", err);
+  }
+}
 async function requireAdmin(req, res, next) {
   try {
     const adminName =
@@ -621,7 +673,61 @@ app.post("/api/logout", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
+app.get("/api/push-public-key", (req, res) => {
+  if (!process.env.VAPID_PUBLIC_KEY) {
+    return res.status(500).json({ ok: false, msg: "Missing public key" });
+  }
+  res.json({ ok: true, publicKey: process.env.VAPID_PUBLIC_KEY });
+});
 
+app.post("/api/push/subscribe", async (req, res) => {
+  try {
+    const { username, subscription } = req.body;
+
+    if (!username || !subscription?.endpoint) {
+      return res.status(400).json({ ok: false, msg: "Invalid subscription" });
+    }
+
+    const user = await User.findOne({ name: username });
+    if (!user) {
+      return res.status(404).json({ ok: false, msg: "User not found" });
+    }
+
+    const current = Array.isArray(user.pushSubscriptions) ? user.pushSubscriptions : [];
+    const exists = current.some(s => s?.endpoint === subscription.endpoint);
+
+    if (!exists) {
+      current.push(subscription);
+      user.pushSubscriptions = current;
+      await user.save();
+    }
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.log("PUSH SUBSCRIBE ERROR:", err);
+    res.status(500).json({ ok: false, msg: "Subscribe failed" });
+  }
+});
+
+app.post("/api/push/unsubscribe", async (req, res) => {
+  try {
+    const { username, endpoint } = req.body;
+
+    if (!username || !endpoint) {
+      return res.status(400).json({ ok: false, msg: "Invalid unsubscribe data" });
+    }
+
+    await User.updateOne(
+      { name: username },
+      { $pull: { pushSubscriptions: { endpoint } } }
+    );
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.log("PUSH UNSUBSCRIBE ERROR:", err);
+    res.status(500).json({ ok: false, msg: "Unsubscribe failed" });
+  }
+});
 app.get("/api/me", async (req, res) => {
   try {
     const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
@@ -1896,6 +2002,16 @@ io.on("connection", socket => {
       });
 
       await newMsg.save();
+      if (!receiverOnline && data.to !== data.from) {
+  await sendPushToUser(data.to, {
+    title: data.from,
+    body: safeNotificationBody(newMsg),
+    url: `/chat.html?user=${encodeURIComponent(data.from)}`,
+    tag: `private-${data.from}`,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png"
+  });
+}
 
       io.to(data.from).emit("private-message", newMsg);
       io.to(data.to).emit("private-message", newMsg);
@@ -1945,7 +2061,20 @@ io.on("connection", socket => {
       });
 
       await newMsg.save();
+      const offlineRecipients = group.members.filter(
+  member => member !== data.from && !userSocketIds[member]?.size
+);
 
+for (const member of offlineRecipients) {
+  await sendPushToUser(member, {
+    title: `👥 ${group.name}`,
+    body: `${data.from}: ${safeNotificationBody(newMsg)}`,
+    url: `/chat.html?group=${encodeURIComponent(String(data.group))}`,
+    tag: `group-${data.group}`,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png"
+  });
+}
       io.to(roomNameForGroup(data.group)).emit("group-message", newMsg);
 
       const onlineSeenMembers = group.members.filter(

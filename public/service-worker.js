@@ -1,4 +1,4 @@
-const CACHE_NAME = "rickyy-chat-cache-v5";
+const CACHE_NAME = "rickyy-chat-cache-v8";
 
 const APP_SHELL = [
   "/",

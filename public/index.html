@@ -537,11 +537,17 @@ async function login(e){
 }
 
 usernameInput.addEventListener("keydown", function(e){
-  if(e.key === "Enter") login();
+  if(e.key === "Enter"){
+    e.preventDefault();
+    login();
+  }
 });
 
 pinInput.addEventListener("keydown", function(e){
-  if(e.key === "Enter") login();
+  if(e.key === "Enter"){
+    e.preventDefault();
+    login();
+  }
 });
 
 pinInput.addEventListener("input", function(){
@@ -583,6 +589,26 @@ if ("serviceWorker" in navigator) {
     console.log(err);
   }
 })();
+if ("serviceWorker" in navigator) {
+  window.addEventListener("load", async () => {
+    try {
+      const regs = await navigator.serviceWorker.getRegistrations();
+      for (const reg of regs) {
+        await reg.unregister();
+      }
+
+      const keys = await caches.keys();
+      for (const key of keys) {
+        await caches.delete(key);
+      }
+
+      await navigator.serviceWorker.register("/service-worker.js");
+      console.log("Fresh Service Worker Registered");
+    } catch (err) {
+      console.log("SW reset error:", err);
+    }
+  });
+}
 </script>
 </body>
 </html>
