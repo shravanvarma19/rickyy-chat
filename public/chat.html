@@ -1938,9 +1938,6 @@ let groups = [];
 let currentGroup = null;
 let isGroupChat = false;
 let groupLastMessages = {};
-let renderedPrivateMessageIds = new Set();
-let heartbeatTimer = null;
-let missingMediaFiles = new Set();
 
 let replyDraft = null;
 let currentHistory = [];
@@ -2032,11 +2029,7 @@ async function verifyLogin(){
     return true;
   }catch(err){
     console.log("VERIFY LOGIN ERROR:", err);
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-    localStorage.removeItem("authToken");
-    location.href = "/index.html";
-    return false;
+    return true;
   }
 }
 
@@ -2055,44 +2048,6 @@ function escapeHtml(str){
   });
 }
 
-function normalizeMediaPath(filePath){
-  if(!filePath) return "";
-  if(filePath.startsWith("http://") || filePath.startsWith("https://")) return filePath;
-  if(filePath.startsWith("/uploads/")) return filePath;
-  return "/uploads/" + filePath;
-}
-
-function handleMissingMedia(filePath, el){
-  const fullPath = normalizeMediaPath(filePath);
-  if(fullPath){
-    missingMediaFiles.add(fullPath);
-  }
-
-  if(el){
-    el.onerror = null;
-    el.style.display = "none";
-    const fallback = el.nextElementSibling;
-    if(fallback){
-      fallback.style.display = "block";
-    }
-  }
-}
-function formatMessageTime(dateString, fallbackTime = ""){
-  if(!dateString){
-    return fallbackTime || "";
-  }
-
-  const d = new Date(dateString);
-  if(isNaN(d.getTime())){
-    return fallbackTime || "";
-  }
-
-  return d.toLocaleTimeString([], {
-    hour: "2-digit",
-    minute: "2-digit",
-    hour12: true
-  });
-}
 function updateFloatingButtonsVisibility(){
   const groupBtn = document.getElementById("groupFab");
   const soundBtn = document.getElementById("soundUnlock");
@@ -2148,19 +2103,7 @@ function getMessagePreview(m){
   if(m.fileType === "doc" || m.fileType === "file") return "📄 Document";
   return "Message";
 }
-function startHeartbeat(){
-  if(heartbeatTimer) clearInterval(heartbeatTimer);
 
-  if(me){
-    socket.emit("heartbeat", me);
-  }
-
-  heartbeatTimer = setInterval(() => {
-    if(me){
-      socket.emit("heartbeat", me);
-    }
-  }, 25000);
-}
 function showChatUI(){
   document.getElementById("noChat").style.display = "none";
   document.getElementById("messages").style.display = "flex";
@@ -2489,28 +2432,26 @@ function renderGroups(groupItems){
   }
 
   groupItems.forEach(g => {
-    const groupDp = g.dp || "/default-group.png";
     const unreadCount = unreadGroups[g._id] || 0;
     const preview = getGroupPreview(g._id);
     const isMutedGroup = isChatMuted(g._id);
-    
 
     const row = document.createElement("div");
     row.className = "group-row";
 
-   row.innerHTML = `
-  <div class="group-row-left">
-    <img src="${groupDp}" onerror="this.src='/default-group.png'">
-    <div class="group-row-text">
-      <div class="group-row-name">👥 ${escapeHtml(g.name)}</div>
-      <div class="group-row-preview">${escapeHtml(preview)}</div>
-    </div>
-  </div>
-  <div style="display:flex;align-items:center;gap:8px;">
-    ${isMutedGroup ? `<span class="mute-chat-icon" title="Group notifications muted">🔕</span>` : ""}
-    ${unreadCount ? `<span class="badge">${unreadCount}</span>` : ""}
-  </div>
-`;
+    row.innerHTML = `
+      <div class="group-row-left">
+        <img src="${g.dp || '/default-group.png'}" onerror="this.src='/default-group.png'">
+        <div class="group-row-text">
+          <div class="group-row-name">👥 ${escapeHtml(g.name)}</div>
+          <div class="group-row-preview">${escapeHtml(preview)}</div>
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:8px;">
+        ${isMutedGroup ? `<span class="mute-chat-icon" title="Group notifications muted">🔕</span>` : ""}
+        ${unreadCount ? `<span class="badge">${unreadCount}</span>` : ""}
+      </div>
+    `;
 
     let pressTimer = null;
     let longPressTriggered = false;
@@ -3311,7 +3252,7 @@ function runMessageSearch(){
   box.innerHTML = results.map((m) => `
     <div class="search-item" onclick="jumpToMessageResult(${m.__index}, '${q.replace(/'/g, "\\'")}')">
       <div class="search-item-text">${highlightText(getMessagePreview(m), q)}</div>
-      <div class="search-item-meta">${escapeHtml(m.from || "")} • ${escapeHtml(formatMessageTime(m.createdAt))}</div>
+      <div class="search-item-meta">${escapeHtml(m.from || "")} • ${escapeHtml(m.time || "")}</div>
     </div>
   `).join("");
 }
@@ -3354,15 +3295,10 @@ function jumpToMessageResult(index, q){
 
   socket.emit("join", me);
   socket.emit("get-unread", me);
-  startHeartbeat();
 })();
 
-document.addEventListener("visibilitychange", () => {
+document.addEventListener("visibilitychange",()=>{
   pageActive = !document.hidden;
-
-  if (!document.hidden && me) {
-    socket.emit("heartbeat", me);
-  }
 });
 
 socket.on("force-logout", (data)=>{
@@ -3438,7 +3374,7 @@ function renderUsers(){
     if(u.name === me) return;
     if(u.blocked) return;
 
-    const dp = u.dp || "/default.png";
+    const dp = u.dp || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(u.name));
     const count = unread[u.name] || 0;
     const isMutedChat = isChatMuted(u.name);
 
@@ -3446,7 +3382,9 @@ function renderUsers(){
     row.className = "user " + (currentChat === u.name ? "active" : "");
 
     row.innerHTML = `
-        <img src="${dp}" onerror="this.src='/default.png'">
+      <div style="display:flex;align-items:center;width:100%">
+        <img src="${dp}"
+          onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}'">
         <div class="user-info">
           <div class="user-name">${escapeHtml(u.name)}</div>
           <div class="user-status">
@@ -3546,7 +3484,7 @@ function openChat(name){
   document.getElementById("chatName").innerText = name;
 
   const u = usersList.find(x => x.name === name);
-  document.getElementById("chatDp").src = (u && u.dp) ? u.dp : "/default.png";
+  document.getElementById("chatDp").src = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name=" + encodeURIComponent(name));
   document.getElementById("chatName").onclick = () => openUserProfile(name);
   document.getElementById("chatDp").onclick = () => openUserProfile(name);
   document.getElementById("typing").innerText = u
@@ -3555,7 +3493,6 @@ function openChat(name){
 
   document.getElementById("messages").innerHTML = "";
   currentHistory = [];
-  renderedPrivateMessageIds.clear();
   unread[name] = 0;
   renderUsers();
 
@@ -3570,7 +3507,6 @@ function openChat(name){
     document.querySelector(".sidebar").style.display = "none";
     document.querySelector(".back-btn").style.display = "inline-block";
   }
-  
 
   updateCurrentChatMuteText();
   applyAppSettings();
@@ -3600,7 +3536,6 @@ function goBack(){
   privateNoMoreShown = false;
   groupNoMoreShown = false;
   currentHistory = [];
-  renderedPrivateMessageIds.clear();
   removeHistoryLoader();
 
   showNoChatUI();
@@ -3615,7 +3550,6 @@ function goBack(){
 socket.on("history", msgs=>{
   currentHistory = msgs || [];
   oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
-  renderedPrivateMessageIds.clear();
 
   const box = document.getElementById("messages");
   box.innerHTML = "";
@@ -3675,9 +3609,6 @@ socket.on("private-message", (m) => {
     renderUsers();
     socket.emit("get-unread", me);
   }
-
-  const alreadyExists = currentHistory.some(x => String(x._id) === String(m._id));
-  if(alreadyExists) return;
 
   currentHistory.push(m);
   oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
@@ -3814,106 +3745,49 @@ function buildMessageContent(m){
     return `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
   }
 
-  const mediaUrl = normalizeMediaPath(m.file);
-  const isMissing = missingMediaFiles.has(mediaUrl);
+  const mediaUrl = getMediaUrl(m.file);
 
   if(m.fileType === "image"){
-    if(isMissing){
-      return `
-        <div>
-          <div style="background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-            Image not available
-          </div>
-        </div>
-      `;
-    }
-
     return `
       <div>
-        <img
-          class="msg-media"
-          src="${mediaUrl}"
-          onclick="openViewer('${mediaUrl}','image')"
-          onerror="handleMissingMedia('${mediaUrl}', this)"
-        />
-        <div style="display:none;background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-          Image not available
+        <img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
         </div>
       </div>
     `;
   }
 
   if(m.fileType === "video"){
-    if(isMissing){
-      return `
-        <div>
-          <div style="background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-            Video not available
-          </div>
-        </div>
-      `;
-    }
-
     return `
       <div>
-        <video
-          class="msg-media"
-          src="${mediaUrl}"
-          preload="metadata"
-          controls
-          onclick="openViewer('${mediaUrl}','video')"
-          onerror="handleMissingMedia('${mediaUrl}', this)"
-        ></video>
-        <div style="display:none;background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-          Video not available
+        <video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
         </div>
       </div>
     `;
   }
 
   if(m.fileType === "audio"){
-    if(isMissing){
-      return `
-        <div style="background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-          Audio not available
-        </div>
-      `;
-    }
-
     return `
       <div>
-        <audio
-          src="${mediaUrl}"
-          controls
-          onerror="handleMissingMedia('${mediaUrl}', this)"
-        ></audio>
-        <div style="display:none;background:rgba(255,255,255,.08);padding:12px;border-radius:12px;">
-          Audio not available
+        <audio src="${mediaUrl}" controls></audio>
+        <div style="margin-top:6px;">
+          <button class="small-btn" onclick="downloadFile('${mediaUrl}')">Download</button>
         </div>
       </div>
     `;
   }
 
   const filename = mediaUrl.split("/").pop();
-
-  if(isMissing){
-    return `
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">📄</div>
-        <div>
-          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-          <div style="font-size:13px;opacity:.8;">File not available</div>
-        </div>
-      </div>
-    `;
-  }
-
   return `
     <div style="display:flex;gap:10px;align-items:center;">
       <div style="font-size:22px;">📄</div>
       <div>
         <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
         <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open</a>
+        <button class="small-btn" style="margin-left:8px;" onclick="downloadFile('${mediaUrl}','${escapeHtml(filename)}')">Download</button>
       </div>
     </div>
   `;
@@ -3921,14 +3795,6 @@ function buildMessageContent(m){
 
 function showMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
-
-  if (m._id && renderedPrivateMessageIds.has(m._id)) {
-    return;
-  }
-  if (m._id) {
-    renderedPrivateMessageIds.add(m._id);
-  }
-
   const div = document.createElement("div");
   div.className = "message " + (m.from === me ? "me" : "other");
   div.setAttribute("data-msg-index", index);
@@ -3956,7 +3822,7 @@ function showMessage(m, index, scrollToBottom = true){
   div.innerHTML = `
     ${replyHtml}
     ${content}
-    <div class="time">${escapeHtml(formatMessageTime(m.createdAt, m.time))}</div>
+    <div class="time">${escapeHtml(m.time || "")} ${ticks}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -4018,7 +3884,7 @@ function showGroupMessage(m, index, scrollToBottom = true){
     ${replyHtml}
     ${content}
     ${seenInfoHtml}
-   <div class="time">${escapeHtml(formatMessageTime(m.createdAt, m.time))} </div>
+    <div class="time">${escapeHtml(m.time || "")}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -4072,33 +3938,31 @@ async function loadPrivateMessages(initial = false){
     privateHasMore = !!data.hasMore;
 
     if(initial){
-  currentHistory = messages;
-  oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
-  privateNoMoreShown = false;
-  renderedPrivateMessageIds.clear();
+      currentHistory = messages;
+      oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
+      privateNoMoreShown = false;
 
-  const msgBox = document.getElementById("messages");
-  msgBox.innerHTML = "";
-  currentHistory.forEach((m, i) => showMessage(m, i, false));
-  msgBox.scrollTop = msgBox.scrollHeight;
-} else {
-  prependMessagesToHistory(messages);
-  oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
+      const msgBox = document.getElementById("messages");
+      msgBox.innerHTML = "";
+      currentHistory.forEach((m, i) => showMessage(m, i, false));
+      msgBox.scrollTop = msgBox.scrollHeight;
+    } else {
+      prependMessagesToHistory(messages);
+      oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
 
-  renderedPrivateMessageIds.clear();
-  box.innerHTML = "";
-  currentHistory.forEach((m, i) => showMessage(m, i, false));
+      box.innerHTML = "";
+      currentHistory.forEach((m, i) => showMessage(m, i, false));
 
-  const newScrollHeight = box.scrollHeight;
-  box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
+      const newScrollHeight = box.scrollHeight;
+      box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
 
-  if(!privateHasMore && !privateNoMoreShown){
-    privateNoMoreShown = true;
-    showNoMoreHistory("No more private messages");
-  } else {
-    removeHistoryLoader();
-  }
-}
+      if(!privateHasMore && !privateNoMoreShown){
+        privateNoMoreShown = true;
+        showNoMoreHistory("No more private messages");
+      } else {
+        removeHistoryLoader();
+      }
+    }
   }catch(err){
     console.log(err);
     removeHistoryLoader();
@@ -4606,7 +4470,7 @@ function renderGallery(tab){
       if(m.text){
         const links = extractLinks(m.text);
         links.forEach(l=>{
-          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: formatMessageTime(m.createdAt) });
+          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: m.time || "" });
         });
       }
     });
@@ -4640,7 +4504,7 @@ function renderGallery(tab){
       <div style="background:white;margin:10px;padding:12px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.1);">
         <div style="font-weight:600;">Document</div>
         <a href="${getMediaUrl(d.file)}" target="_blank" style="color:#075e54;word-break:break-all;">${escapeHtml(getMediaUrl(d.file))}</a>
-        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(formatMessageTime(d.createdAt))}</div>
+        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(d.time||"")}</div>
       </div>
     `).join("");
   }
@@ -5117,7 +4981,7 @@ function getRemoteAudioEl(){ return document.getElementById("remoteAudio"); }
 
 function setCallerInfo(name){
   const u = (usersList || []).find(x => x.name === name);
-  const dp = u.dp || "/default.png";
+  const dp = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name=" + encodeURIComponent(name));
 
   const callDp = document.getElementById("callDp");
   const callAvatar = document.getElementById("callAvatarImg");
@@ -5574,7 +5438,7 @@ function openChatDpPreview(){
 
   if(!currentChat) return;
   const u = usersList.find(x => x.name === currentChat);
-  const dp = (u && u.dp) ? u.dp : "/default.png";
+  const dp = (u && u.dp) ? u.dp : ("https://ui-avatars.com/api/?name="+encodeURIComponent(currentChat));
   openDpPreview(dp, currentChat);
 }
 
@@ -5611,7 +5475,6 @@ async function openUserProfile(username){
 
 async function logout(){
   const username = localStorage.getItem("user");
-  const token = localStorage.getItem("authToken");
 
   localStorage.removeItem("user");
   localStorage.removeItem("role");
@@ -5620,10 +5483,7 @@ async function logout(){
   try{
     await fetch("/api/logout",{
       method:"POST",
-      headers:{
-        "Content-Type":"application/json",
-        "Authorization":"Bearer " + token
-      },
+      headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ name: username })
     });
   }catch(e){}
@@ -6272,11 +6132,6 @@ window.addEventListener("resize", () => {
     setTimeout(() => {
       box.scrollTop = box.scrollHeight;
     }, 100);
-  }
-});
-window.addEventListener("beforeunload", () => {
-  if(me){
-    socket.emit("heartbeat", me);
   }
 });
 </script>
