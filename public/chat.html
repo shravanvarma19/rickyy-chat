@@ -2065,7 +2065,22 @@ function escapeHtml(str){
     })[m];
   });
 }
+function formatMessageTime(dateString, fallbackTime = ""){
+  if(!dateString){
+    return fallbackTime || "";
+  }
 
+  const d = new Date(dateString);
+  if(isNaN(d.getTime())){
+    return fallbackTime || "";
+  }
+
+  return d.toLocaleTimeString([], {
+    hour: "2-digit",
+    minute: "2-digit",
+    hour12: true
+  });
+}
 function updateFloatingButtonsVisibility(){
   const groupBtn = document.getElementById("groupFab");
   const soundBtn = document.getElementById("soundUnlock");
@@ -3282,7 +3297,7 @@ function runMessageSearch(){
   box.innerHTML = results.map((m) => `
     <div class="search-item" onclick="jumpToMessageResult(${m.__index}, '${q.replace(/'/g, "\\'")}')">
       <div class="search-item-text">${highlightText(getMessagePreview(m), q)}</div>
-      <div class="search-item-meta">${escapeHtml(m.from || "")} • ${escapeHtml(m.time || "")}</div>
+      <div class="search-item-meta">${escapeHtml(m.from || "")} • ${escapeHtml(formatMessageTime(m.createdAt))}</div>
     </div>
   `).join("");
 }
@@ -3890,7 +3905,7 @@ function showMessage(m, index, scrollToBottom = true){
   div.innerHTML = `
     ${replyHtml}
     ${content}
-    <div class="time">${escapeHtml(m.time || "")} ${ticks}</div>
+    <div class="time">${escapeHtml(formatMessageTime(m.createdAt, m.time))}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -3952,7 +3967,7 @@ function showGroupMessage(m, index, scrollToBottom = true){
     ${replyHtml}
     ${content}
     ${seenInfoHtml}
-    <div class="time">${escapeHtml(m.time || "")}</div>
+   <div class="time">${escapeHtml(formatMessageTime(m.createdAt, m.time))} </div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -4540,7 +4555,7 @@ function renderGallery(tab){
       if(m.text){
         const links = extractLinks(m.text);
         links.forEach(l=>{
-          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: m.time || "" });
+          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: formatMessageTime(m.createdAt) });
         });
       }
     });
@@ -4555,7 +4570,7 @@ function renderGallery(tab){
       <div style="background:white;margin:10px;padding:12px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.1);">
         <div style="font-weight:600;margin-bottom:6px;">${escapeHtml(l.raw)}</div>
         <a href="${l.url}" target="_blank" style="color:#075e54;word-break:break-all;">${escapeHtml(l.url)}</a>
-        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(l.time)}</div>
+        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(formatMessageTime(d.createdAt))}</div>
       </div>
     `).join("");
     return;
@@ -4574,7 +4589,7 @@ function renderGallery(tab){
       <div style="background:white;margin:10px;padding:12px;border-radius:12px;box-shadow:0 1px 6px rgba(0,0,0,0.1);">
         <div style="font-weight:600;">Document</div>
         <a href="${getMediaUrl(d.file)}" target="_blank" style="color:#075e54;word-break:break-all;">${escapeHtml(getMediaUrl(d.file))}</a>
-        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(d.time||"")}</div>
+        <div style="font-size:12px;color:gray;margin-top:6px;">${escapeHtml(formatMessageTime(d.createdAt))}</div>
       </div>
     `).join("");
   }
