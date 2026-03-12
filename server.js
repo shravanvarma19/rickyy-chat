@@ -2063,7 +2063,7 @@ io.on("connection", socket => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
-        time: formatTime(),
+        
         status: receiverOnline ? "delivered" : "sent",
         reaction: null,
         seenBy: [],
@@ -2122,7 +2122,7 @@ io.on("connection", socket => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
-        time: formatTime(),
+        
         status: "sent",
         reaction: null,
         deliveredTo: onlineRecipients,
