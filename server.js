@@ -107,7 +107,9 @@ const userSchema = new mongoose.Schema({
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
   authToken: { type: String, default: null },
-  pushSubscriptions: { type: [Object], default: [] }
+  pushSubscriptions: { type: [Object], default: [] },
+  rejectCooldownUntil: { type: Date, default: null },
+lastRejectedAt: { type: Date, default: null }
 });
 
 
@@ -245,7 +247,10 @@ const upload = multer({
 
 /* ---------- HELPERS ---------- */
 async function getUsers() {
-  return await User.find({ blocked: { $ne: true } });
+  return await User.find({
+    blocked: { $ne: true },
+    approvalStatus: "approved"
+  });
 }
 
 async function isUserOnline(username) {
@@ -400,10 +405,14 @@ async function sendPushToUser(username, payload) {
         validSubs.push(sub);
       } catch (err) {
         const status = err?.statusCode;
-        if (status !== 404 && status !== 410) {
-          validSubs.push(sub);
+
+        if (status === 404 || status === 410) {
+          console.log(`Removed invalid push subscription for ${username}`);
+          continue;
         }
+
         console.log("PUSH SEND ERROR:", username, status || "", err?.message || err);
+        validSubs.push(sub);
       }
     }
 
@@ -767,9 +776,11 @@ app.get("/api/me", async (req, res) => {
 /* ---------- USERS ---------- */
 app.get("/users-data", async (req, res) => {
   try {
-    const allUsers = await User.find({ blocked: { $ne: true } }).select(
-      "name dp role online lastSeen muted bio about"
-    );
+    const allUsers = await User.find({
+      blocked: { $ne: true },
+      approvalStatus: "approved"
+    }).select("name dp role online lastSeen muted bio about");
+
     res.json(allUsers);
   } catch (err) {
     console.log(err);
@@ -1515,24 +1526,43 @@ app.get("/admin/pending-users", requireAdmin, async (req, res) => {
     res.status(500).json({ ok: false, users: [] });
   }
 });
-
+app.post("/admin/clear-push-subscriptions", async (req, res) => {
+  try {
+    const { username } = req.body;
+    await User.updateOne(
+      { name: username },
+      { $set: { pushSubscriptions: [] } }
+    );
+    res.json({ ok: true });
+  } catch (err) {
+    console.log("CLEAR PUSH SUBSCRIPTIONS ERROR:", err);
+    res.status(500).json({ ok: false });
+  }
+});
 app.post("/admin/approve-user", requireAdmin, async (req, res) => {
   try {
     const { username } = req.body;
 
     const user = await User.findOneAndUpdate(
       { name: username },
-      { approvalStatus: "approved", role: "user" },
+      {
+        approvalStatus: "approved",
+        role: "user",
+        blocked: false,
+        rejectCooldownUntil: null,
+        lastRejectedAt: null
+      },
       { new: true }
     );
 
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
     io.to(username).emit("approval-approved", {
-      msg: "Admin approved your request"
+      msg: "shravan approved your request"
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
+    await emitUsersToAll();
 
     res.json({ ok: true });
   } catch (err) {
@@ -1544,20 +1574,28 @@ app.post("/admin/approve-user", requireAdmin, async (req, res) => {
 app.post("/admin/reject-user", requireAdmin, async (req, res) => {
   try {
     const { username } = req.body;
+    const cooldownUntil = new Date(Date.now() + 60 * 60 * 1000);
 
     const user = await User.findOneAndUpdate(
       { name: username },
-      { approvalStatus: "rejected", role: "user" },
+      {
+        approvalStatus: "rejected",
+        role: "user",
+        rejectCooldownUntil: cooldownUntil,
+        lastRejectedAt: new Date(),
+        online: false
+      },
       { new: true }
     );
 
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
     io.to(username).emit("approval-rejected", {
-      msg: "Admin rejected your request"
+      msg: "Shravan aithee reject chesinduu. ooh 1 hour tharuvatha chudu."
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
+    await emitUsersToAll();
 
     res.json({ ok: true });
   } catch (err) {
@@ -1601,7 +1639,7 @@ app.post("/admin/unblock-user", async (req, res) => {
 
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
-    io.to(username).emit("unblocked", { msg: "Admin unblocked your account" });
+    io.to(username).emit("unblocked", { msg: "Shravan unblocked your account" });
     await emitUsersToAll();
     return res.json({ ok: true });
   } catch (err) {
@@ -1623,7 +1661,7 @@ app.post("/admin/mute-user", async (req, res) => {
 
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
-    io.to(username).emit("muted-by-admin", { msg: "Admin muted your account" });
+    io.to(username).emit("muted-by-admin", { msg: "Shravan muted your account" });
     await emitUsersToAll();
     return res.json({ ok: true });
   } catch (err) {
@@ -1635,7 +1673,7 @@ app.post("/admin/mute-user", async (req, res) => {
 app.post("/admin/unmute-user", async (req, res) => {
   try {
     const { admin, username } = req.body;
-    if (admin !== ADMIN_NAME) return res.status(403).json({ ok: false, msg: "Only admin allowed" });
+    if (admin !== ADMIN_NAME) return res.status(403).json({ ok: false, msg: "Only Shravan allowed" });
 
     const user = await User.findOneAndUpdate(
       { name: username },
@@ -1645,7 +1683,7 @@ app.post("/admin/unmute-user", async (req, res) => {
 
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
-    io.to(username).emit("unmuted-by-admin", { msg: "Admin unmuted your account" });
+    io.to(username).emit("unmuted-by-admin", { msg: "Shravan unmuted your account" });
     await emitUsersToAll();
     return res.json({ ok: true });
   } catch (err) {
@@ -1689,7 +1727,9 @@ app.post("/api/login", async (req, res) => {
         approvalStatus: isAdmin ? "approved" : "pending",
         loginAttempts: 0,
         lockUntil: null,
-        authToken: null
+        authToken: null,
+        rejectCooldownUntil: null,
+        lastRejectedAt: null
       });
 
       await user.save();
@@ -1700,10 +1740,12 @@ app.post("/api/login", async (req, res) => {
           dp: user.dp
         });
 
+        io.to(ADMIN_NAME).emit("approval-list-updated");
+
         return res.json({
           ok: false,
           pending: true,
-          msg: "Request sent to admin. Wait for approval."
+          msg: "Request sent to Shravan. Wait for approval."
         });
       }
 
@@ -1750,14 +1792,14 @@ app.post("/api/login", async (req, res) => {
 
         return res.json({
           ok: false,
-          msg: "Too many wrong PIN attempts. Account locked for 10 minutes."
+          msg: "chala sarlu worng PIN kottinav. ooh 10 minutes aithee aguu."
         });
       }
 
       await user.save();
       return res.json({
         ok: false,
-        msg: `Wrong PIN. ${5 - user.loginAttempts} attempt(s) left.`
+        msg: `Wrong PIN. ${3 - user.loginAttempts} attempt(s) left.`
       });
     }
 
@@ -1768,7 +1810,7 @@ app.post("/api/login", async (req, res) => {
       await user.save();
       return res.json({
         ok: false,
-        msg: "Admin blocked your account"
+        msg: "Shravan blocked your account"
       });
     }
 
@@ -1798,15 +1840,43 @@ app.post("/api/login", async (req, res) => {
       return res.json({
         ok: false,
         pending: true,
-        msg: "Still waiting for admin approval."
+        msg: "Still waiting for Shravan's approval."
       });
     }
 
     if (user.approvalStatus === "rejected") {
+      const now = new Date();
+
+      if (user.rejectCooldownUntil && new Date(user.rejectCooldownUntil) > now) {
+        const mins = Math.ceil(
+          (new Date(user.rejectCooldownUntil).getTime() - now.getTime()) / 60000
+        );
+
+        await user.save();
+        return res.json({
+          ok: false,
+          msg: `Shravan rejected your request. Try again after ${mins} minute(s).`
+        });
+      }
+
+      user.approvalStatus = "pending";
+      user.rejectCooldownUntil = null;
+      user.lastRejectedAt = null;
+      user.loginAttempts = 0;
+      user.lockUntil = null;
       await user.save();
+
+      io.to(ADMIN_NAME).emit("approval-request-added", {
+        name: user.name,
+        dp: user.dp
+      });
+
+      io.to(ADMIN_NAME).emit("approval-list-updated");
+
       return res.json({
         ok: false,
-        msg: "Admin rejected your request."
+        pending: true,
+        msg: "Request sent to Shravan's again. Wait for approval."
       });
     }
 
@@ -1979,7 +2049,7 @@ io.on("connection", socket => {
 
       if (senderUser && senderUser.muted) {
         io.to(data.from).emit("user-muted", {
-          msg: "Admin muted you. You cannot send messages."
+          msg: "Shravan muted you. You cannot send messages."
         });
         return;
       }
@@ -1993,7 +2063,7 @@ io.on("connection", socket => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
-        
+        time: formatTime(),
         status: receiverOnline ? "delivered" : "sent",
         reaction: null,
         seenBy: [],
@@ -2030,7 +2100,7 @@ io.on("connection", socket => {
       const senderUser = await User.findOne({ name: data.from });
 
       if (senderUser && senderUser.muted) {
-        io.to(data.from).emit("user-muted", { msg: "Admin muted you. You cannot send messages." });
+        io.to(data.from).emit("user-muted", { msg: "Shravan muted you. yevariki messages cheyaniki ledhu." });
         return;
       }
 
@@ -2052,7 +2122,7 @@ io.on("connection", socket => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
-      
+        time: formatTime(),
         status: "sent",
         reaction: null,
         deliveredTo: onlineRecipients,

@@ -6,17 +6,19 @@
 <link rel="icon" type="image" href="./default.png">
 <script src="/socket.io/socket.io.js"></script>
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;600&display=swap" rel="stylesheet">
-
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
 <style>
 *{
   box-sizing:border-box;
 }
 
-html,
-body{
+html, body{
   margin:0;
   width:100%;
   height:100%;
+  overflow:hidden;
 }
 
 body{
@@ -26,16 +28,12 @@ body{
     radial-gradient(circle at top right, rgba(34,211,238,.12), transparent 18%),
     linear-gradient(135deg,#081018 0%,#0b1220 45%,#111827 100%);
   color:hsl(240, 3%, 7%);
-  min-height:100vh;
-  min-height:100dvh;
-  overflow:hidden;
 }
 
 .app{
   display:flex;
-  width:100%;
-  height:100vh;
-  height:100dvh;
+  height:100%;
+  min-height:100dvh;
   gap:14px;
   padding:14px;
   box-sizing:border-box;
@@ -712,7 +710,38 @@ body{
   flex:1;
   align-content:start;
 }
+.date-separator-wrap{
+  display:flex;
+  justify-content:center;
+  margin:10px 0 14px;
+  position:relative;
+}
 
+.date-separator{
+  position:sticky;
+  top:10px;
+  z-index:4;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  color:#e5e7eb;
+  background:rgba(15,23,42,.78);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 18px rgba(0,0,0,.18);
+}
+
+body.dark .date-separator{
+  background:rgba(15,23,42,.88);
+  color:#f8fafc;
+}
+
+body:not(.dark) .date-separator{
+  background:rgba(255,255,255,.86);
+  color:#0f172a;
+  border:1px solid rgba(15,23,42,.08);
+}
 .g-item{
   height:140px;
   border-radius:12px;
@@ -1278,7 +1307,38 @@ body.dark .settings-option{
 .wallpaper-item.active{
   border-color:#25d366;
 }
+.date-separator-wrap{
+  display:flex;
+  justify-content:center;
+  margin:10px 0 14px;
+  position:relative;
+}
 
+.date-separator{
+  position:sticky;
+  top:10px;
+  z-index:4;
+  padding:6px 12px;
+  border-radius:999px;
+  font-size:12px;
+  font-weight:800;
+  color:#e5e7eb;
+  background:rgba(15,23,42,.78);
+  border:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(12px);
+  box-shadow:0 8px 18px rgba(0,0,0,.18);
+}
+
+body.dark .date-separator{
+  background:rgba(15,23,42,.88);
+  color:#f8fafc;
+}
+
+body:not(.dark) .date-separator{
+  background:rgba(255,255,255,.86);
+  color:#0f172a;
+  border:1px solid rgba(15,23,42,.08);
+}
 /* =========================
    CENTER POPUP
 ========================= */
@@ -1400,7 +1460,9 @@ body.dark .history-loader{
     min-height:100dvh;
     overflow:hidden;
   }
-
+  :root{
+    --app-height:100vh;
+  }
   body{
     position:fixed;
     inset:0;
@@ -1410,8 +1472,8 @@ body.dark .history-loader{
     display:flex;
     flex-direction:column;
     width:100%;
-    height:100%;
-    min-height:100dvh;
+    height:var(--app-height);
+    min-height:var(--app-height);
     padding:0;
     gap:0;
     overflow:hidden;
@@ -1421,13 +1483,11 @@ body.dark .history-loader{
     position:absolute;
     inset:0;
     width:100%;
-    height:100%;
-    min-height:100dvh;
+    height:var(--app-height);
     z-index:20;
     border-radius:0;
     border:none;
     margin:0;
-    box-shadow:none;
   }
 
   .sidebar-header{
@@ -1486,18 +1546,16 @@ body.dark .history-loader{
   }
 
   .chat{
-    position:fixed;
-    inset:0;
+    position:relative;
     width:100%;
-    height:100%;
-    min-height:100dvh;
+    height:var(--app-height);
+    min-height:var(--app-height);
     margin:0;
     border:none;
     border-radius:0;
     display:flex;
     flex-direction:column;
     overflow:hidden;
-    padding-bottom:0;
   }
 
   .chat-header{
@@ -1546,11 +1604,9 @@ body.dark .history-loader{
     flex:1 1 auto;
     min-height:0;
     overflow-y:auto;
-    overflow-x:hidden;
-    padding:10px 10px 84px;
-    margin-bottom:0;
+    padding:12px 10px 110px;
     -webkit-overflow-scrolling:touch;
-    scroll-behavior:smooth;
+    
   }
 
   .message{
@@ -1595,32 +1651,32 @@ body.dark .history-loader{
     height:auto;
   }
 
-  .input-area{
-    position:fixed;
-    left:0;
-    right:0;
-    bottom:0;
-    width:100%;
-    min-height:64px;
-    display:flex;
-    align-items:center;
-    gap:8px;
-    padding:8px 10px calc(8px + env(safe-area-inset-bottom));
-    box-sizing:border-box;
-    border-radius:0;
-    z-index:1000;
-    background:rgba(17,24,39,0.97);
-    border-top:1px solid rgba(255,255,255,.08);
-    backdrop-filter:blur(12px);
-  }
+ .input-area{
+  position:absolute;
+  left:0;
+  right:0;
+  bottom:0;
+  width:100%;
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:10px;
+  padding-bottom:calc(10px + env(safe-area-inset-bottom));
+  box-sizing:border-box;
+  border-radius:0;
+  z-index:1000;
+  background:rgba(17,24,39,.96);
+  border-top:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(10px);
+}
 
   .input-area input{
     flex:1;
     min-width:0;
     height:44px;
-    padding:10px 14px;
+    padding:12px 14px;
     font-size:16px;
-    border-radius:14px;
+    border-radius:16px;
   }
 
   .attach-btn,
@@ -2166,7 +2222,7 @@ async function urlBase64ToUint8Array(base64String) {
   return Uint8Array.from([...rawData].map(ch => ch.charCodeAt(0)));
 }
 
-async function initPushNotifications() {
+async function initPushNotifications(forceResubscribe = false) {
   try {
     if (!("serviceWorker" in navigator) || !("PushManager" in window)) {
       console.log("Push not supported");
@@ -2188,6 +2244,33 @@ async function initPushNotifications() {
 
     const reg = await navigator.serviceWorker.ready;
 
+    let subscription = await reg.pushManager.getSubscription();
+
+    if (subscription && forceResubscribe) {
+      try {
+        await fetch("/api/push/unsubscribe", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json"
+          },
+          body: JSON.stringify({
+            username: me,
+            endpoint: subscription.endpoint
+          })
+        });
+      } catch (e) {
+        console.log("Old push unsubscribe API error:", e);
+      }
+
+      try {
+        await subscription.unsubscribe();
+      } catch (e) {
+        console.log("Old browser unsubscribe error:", e);
+      }
+
+      subscription = null;
+    }
+
     const keyRes = await fetch("/api/push-public-key");
     const keyData = await keyRes.json().catch(() => null);
 
@@ -2196,8 +2279,6 @@ async function initPushNotifications() {
       return;
     }
 
-    let subscription = await reg.pushManager.getSubscription();
-
     if (!subscription) {
       subscription = await reg.pushManager.subscribe({
         userVisibleOnly: true,
@@ -2205,7 +2286,7 @@ async function initPushNotifications() {
       });
     }
 
-    await fetch("/api/push/subscribe", {
+    const saveRes = await fetch("/api/push/subscribe", {
       method: "POST",
       headers: {
         "Content-Type": "application/json"
@@ -2216,7 +2297,13 @@ async function initPushNotifications() {
       })
     });
 
-    console.log("Push subscription saved");
+    const saveData = await saveRes.json().catch(() => null);
+
+    if (saveData && saveData.ok) {
+      console.log("Push subscription saved");
+    } else {
+      console.log("Push subscription save failed");
+    }
   } catch (err) {
     console.log("INIT PUSH ERROR:", err);
   }
@@ -2234,7 +2321,88 @@ function updateFloatingButtonsVisibility(){
     soundBtn.style.display = shouldShow ? "flex" : "none";
   }
 }
+function getMessageTime(m){
+  if(m.time) return m.time;
 
+  if(m.createdAt){
+    const d = new Date(m.createdAt);
+    if(!isNaN(d.getTime())){
+      let hours = d.getHours();
+      const minutes = String(d.getMinutes()).padStart(2, "0");
+      const ampm = hours >= 12 ? "PM" : "AM";
+      hours = hours % 12;
+      hours = hours === 0 ? 12 : hours;
+      return `${String(hours).padStart(2, "0")}:${minutes} ${ampm}`;
+    }
+  }
+
+  return "";
+}
+function isSameDate(d1, d2){
+  return d1.getDate() === d2.getDate() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getFullYear() === d2.getFullYear();
+}
+
+function getStartOfDay(date){
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function formatChatDateLabel(dateString){
+  const date = new Date(dateString);
+  if(isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const today = getStartOfDay(now);
+  const msgDay = getStartOfDay(date);
+
+  const diffMs = today - msgDay;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if(diffDays === 0) return "Today";
+  if(diffDays === 1) return "Yesterday";
+
+  if(diffDays > 1 && diffDays < 7){
+    return date.toLocaleDateString("en-US", { weekday:"long" });
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day:"2-digit",
+    month:"short",
+    year:"numeric"
+  });
+}
+
+function shouldShowDateSeparator(messages, index){
+  const current = messages[index];
+  if(!current || !current.createdAt) return false;
+
+  if(index === 0) return true;
+
+  const prev = messages[index - 1];
+  if(!prev || !prev.createdAt) return true;
+
+  const currentDate = new Date(current.createdAt);
+  const prevDate = new Date(prev.createdAt);
+
+  if(isNaN(currentDate.getTime()) || isNaN(prevDate.getTime())) return false;
+
+  return !isSameDate(currentDate, prevDate);
+}
+
+function createDateSeparator(label){
+  const wrap = document.createElement("div");
+  wrap.className = "date-separator-wrap";
+
+  const pill = document.createElement("div");
+  pill.className = "date-separator";
+  pill.innerText = label;
+
+  wrap.appendChild(pill);
+  return wrap;
+}
 function openChatWallpaperModal(){
   if(!currentChat && !currentGroup){
     alert("Open a chat or group first");
@@ -2711,11 +2879,14 @@ function toggleMuteGroupChat(groupId){
 
   const key = String(groupId);
   const idx = appSettings.mutedChats.indexOf(key);
+  let mutedNow = false;
 
   if(idx >= 0){
     appSettings.mutedChats.splice(idx, 1);
+    mutedNow = false;
   } else {
     appSettings.mutedChats.push(key);
+    mutedNow = true;
   }
 
   saveAppSettings();
@@ -2724,6 +2895,13 @@ function toggleMuteGroupChat(groupId){
   if(currentGroup === groupId){
     updateCurrentChatMuteText();
   }
+
+  showToast(
+    mutedNow
+      ? `Group notifications muted 🔕`
+      : `Group notifications unmuted 🔔`,
+    mutedNow ? "warning" : "success"
+  );
 }
 
 async function loadGroups(){
@@ -3117,7 +3295,26 @@ async function deleteCurrentGroup(){
     alert("Server error");
   }
 }
+function updateAppHeight(){
+  const vh = window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${vh}px`);
+}
 
+window.addEventListener("load", updateAppHeight);
+window.addEventListener("resize", () => {
+  updateAppHeight();
+
+  const box = document.getElementById("messages");
+  if(box && (currentChat || currentGroup)){
+    setTimeout(() => {
+      box.scrollTop = box.scrollHeight;
+    }, 120);
+  }
+});
+
+window.addEventListener("orientationchange", () => {
+  setTimeout(updateAppHeight, 200);
+});
 /* =========================
    GROUP EDIT / MEMBERS
 ========================= */
@@ -3499,7 +3696,7 @@ function jumpToMessageResult(index, q){
   if(!ok) return;
 
   await initNotifications();
-  await initPushNotifications();
+  await initPushNotifications(true);
   await loadGroups();
   updateFloatingButtonsVisibility();
   applyAppSettings();
@@ -3601,7 +3798,7 @@ function renderUsers(){
         <div class="user-info">
           <div class="user-name">${escapeHtml(u.name)}</div>
           <div class="user-status">
-            ${u.bio ? escapeHtml(u.bio) : (u.online ? "online" : formatLastSeenSmart(u.lastSeen))}${u.muted ? " • muted" : ""}
+            ${u.online ? "online" : formatLastSeenSmart(u.lastSeen)}${u.muted ? " • muted" : ""}
           </div>
         </div>
         <div class="user-actions">
@@ -3664,11 +3861,14 @@ function toggleMuteUserChat(username){
 
   const key = String(username);
   const idx = appSettings.mutedChats.indexOf(key);
+  let mutedNow = false;
 
   if(idx >= 0){
     appSettings.mutedChats.splice(idx, 1);
+    mutedNow = false;
   } else {
     appSettings.mutedChats.push(key);
+    mutedNow = true;
   }
 
   saveAppSettings();
@@ -3677,6 +3877,13 @@ function toggleMuteUserChat(username){
   if(currentChat === username){
     updateCurrentChatMuteText();
   }
+
+  showToast(
+    mutedNow
+      ? `${username} notifications muted 🔕`
+      : `${username} notifications unmuted 🔔`,
+    mutedNow ? "warning" : "success"
+  );
 }
 
 function openChat(name){
@@ -3784,15 +3991,18 @@ forceScrollToLatest();
 
 socket.on("private-message", (m) => {
   const currentUser = localStorage.getItem("user");
+  const isMuted = isChatMuted(m.from);
 
-  if(m.from !== currentUser && !isChatMuted(m.from)){
+  if (m.from !== currentUser && !isMuted) {
     showNotification(m.from, m.text || "📎 Media message", { user: m.from });
   }
 
-  if(m.from !== me){
-    playMsgSound();
+  if (m.from !== me) {
+    if (!isMuted) {
+      playMsgSound();
+    }
 
-    if((currentChat !== m.from || !pageActive) && !isChatMuted(m.from)){
+    if ((currentChat !== m.from || !pageActive) && !isMuted) {
       showNotify(
         m.from,
         m.text ? m.text : (m.fileType ? `Sent ${m.fileType}` : "New message"),
@@ -3801,23 +4011,23 @@ socket.on("private-message", (m) => {
     }
   }
 
-  if(!currentChat){
+  if (!currentChat) {
     socket.emit("get-unread", me);
     renderUsers();
     return;
   }
 
-  if(m.from !== me && currentChat !== m.from){
+  if (m.from !== me && currentChat !== m.from) {
     socket.emit("get-unread", me);
     renderUsers();
     return;
   }
 
-  if(m.from !== me && pageActive && currentChat === m.from){
+  if (m.from !== me && pageActive && currentChat === m.from) {
     socket.emit("seen", { from: m.from, to: me });
   }
 
-  if(m.from !== me){
+  if (m.from !== me) {
     unread[m.from] = 0;
     renderUsers();
     socket.emit("get-unread", me);
@@ -3830,8 +4040,11 @@ socket.on("private-message", (m) => {
 });
 
 socket.on("group-message", async (m) => {
-  if(m.from !== me && !isChatMuted(m.group)){
+  const isMuted = isChatMuted(m.group);
+
+  if (m.from !== me && !isMuted) {
     playMsgSound();
+
     showNotification(
       "Group message",
       `${m.from}: ${m.text || "📎 Media"}`,
@@ -4008,18 +4221,50 @@ function buildMessageContent(m){
 
 function showMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
+
+  if(shouldShowDateSeparator(currentHistory, index)){
+    const label = formatChatDateLabel(m.createdAt);
+    if(label){
+      box.appendChild(createDateSeparator(label));
+    }
+  }
+
   const div = document.createElement("div");
-  div.className = "message " + (m.from === me ? "me" : "other");
+  div.className = "message " + (m.from===me ? "me" : "other");
   div.setAttribute("data-msg-index", index);
 
   let ticks = "";
-  if(m.from === me){
-    if(m.status === "sent") ticks = "✓";
-    else if(m.status === "delivered") ticks = "✓✓";
-    else if(m.status === "seen") ticks = "<span style='color:#34b7f1'>✓✓</span>";
+  if(m.from===me){
+    if(m.status==="sent") ticks="✓";
+    else if(m.status==="delivered") ticks="✓✓";
+    else if(m.status==="seen") ticks="<span style='color:#34b7f1'>✓✓</span>";
   }
 
-  const content = buildMessageContent(m);
+  let content = "";
+  if(m.file && m.fileType==="image"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
+  } else if(m.file && m.fileType==="video"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
+  } else if(m.file && m.fileType==="audio"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<audio src="${mediaUrl}" controls></audio>`;
+  } else if(m.file && (m.fileType==="doc" || m.fileType==="file")){
+    const mediaUrl = getMediaUrl(m.file);
+    const filename = mediaUrl.split("/").pop();
+    content = `
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="font-size:22px;">📄</div>
+        <div>
+          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
+        </div>
+      </div>
+    `;
+  } else {
+    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+  }
 
   let replyHtml = "";
   if(m.replyTo){
@@ -4027,7 +4272,7 @@ function showMessage(m, index, scrollToBottom = true){
     replyHtml = `
       <div style="background:rgba(0,0,0,0.05);padding:8px;border-radius:10px;margin-bottom:6px;border-left:4px solid #25d366;">
         <div style="font-weight:700;font-size:12px;">${escapeHtml(m.replyTo.from)}</div>
-        <div style="font-size:12px;color:gray;word-break:break-word;">${escapeHtml(t)}</div>
+        <div style="font-size:12px;color:#d5c5c5;word-break:break-word;">${escapeHtml(t)}</div>
       </div>
     `;
   }
@@ -4035,7 +4280,7 @@ function showMessage(m, index, scrollToBottom = true){
   div.innerHTML = `
     ${replyHtml}
     ${content}
-    <div class="time">${escapeHtml(m.time || "")} ${ticks}</div>
+    <div class="time">${escapeHtml(getMessageTime(m))} ${ticks}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -4047,12 +4292,14 @@ function showMessage(m, index, scrollToBottom = true){
   div.addEventListener("dblclick",(e)=>{
     showReactionMenu(m, e);
   });
+
   attachSwipeReply(div, m);
 
   box.appendChild(div);
-  bindMediaAutoScroll(div)
+  bindMediaAutoScroll(div);
+
   if(scrollToBottom){
-   forceScrollToLatest();
+    forceScrollToLatest();
   }
 }
 function attachSwipeReply(div, messageObj){
@@ -4155,6 +4402,13 @@ function attachSwipeReply(div, messageObj){
 function showGroupMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
 
+  if(shouldShowDateSeparator(currentHistory, index)){
+    const label = formatChatDateLabel(m.createdAt);
+    if(label){
+      box.appendChild(createDateSeparator(label));
+    }
+  }
+
   if (m._id && renderedGroupMessageIds.has(m._id)) {
     return;
   }
@@ -4169,10 +4423,34 @@ function showGroupMessage(m, index, scrollToBottom = true){
 
   let senderName = "";
   if(m.from !== me){
-    senderName = `<div style="font-size:12px;font-weight:700;color:#075e54;margin-bottom:4px;">${escapeHtml(m.from)}</div>`;
+    senderName = `<div class="group-sender-name">${escapeHtml(m.from)}</div>`;
   }
 
-  const content = buildMessageContent(m);
+  let content = "";
+  if(m.file && m.fileType === "image"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
+  } else if(m.file && m.fileType === "video"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
+  } else if(m.file && m.fileType === "audio"){
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<audio src="${mediaUrl}" controls></audio>`;
+  } else if(m.file && (m.fileType === "doc" || m.fileType === "file")){
+    const mediaUrl = getMediaUrl(m.file);
+    const filename = mediaUrl.split("/").pop();
+    content = `
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="font-size:22px;">📄</div>
+        <div>
+          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
+        </div>
+      </div>
+    `;
+  } else {
+    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+  }
 
   let replyHtml = "";
   if(m.replyTo){
@@ -4180,7 +4458,7 @@ function showGroupMessage(m, index, scrollToBottom = true){
     replyHtml = `
       <div style="background:rgba(0,0,0,0.05);padding:8px;border-radius:10px;margin-bottom:6px;border-left:4px solid #25d366;">
         <div style="font-weight:700;font-size:12px;">${escapeHtml(m.replyTo.from)}</div>
-        <div style="font-size:12px;color:gray;word-break:break-word;">${escapeHtml(t)}</div>
+        <div style="font-size:12px;color:#d5c5c5;word-break:break-word;">${escapeHtml(t)}</div>
       </div>
     `;
   }
@@ -4195,7 +4473,7 @@ function showGroupMessage(m, index, scrollToBottom = true){
     ${replyHtml}
     ${content}
     ${seenInfoHtml}
-    <div class="time">${escapeHtml(m.time || "")}</div>
+    <div class="time">${escapeHtml(getMessageTime(m))}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
   `;
 
@@ -4207,14 +4485,15 @@ function showGroupMessage(m, index, scrollToBottom = true){
   div.addEventListener("dblclick",(e)=>{
     showReactionMenu(m, e);
   });
+
   attachSwipeReply(div, m);
 
- box.appendChild(div);
-bindMediaAutoScroll(div);
+  box.appendChild(div);
+  bindMediaAutoScroll(div);
 
-if(scrollToBottom){
-  forceScrollToLatest();
-}
+  if(scrollToBottom){
+    forceScrollToLatest();
+  }
 }
 
 async function loadPrivateMessages(initial = false){
@@ -4731,7 +5010,71 @@ function setGalleryTab(tab){
   setActiveTab(tab);
   renderGallery(tab);
 }
+function isSameDate(d1, d2){
+  return d1.getDate() === d2.getDate() &&
+         d1.getMonth() === d2.getMonth() &&
+         d1.getFullYear() === d2.getFullYear();
+}
 
+function getStartOfDay(date){
+  const d = new Date(date);
+  d.setHours(0,0,0,0);
+  return d;
+}
+
+function formatChatDateLabel(dateString){
+  const date = new Date(dateString);
+  if(isNaN(date.getTime())) return "";
+
+  const now = new Date();
+  const today = getStartOfDay(now);
+  const msgDay = getStartOfDay(date);
+
+  const diffMs = today - msgDay;
+  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+
+  if(diffDays === 0) return "Today";
+  if(diffDays === 1) return "Yesterday";
+
+  if(diffDays > 1 && diffDays < 7){
+    return date.toLocaleDateString("en-US", { weekday:"long" });
+  }
+
+  return date.toLocaleDateString("en-GB", {
+    day:"2-digit",
+    month:"short",
+    year:"numeric"
+  });
+}
+
+function shouldShowDateSeparator(messages, index){
+  const current = messages[index];
+  if(!current || !current.createdAt) return false;
+
+  if(index === 0) return true;
+
+  const prev = messages[index - 1];
+  if(!prev || !prev.createdAt) return true;
+
+  const currentDate = new Date(current.createdAt);
+  const prevDate = new Date(prev.createdAt);
+
+  if(isNaN(currentDate.getTime()) || isNaN(prevDate.getTime())) return false;
+
+  return !isSameDate(currentDate, prevDate);
+}
+
+function createDateSeparator(label){
+  const wrap = document.createElement("div");
+  wrap.className = "date-separator-wrap";
+
+  const pill = document.createElement("div");
+  pill.className = "date-separator";
+  pill.innerText = label;
+
+  wrap.appendChild(pill);
+  return wrap;
+}
 function openGallery(){
   if(!currentChat && !currentGroup) return;
   document.getElementById("galleryTitle").innerText = (currentChat || "Group") + " • Gallery";
