@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resize-content">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resizes-content">
 <title>RickyY Chat</title>
 <link rel="icon" type="image" href="./default.png">
 <script src="/socket.io/socket.io.js"></script>
@@ -3627,8 +3627,10 @@ function handleViewportResize(){
   }
 }
 function updateAppHeight(){
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty("--app-height", `${Math.round(vh)}px`);
+  document.documentElement.style.setProperty(
+    "--app-height",
+    `${window.innerHeight}px`
+  );
 }
 
 function handleViewportResize(){
@@ -3636,7 +3638,7 @@ function handleViewportResize(){
 }
 
 window.addEventListener("load", updateAppHeight);
-window.addEventListener("resize", handleViewportResize);
+
 window.addEventListener("orientationchange", () => {
   setTimeout(handleViewportResize, 150);
 });
@@ -6703,7 +6705,35 @@ socket.on("incoming-call", async ({ from, type })=>{
 
   startRingtone();
 });
+socket.on("call-ringing", ({ to, type }) => {
+  if (!callPeer || callPeer !== to) return;
 
+  callMode = type === "video" ? "video" : "voice";
+
+  setCallUI({
+    title: to,
+    sub: "Ringing...",
+    showAccept: false,
+    showInCallControls: false
+  });
+
+  startRingback();
+});
+socket.on("call-unavailable", ({ to, reason }) => {
+  stopAllRings();
+
+  if (reason === "missed") {
+    alert(`${to} did not answer`);
+  } else if (reason === "user_busy") {
+    alert(`${to} is busy`);
+  } else if (reason === "you_busy") {
+    alert("You are already in another call");
+  } else {
+    alert("Call unavailable");
+  }
+
+  cleanupCall();
+});
 socket.on("call-offer", async ({ from, offer, type }) => {
   callPeer = from;
   callMode = (type === "video") ? "video" : "voice";

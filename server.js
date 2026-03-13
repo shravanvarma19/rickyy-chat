@@ -2186,6 +2186,7 @@ let userSocketIds = {};
 
 /* ---------- CALL STATE ---------- */
 let callState = {};
+let pendingCallOffers = {};
 
 function isBusy(user) {
   return !!callState[user];
@@ -2242,6 +2243,22 @@ io.on("connection", socket => {
 
       await emitUsersToAll();
       await emitGroupUnreadForUser(username);
+      const pending = callState[username];
+      if (pending && pending.status === "ringing" && pending.peer) {
+        socket.emit("incoming-call", {
+          from: pending.peer,
+          type: pending.type || "voice"
+        });
+      }
+
+      const pendingOffer = pendingCallOffers[username];
+      if (pendingOffer) {
+        socket.emit("call-offer", {
+          from: pendingOffer.from,
+          offer: pendingOffer.offer,
+          type: pendingOffer.type || "voice"
+        });
+      }
     } catch (err) {
       console.log("JOIN ERROR:", err);
     }
@@ -2593,21 +2610,24 @@ for (const member of offlineRecipients) {
       return;
     }
 
-    const online = await isUserOnline(to);
-    if (!online) {
-      socket.emit("call-unavailable", { to, reason: "offline" });
-      return;
-    }
-
     if (isBusy(to)) {
       socket.emit("call-busy", { to, reason: "user_busy" });
       return;
     }
 
     setCall(from, to, "ringing", callType);
-    io.to(from).emit("call-ringing", { to, type: callType });
-    io.to(to).emit("incoming-call", { from, type: callType });
 
+    // caller side ringback always start avvali
+    io.to(from).emit("call-ringing", { to, type: callType });
+
+    const online = await isUserOnline(to);
+
+    // callee app open unte direct incoming-call emit
+    if (online) {
+      io.to(to).emit("incoming-call", { from, type: callType });
+    }
+
+    // app close/recent clear/background unna push ravali
     await sendPushToUser(to, {
       title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
       body: `${from} is calling you`,
@@ -2617,10 +2637,13 @@ for (const member of offlineRecipients) {
       badge: "/icons/icon-192.png"
     });
 
+    // 25 sec lo accept kakapothe missed
     setTimeout(async () => {
       try {
         if (callState[from] && callState[from].status === "ringing") {
           clearCall(from);
+          delete pendingCallOffers[to];
+          delete pendingCallOffers[from];
 
           await Call.create({
             from,
@@ -2635,9 +2658,11 @@ for (const member of offlineRecipients) {
             to,
             callType === "video" ? "🎥 Missed video call" : "📞 Missed voice call"
           );
+
+          io.to(from).emit("call-unavailable", { to, reason: "missed" });
         }
       } catch (err) {
-        console.log(err);
+        console.log("MISSED CALL TIMER ERROR:", err);
       }
     }, 25000);
   } catch (e) {
@@ -2646,33 +2671,47 @@ for (const member of offlineRecipients) {
   }
 });
 
-  socket.on("call-offer", ({ to, from, offer, type }) => {
-    if (!callState[from] || callState[from].peer !== to) return;
-    const callType = callState[from].type || (type === "video" ? "video" : "voice");
-    io.to(to).emit("call-offer", { from, offer, type: callType });
-  });
+ socket.on("call-offer", ({ to, from, offer, type }) => {
+  if (!callState[from] || callState[from].peer !== to) return;
+
+  const callType = callState[from].type || (type === "video" ? "video" : "voice");
+
+  // callee app close ayina join ayyaka resend cheyyadaniki store chestham
+  pendingCallOffers[to] = {
+    from,
+    offer,
+    type: callType,
+    createdAt: Date.now()
+  };
+
+  io.to(to).emit("call-offer", { from, offer, type: callType });
+});
 
   socket.on("call-answer", async ({ to, from, answer, type }) => {
-    try {
-      if (!callState[from] || callState[from].peer !== to) return;
+  try {
+    if (!callState[from] || callState[from].peer !== to) return;
 
-      callState[from].status = "in_call";
-      if (callState[to]) callState[to].status = "in_call";
+    callState[from].status = "in_call";
+    if (callState[to]) callState[to].status = "in_call";
 
-      const callType = callState[from].type || (type === "video" ? "video" : "voice");
-      io.to(to).emit("call-answer", { from, answer, type: callType });
+    const callType = callState[from].type || (type === "video" ? "video" : "voice");
 
-      await Call.create({
-        from: to,
-        to: from,
-        type: callType,
-        status: "completed",
-        time: formatTime()
-      });
-    } catch (err) {
-      console.log(err);
-    }
-  });
+    delete pendingCallOffers[from];
+    delete pendingCallOffers[to];
+
+    io.to(to).emit("call-answer", { from, answer, type: callType });
+
+    await Call.create({
+      from: to,
+      to: from,
+      type: callType,
+      status: "completed",
+      time: formatTime()
+    });
+  } catch (err) {
+    console.log(err);
+  }
+});
 
   socket.on("call-ice", ({ to, from, candidate, type }) => {
     if (!callState[from] || callState[from].peer !== to) return;
@@ -2681,30 +2720,34 @@ for (const member of offlineRecipients) {
   });
 
   socket.on("call-end", async ({ to, from }) => {
-    try {
-      io.to(to).emit("call-end", { from });
+  try {
+    io.to(to).emit("call-end", { from });
 
-      const st = callState[from];
-      const callType = st?.type || "voice";
-      clearCall(from);
+    const st = callState[from];
+    const callType = st?.type || "voice";
 
-      await Call.create({
-        from,
-        to,
-        type: callType,
-        status: "ended",
-        time: formatTime()
-      });
+    delete pendingCallOffers[from];
+    delete pendingCallOffers[to];
 
-      await pushCallMessage(
-        from,
-        to,
-        callType === "video" ? "🎥 Call ended" : "📞 Call ended"
-      );
-    } catch (err) {
-      console.log(err);
-    }
-  });
+    clearCall(from);
+
+    await Call.create({
+      from,
+      to,
+      type: callType,
+      status: "ended",
+      time: formatTime()
+    });
+
+    await pushCallMessage(
+      from,
+      to,
+      callType === "video" ? "🎥 Call ended" : "📞 Call ended"
+    );
+  } catch (err) {
+    console.log(err);
+  }
+});
 
   socket.on("disconnect", async () => {
     try {
@@ -2722,6 +2765,8 @@ for (const member of offlineRecipients) {
           const peer = callState[username].peer;
           io.to(peer).emit("call-end", { from: username });
           clearCall(username);
+          delete pendingCallOffers[username];
+          if (peer) delete pendingCallOffers[peer];
         }
 
         if (!userSocketIds[username] || userSocketIds[username].size === 0) {
