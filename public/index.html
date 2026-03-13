@@ -562,33 +562,16 @@ if ("serviceWorker" in navigator) {
   });
 }
 
-(async function autoLoginRedirect(){
+(function fastAutoLogin(){
   const token = localStorage.getItem("authToken");
-  if(!token) return;
+  const user = localStorage.getItem("user");
 
-  try{
-    const res = await fetch("/api/me", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if(data && data.ok){
-      localStorage.setItem("user", data.user.name);
-      localStorage.setItem("role", data.user.role || "user");
-      localStorage.setItem("authToken", token);
-      window.location.href = "/chat.html";
-    } else {
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      localStorage.removeItem("authToken");
-    }
-  }catch(err){
-    console.log(err);
+  if(token && user){
+    window.location.href = "/chat.html";
   }
 })();
+
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {

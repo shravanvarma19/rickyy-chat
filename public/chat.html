@@ -182,7 +182,35 @@ body{
   box-shadow:inset 0 -18px 22px rgba(0,0,0,.08);
   pointer-events:none;
 }
+.message-admin-actions{
+  position:fixed;
+  z-index:30000;
+  display:flex;
+  gap:8px;
+  padding:8px;
+  border-radius:14px;
+  background:rgba(17,24,39,.98);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 14px 30px rgba(0,0,0,.28);
+  backdrop-filter:blur(10px);
+}
 
+.message-admin-actions button{
+  border:none;
+  cursor:pointer;
+  padding:10px 12px;
+  border-radius:10px;
+  font-weight:700;
+  color:#fff;
+}
+
+.message-admin-actions .edit-btn{
+  background:#2563eb;
+}
+
+.message-admin-actions .delete-btn{
+  background:#dc2626;
+}
 .status-bubble img,
 .status-bubble video{
   width:100%;
@@ -348,7 +376,9 @@ body{
   flex:1;
   min-width:0;
 }
-
+.message .time + .time{
+  display:none !important;
+}
 .chat-header .name{
   font-weight:800;
   font-size:18px;
@@ -791,7 +821,7 @@ body:not(.dark) .date-separator{
 
 .status-viewer{
   position:fixed;
-  insert: 0;
+  inset: 0;
   width:100%;
   height:100%;
   background:black;
@@ -881,19 +911,23 @@ body:not(.dark) .date-separator{
 }
 
 .reaction-menu{
-  position:absolute;
-  background:white;
-  padding:6px 10px;
+  position:fixed;
+  background:rgba(17,24,39,.98);
+  padding:8px 10px;
   border-radius:20px;
-  box-shadow:0 2px 10px rgba(0,0,0,0.2);
+  box-shadow:0 8px 24px rgba(0,0,0,.28);
   display:flex;
-  gap:8px;
-  z-index:1000;
+  gap:10px;
+  z-index:100000;
+  border:1px solid rgba(255,255,255,.08);
+  max-width:calc(100vw - 20px);
+  color:#fff;
 }
 
 .reaction-menu span{
   cursor:pointer;
-  font-size:18px;
+  font-size:20px;
+  line-height:1;
 }
 
 .reactions{
@@ -1568,24 +1602,24 @@ body.dark .history-loader{
   }
 
   .chat{
-    position:relative;
-    width:100%;
-    height:var(--app-height);
-    min-height:var(--app-height);
-    margin:0;
-    border:none;
-    border-radius:0;
-    display:flex;
-    flex-direction:column;
-    overflow:hidden;
-    background: rgb(17,24,39,.96);
-  }
+  position:relative;
+  width:100%;
+  height:var(--app-height);
+  min-height:var(--app-height);
+  margin:0;
+  border:none;
+  border-radius:0;
+  display:grid;
+  grid-template-rows: var(--header-h) minmax(0, 1fr) auto;
+  overflow:hidden;
+  background:#111827;
+}
 
-  .chat-header{
-  position:absolute;
-  top:0;
-  left:0;
-  right:0;
+.chat-header{
+  position:relative;
+  top:auto;
+  left:auto;
+  right:auto;
   z-index:1002;
   height:var(--header-h);
   min-height:var(--header-h);
@@ -1628,21 +1662,24 @@ body.dark .history-loader{
     cursor:pointer;
   }
 
-  .messages{
-    position:absolute;
-    top:var(--header-h);
-    left:0;
-    right:0;
-    bottom:var(--input-h);
-    overflow-y:auto;
-    overflow-x:hidden;
-    padding:12px 10px 18px;
-    margin:0;
-    min-height:0;
-    -webkit-overflow-scrolling:touch;
-    scroll-behavior:smooth;
-    
-  }
+ .messages{
+  position:relative;
+  top:auto;
+  left:auto;
+  right:auto;
+  bottom:auto;
+  min-height:0;
+  height:auto;
+  overflow-y:auto;
+  overflow-x:hidden;
+  padding:12px 10px 12px;
+  margin:0;
+  -webkit-overflow-scrolling:touch;
+  scroll-behavior:smooth;
+  overscroll-behavior:contain;
+  background-color:#e9e5dc;
+}
+
 
   .message{
     display:inline-block;
@@ -1687,15 +1724,16 @@ body.dark .history-loader{
   }
 
  .input-area{
-  position:absolute;
-  left:0;
-  right:0;
-  bottom:0;
+  position:relative;
+  left:auto;
+  right:auto;
+  bottom:auto;
   width:100%;
-  min-height: var(--input-h);
+  min-height:var(--input-h);
   display:flex;
   align-items:center;
   gap:8px;
+  flex-wrap:wrap;
   padding:10px;
   padding-bottom:calc(10px + env(safe-area-inset-bottom));
   box-sizing:border-box;
@@ -1734,12 +1772,14 @@ body.dark .history-loader{
   }
 
   #replyBox{
-    position:fixed !important;
-    left:10px !important;
-    right:10px !important;
-    bottom:72px !important;
-    z-index:1004;
-    margin:0 !important;
+    position:relative !important;
+    left:auto !important;
+    right:auto !important;
+    bottom:auto !important;
+    z-index:auto !important;
+    margin:0 0 8px 0!important;
+    width: 100%;
+    order: -1;
   }
 
   .search-panel{
@@ -2127,6 +2167,9 @@ let unreadGroups = {};
 let groupDrawerOpen = false;
 let renderedGroupMessageIds = new Set();
 let groups = [];
+let activeMessageActionId = null;
+let messageActionOutsideHandler = null;
+let messageActionopenedAt = 0;
 let currentGroup = null;
 let isGroupChat = false;
 let groupLastMessages = {};
@@ -2140,6 +2183,7 @@ let usersList = [];
 let typingTimer = null;
 let pageActive = true;
 let statusList = [];
+let allStatusescache = [];
 let currentStatusIndex = 0;
 let statusTimer = null;
 let statusEditable = false;
@@ -2158,6 +2202,7 @@ let privateNoMoreShown = false;
 let groupNoMoreShown = false;
 let hasOpenedUserFromUrl = false;
 let hasOpenedGroupFromUrl = false;
+
 
 const WALLPAPERS = [
   "linear-gradient(135deg, #ece5dd, #d9fdd3)",
@@ -2192,13 +2237,15 @@ async function verifyLogin(){
   const token = localStorage.getItem("authToken");
   const savedUser = localStorage.getItem("user");
 
-  if(!token){
+  if(!token || !savedUser){
     localStorage.removeItem("user");
     localStorage.removeItem("role");
     localStorage.removeItem("authToken");
     location.href = "/index.html";
     return false;
   }
+
+  me = savedUser;
 
   try{
     const res = await fetch("/api/me", {
@@ -2209,7 +2256,7 @@ async function verifyLogin(){
 
     const data = await res.json().catch(() => null);
 
-    if(!data || !data.ok){
+    if(res.status === 401 || res.status === 403 || !data || !data.ok){
       localStorage.removeItem("user");
       localStorage.removeItem("role");
       localStorage.removeItem("authToken");
@@ -2224,13 +2271,7 @@ async function verifyLogin(){
     return true;
   }catch(err){
     console.log("VERIFY LOGIN ERROR:", err);
-
-    if(savedUser){
-      me = savedUser;
-      return true;
-    }
-
-    return false;
+    return true;
   }
 }
 
@@ -2374,7 +2415,30 @@ function isSameDate(d1, d2){
          d1.getMonth() === d2.getMonth() &&
          d1.getFullYear() === d2.getFullYear();
 }
+function showAdminApprovalRequestNotification(data){
+  if(me !== "shravan") return;
 
+  const requesterName = data?.name || "Unknown user";
+
+  showToast(`Request from ${requesterName}`, "info", 2600);
+
+  if("Notification" in window && Notification.permission === "granted"){
+    showNotification(
+      "New login request",
+      `Request from ${requesterName}`,
+      { user: requesterName }
+    );
+  }
+}
+socket.on("approval-request-added", (data)=>{
+  if(localStorage.getItem("user") === "shravan"){
+    showAdminApprovalRequestNotification(data);
+
+    if(currentAdminTab === "pending"){
+      loadPendingUsers();
+    }
+  }
+});
 function getStartOfDay(date){
   const d = new Date(date);
   d.setHours(0,0,0,0);
@@ -2727,7 +2791,47 @@ function showNotification(title, body, target = {}){
     }
   }).catch(()=>{});
 }
+async function showIncomingCallNotification(from, type = "voice"){
+  try{
+    if(!("Notification" in window)) return;
+    if(Notification.permission !== "granted") return;
 
+    const title = type === "video"
+      ? "📹 Incoming video call"
+      : "📞 Incoming voice call";
+
+    const body = `${from} is calling you`;
+    const url = `/chat.html?user=${encodeURIComponent(from)}`;
+
+    const reg = await navigator.serviceWorker.getRegistration();
+
+    if(reg){
+      await reg.showNotification(title, {
+        body,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        tag: `incoming-call-${from}`,
+        renotify: true,
+        requireInteraction: true,
+        vibrate: [300, 120, 300, 120, 500],
+        data: { url }
+      });
+    } else {
+      const n = new Notification(title, {
+        body,
+        tag: `incoming-call-${from}`,
+        requireInteraction: true
+      });
+
+      n.onclick = () => {
+        window.location.href = url;
+        window.focus();
+      };
+    }
+  }catch(err){
+    console.log("CALL NOTIFICATION ERROR:", err);
+  }
+}
 function showNotify(title, body, target = {}){
   if(!("Notification" in window) || Notification.permission !== "granted") return;
 
@@ -3324,6 +3428,24 @@ async function deleteCurrentGroup(){
   }catch(err){
     console.log(err);
     alert("Server error");
+  }
+}
+function updateAppHeight(){
+  const vh = window.visualViewport
+    ? window.visualViewport.height
+    : window.innerHeight;
+
+  document.documentElement.style.setProperty("--app-height", `${Math.round(vh)}px`);
+}
+
+function handleViewportResize(){
+  updateAppHeight();
+
+  const box = document.getElementById("messages");
+  if(box && (currentChat || currentGroup)){
+    setTimeout(() => {
+      box.scrollTop = box.scrollHeight;
+    }, 80);
   }
 }
 function updateAppHeight(){
@@ -4272,30 +4394,32 @@ function showMessage(m, index, scrollToBottom = true){
   }
 
   let content = "";
-  if(m.file && m.fileType==="image"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
-  } else if(m.file && m.fileType==="video"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
-  } else if(m.file && m.fileType==="audio"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls></audio>`;
-  } else if(m.file && (m.fileType==="doc" || m.fileType==="file")){
-    const mediaUrl = getMediaUrl(m.file);
-    const filename = mediaUrl.split("/").pop();
-    content = `
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">📄</div>
-        <div>
-          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
-        </div>
+  if (m.deleted) {
+  content = `<div class="msg-text" style="font-style:italic;opacity:.8;">${escapeHtml(m.text || "This message was deleted by Shravan")}</div>`;
+} else if (m.file && m.fileType === "image") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
+} else if (m.file && m.fileType === "video") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
+} else if (m.file && m.fileType === "audio") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<audio src="${mediaUrl}" controls></audio>`;
+} else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
+  const mediaUrl = getMediaUrl(m.file);
+  const filename = mediaUrl.split("/").pop();
+  content = `
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div style="font-size:22px;">📄</div>
+      <div>
+        <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+        <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
       </div>
-    `;
-  } else {
-    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
-  }
+    </div>
+  `;
+} else {
+  content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+}
 
   let replyHtml = "";
   if(m.replyTo){
@@ -4308,12 +4432,19 @@ function showMessage(m, index, scrollToBottom = true){
     `;
   }
 
-  div.innerHTML = `
-    ${replyHtml}
-    ${content}
-    <div class="time">${escapeHtml(getMessageTime(m))} ${ticks}</div>
-    <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
-  `;
+  const timeText = getMessageTime(m);
+
+div.innerHTML = `
+  ${replyHtml}
+  ${content}
+  <div class="time">${escapeHtml(timeText)}${ticks ? " " + ticks : ""}</div>
+  <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
+`;
+
+const duplicateTimes = div.querySelectorAll(".time");
+duplicateTimes.forEach((el, i) => {
+  if (i > 0) el.remove();
+});
 
   div.addEventListener("contextmenu",(e)=>{
     e.preventDefault();
@@ -4333,102 +4464,322 @@ function showMessage(m, index, scrollToBottom = true){
     forceScrollToLatest();
   }
 }
+function isMainAdmin(){
+  return localStorage.getItem("role") === "admin" || me === "shravan";
+}
+
+function closeMessageAdminActions(){
+  const old = document.querySelector(".message-admin-actions");
+  if(old) old.remove();
+
+  if(messageActionOutsideHandler){
+    document.removeEventListener("click", messageActionOutsideHandler, true);
+    document.removeEventListener("mousedown", messageActionOutsideHandler, true);
+    document.removeEventListener("touchend", messageActionOutsideHandler, true);
+    messageActionOutsideHandler = null;
+  }
+
+  activeMessageActionId = null;
+}
+
+function openMessageAdminActions(messageObj, anchorEl){
+  if(!isMainAdmin()) return;
+  if(!messageObj || !messageObj._id || !anchorEl) return;
+
+  const sameMenuOpen = activeMessageActionId === String(messageObj._id);
+  if(sameMenuOpen) return;
+
+  closeMessageAdminActions();
+  activeMessageActionId = String(messageObj._id);
+  messageActionOpenedAt = Date.now();
+
+  const menu = document.createElement("div");
+  menu.className = "message-admin-actions";
+
+  const canEdit = !!messageObj.text && !messageObj.file;
+
+  if(canEdit){
+    const editBtn = document.createElement("button");
+    editBtn.className = "edit-btn";
+    editBtn.type = "button";
+    editBtn.innerText = "✏️ Edit";
+    editBtn.onclick = function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      adminEditMessagePrompt(messageObj);
+    };
+    menu.appendChild(editBtn);
+  }
+
+  const delBtn = document.createElement("button");
+  delBtn.className = "delete-btn";
+  delBtn.type = "button";
+  delBtn.innerText = "🗑 Delete";
+  delBtn.onclick = function(e){
+    e.preventDefault();
+    e.stopPropagation();
+    adminDeleteMessageConfirm(messageObj);
+  };
+  menu.appendChild(delBtn);
+
+  menu.addEventListener("click", e => e.stopPropagation());
+  menu.addEventListener("mousedown", e => e.stopPropagation());
+  menu.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+  menu.addEventListener("touchend", e => e.stopPropagation(), { passive:true });
+
+  document.body.appendChild(menu);
+
+  const rect = anchorEl.getBoundingClientRect();
+  const gap = 10;
+
+  let left = messageObj.from === me
+    ? rect.right - menu.offsetWidth
+    : rect.left;
+
+  let top = rect.top + (rect.height / 2) - (menu.offsetHeight / 2);
+
+  if(left < gap) left = gap;
+  if(left + menu.offsetWidth > window.innerWidth - gap){
+    left = window.innerWidth - menu.offsetWidth - gap;
+  }
+
+  if(top < gap) top = gap;
+  if(top + menu.offsetHeight > window.innerHeight - gap){
+    top = window.innerHeight - menu.offsetHeight - gap;
+  }
+
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+
+  messageActionOutsideHandler = function(e){
+    if(Date.now() - messageActionOpenedAt < 300){
+      return;
+    }
+
+    if(menu && !menu.contains(e.target)){
+      closeMessageAdminActions();
+    }
+  };
+
+  setTimeout(() => {
+    document.addEventListener("click", messageActionOutsideHandler, true);
+    document.addEventListener("mousedown", messageActionOutsideHandler, true);
+    document.addEventListener("touchend", messageActionOutsideHandler, true);
+  }, 320);
+}
+async function adminEditMessagePrompt(messageObj){
+  closeMessageAdminActions();
+
+  if(!isMainAdmin()) return;
+  if(!messageObj || !messageObj._id) return;
+
+  const oldText = messageObj.text || "";
+  const newText = prompt("Edit message", oldText);
+
+  if(newText === null) return;
+
+  const trimmed = newText.trim();
+  if(!trimmed){
+    alert("Message cannot be empty");
+    return;
+  }
+
+  try{
+    const res = await fetch("/admin/message/edit", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        admin: me,
+        messageId: messageObj._id,
+        text: trimmed
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      alert((data && data.msg) || "Edit failed");
+      return;
+    }
+
+    if(isGroupChat){
+      loadGroupMessages(true);
+    }else if(currentChat){
+      loadPrivateMessages(true);
+    }
+  }catch(err){
+    console.log(err);
+    alert("Server error");
+  }
+}
+
+async function adminDeleteMessageConfirm(messageObj){
+  closeMessageAdminActions();
+
+  if(!isMainAdmin()) return;
+  if(!messageObj || !messageObj._id) return;
+
+  const ok = confirm("Delete this message?");
+  if(!ok) return;
+
+  try{
+    const res = await fetch("/admin/message/delete", {
+      method:"POST",
+      headers:{ "Content-Type":"application/json" },
+      body: JSON.stringify({
+        admin: me,
+        messageId: messageObj._id
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      alert((data && data.msg) || "Delete failed");
+      return;
+    }
+
+    if(isGroupChat){
+      loadGroupMessages(true);
+    }else if(currentChat){
+      loadPrivateMessages(true);
+    }
+  }catch(err){
+    console.log(err);
+    alert("Server error");
+  }
+}
 function attachSwipeReply(div, messageObj){
   let startX = 0;
-  let currentX = 0;
-  let isSwiping = false;
-  let replied = false;
+  let startY = 0;
+  let pointerDown = false;
+  let horizontalSwipeLocked = false;
+  let gestureFinished = false;
 
-  const threshold = 70; // swipe distance
+  const replyThreshold = 70;
+  const adminActionThreshold = 70;
+  const maxDrag = 95;
+  const axisLockDistance = 12;
 
   function resetSwipe(withAnimation = true){
     if(withAnimation){
       div.style.transition = "transform .18s ease";
-    } else {
+    }else{
       div.style.transition = "none";
     }
+
     div.style.transform = "translateX(0px)";
+
     setTimeout(() => {
       div.style.transition = "";
     }, 200);
   }
 
-  div.addEventListener("touchstart", (e) => {
+  function finishGesture(){
+    pointerDown = false;
+    horizontalSwipeLocked = false;
+    gestureFinished = false;
+    resetSwipe(true);
+    removeMouseListeners();
+  }
+
+  function startGesture(x, y){
+    startX = x;
+    startY = y;
+    pointerDown = true;
+    horizontalSwipeLocked = false;
+    gestureFinished = false;
+    div.style.transition = "none";
+  }
+
+  function handleMove(x, y){
+    if(!pointerDown || gestureFinished) return;
+
+    const diffX = x - startX;
+    const diffY = y - startY;
+
+    if(!horizontalSwipeLocked){
+      if(Math.abs(diffX) < axisLockDistance && Math.abs(diffY) < axisLockDistance){
+        return;
+      }
+
+      if(Math.abs(diffY) > Math.abs(diffX)){
+        finishGesture();
+        return;
+      }
+
+      horizontalSwipeLocked = true;
+    }
+
+    let dragX = diffX;
+    if(dragX > maxDrag) dragX = maxDrag;
+    if(dragX < -maxDrag) dragX = -maxDrag;
+
+    div.style.transform = `translateX(${dragX}px)`;
+
+    if(dragX >= replyThreshold){
+      gestureFinished = true;
+      if(navigator.vibrate) navigator.vibrate(25);
+      setReply(messageObj);
+      setTimeout(() => resetSwipe(true), 20);
+      return;
+    }
+
+    if(dragX <= -adminActionThreshold && isMainAdmin()){
+      gestureFinished = true;
+      if(navigator.vibrate) navigator.vibrate(25);
+      openMessageAdminActions(messageObj, div);
+      setTimeout(() => resetSwipe(true), 20);
+      return;
+    }
+  }
+
+  function onTouchStart(e){
+    const tag = (e.target.tagName || "").toLowerCase();
+    if(["button","a","input","textarea","audio","video"].includes(tag)) return;
     if(!e.touches || !e.touches.length) return;
-    startX = e.touches[0].clientX;
-    currentX = startX;
-    isSwiping = true;
-    replied = false;
-    div.style.transition = "none";
-  }, { passive: true });
+    startGesture(e.touches[0].clientX, e.touches[0].clientY);
+  }
 
-  div.addEventListener("touchmove", (e) => {
-    if(!isSwiping || !e.touches || !e.touches.length) return;
+  function onTouchMove(e){
+    if(!e.touches || !e.touches.length) return;
+    handleMove(e.touches[0].clientX, e.touches[0].clientY);
+  }
 
-    currentX = e.touches[0].clientX;
-    let diff = currentX - startX;
+  function onTouchEnd(){
+    if(pointerDown) finishGesture();
+  }
 
-    // only right swipe for reply
-    if(diff < 0) diff = 0;
+  function onMouseDown(e){
+    const tag = (e.target.tagName || "").toLowerCase();
+    if(["button","a","input","textarea","audio","video"].includes(tag)) return;
+    startGesture(e.clientX, e.clientY);
+    addMouseListeners();
+  }
 
-    // limit max drag
-    if(diff > 95) diff = 95;
+  function onMouseMove(e){
+    handleMove(e.clientX, e.clientY);
+  }
 
-    div.style.transform = `translateX(${diff}px)`;
+  function onMouseUp(){
+    if(pointerDown) finishGesture();
+  }
 
-    if(diff >= threshold && !replied){
-      replied = true;
-      if(navigator.vibrate) navigator.vibrate(30);
-      setReply(messageObj);
-    }
-  }, { passive: true });
+  function addMouseListeners(){
+    document.addEventListener("mousemove", onMouseMove);
+    document.addEventListener("mouseup", onMouseUp);
+  }
 
-  div.addEventListener("touchend", () => {
-    isSwiping = false;
-    resetSwipe(true);
-  });
+  function removeMouseListeners(){
+    document.removeEventListener("mousemove", onMouseMove);
+    document.removeEventListener("mouseup", onMouseUp);
+  }
 
-  div.addEventListener("touchcancel", () => {
-    isSwiping = false;
-    resetSwipe(true);
-  });
-
-  // optional desktop mouse swipe
-  let mouseDown = false;
-
-  div.addEventListener("mousedown", (e) => {
-    mouseDown = true;
-    startX = e.clientX;
-    currentX = startX;
-    isSwiping = true;
-    replied = false;
-    div.style.transition = "none";
-  });
-
-  window.addEventListener("mousemove", (e) => {
-    if(!mouseDown || !isSwiping) return;
-
-    currentX = e.clientX;
-    let diff = currentX - startX;
-
-    if(diff < 0) diff = 0;
-    if(diff > 95) diff = 95;
-
-    div.style.transform = `translateX(${diff}px)`;
-
-    if(diff >= threshold && !replied){
-      replied = true;
-      setReply(messageObj);
-    }
-  });
-
-  window.addEventListener("mouseup", () => {
-    if(mouseDown || isSwiping){
-      mouseDown = false;
-      isSwiping = false;
-      resetSwipe(true);
-    }
-  });
+  div.addEventListener("touchstart", onTouchStart, { passive:true });
+  div.addEventListener("touchmove", onTouchMove, { passive:true });
+  div.addEventListener("touchend", onTouchEnd);
+  div.addEventListener("touchcancel", onTouchEnd);
+  div.addEventListener("mousedown", onMouseDown);
 }
 function showGroupMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
@@ -4458,41 +4809,47 @@ function showGroupMessage(m, index, scrollToBottom = true){
   }
 
   let content = "";
-  if(m.file && m.fileType === "image"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
-  } else if(m.file && m.fileType === "video"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
-  } else if(m.file && m.fileType === "audio"){
-    const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls></audio>`;
-  } else if(m.file && (m.fileType === "doc" || m.fileType === "file")){
-    const mediaUrl = getMediaUrl(m.file);
-    const filename = mediaUrl.split("/").pop();
-    content = `
-      <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">📄</div>
-        <div>
-          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
-        </div>
+  if (m.deleted) {
+  content = `<div class="msg-text" style="font-style:italic;opacity:.8;">${escapeHtml(m.text || "This message was deleted by Shravan")}</div>`;
+} else if (m.file && m.fileType === "image") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
+} else if (m.file && m.fileType === "video") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
+} else if (m.file && m.fileType === "audio") {
+  const mediaUrl = getMediaUrl(m.file);
+  content = `<audio src="${mediaUrl}" controls></audio>`;
+} else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
+  const mediaUrl = getMediaUrl(m.file);
+  const filename = mediaUrl.split("/").pop();
+  content = `
+    <div style="display:flex;gap:10px;align-items:center;">
+      <div style="font-size:22px;">📄</div>
+      <div>
+        <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+        <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
       </div>
-    `;
-  } else {
-    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
-  }
+    </div>
+  `;
+} else {
+  content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+}
+const timeText = getMessageTime(m);
 
-  let replyHtml = "";
-  if(m.replyTo){
-    const t = m.replyTo.text ? m.replyTo.text : (m.replyTo.fileType ? `Attachment: ${m.replyTo.fileType}` : "");
-    replyHtml = `
-      <div style="background:rgba(0,0,0,0.05);padding:8px;border-radius:10px;margin-bottom:6px;border-left:4px solid #25d366;">
-        <div style="font-weight:700;font-size:12px;">${escapeHtml(m.replyTo.from)}</div>
-        <div style="font-size:12px;color:#d5c5c5;word-break:break-word;">${escapeHtml(t)}</div>
-      </div>
-    `;
-  }
+div.innerHTML = `
+  ${senderName}
+  ${replyHtml}
+  ${content}
+  ${seenInfoHtml}
+  <div class="time">${escapeHtml(timeText)}</div>
+  <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
+`;
+
+const duplicateTimes = div.querySelectorAll(".time");
+duplicateTimes.forEach((el, i) => {
+  if (i > 0) el.remove();
+});
 
   let seenInfoHtml = "";
   if(m.from === me && Array.isArray(m.seenBy) && m.seenBy.length){
@@ -4506,6 +4863,9 @@ function showGroupMessage(m, index, scrollToBottom = true){
     ${seenInfoHtml}
     <div class="time">${escapeHtml(getMessageTime(m))}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
+    <div class="time">
+  ${escapeHtml(getMessageTime(m))} ${m.edited ? "<span style='opacity:.8'>(edited)</span>" : ""} ${ticks}
+</div>
   `;
 
   div.addEventListener("contextmenu",(e)=>{
@@ -4697,47 +5057,76 @@ function showReactionMenu(messageObj, event){
   const menu = document.createElement("div");
   menu.className = "reaction-menu";
 
-
   if(messageObj.from === me){
     const infoBtn = document.createElement("span");
     infoBtn.innerText = "👁️";
     infoBtn.title = "Message Info";
-    infoBtn.onclick = ()=>{
+    infoBtn.onclick = (e) => {
+      e.stopPropagation();
       openSeenInfo(messageObj._id);
       menu.remove();
     };
     menu.appendChild(infoBtn);
   }
 
-  ["❤️","😂","🔥","👍","😮"].forEach(e=>{
+  ["❤️","😂","🔥","👍","😮"].forEach(emoji => {
     const span = document.createElement("span");
-    span.innerText = e;
-    span.onclick = ()=>{
-      socket.emit("reaction",{
+    span.innerText = emoji;
+    span.onclick = (e) => {
+      e.stopPropagation();
+      socket.emit("reaction", {
         from: me,
         to: currentChat,
         group: currentGroup,
         messageId: messageObj._id,
-        emoji: e
+        emoji
       });
       menu.remove();
     };
     menu.appendChild(span);
   });
 
+  menu.addEventListener("click", e => e.stopPropagation());
+  menu.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+
   document.body.appendChild(menu);
 
   const x = event?.clientX || window.innerWidth / 2;
   const y = event?.clientY || window.innerHeight / 2;
+  const gap = 10;
 
-  menu.style.left = Math.max(10, x - 80) + "px";
-  menu.style.top = Math.max(10, y - 50) + "px";
+  const menuRect = menu.getBoundingClientRect();
+
+  let left = x - (menuRect.width / 2);
+  let top = y - menuRect.height - 12;
+
+  if(left < gap) left = gap;
+  if(left + menuRect.width > window.innerWidth - gap){
+    left = window.innerWidth - menuRect.width - gap;
+  }
+
+  if(top < gap){
+    top = y + 12;
+  }
+
+  if(top + menuRect.height > window.innerHeight - gap){
+    top = window.innerHeight - menuRect.height - gap;
+  }
+
+  menu.style.left = left + "px";
+  menu.style.top = top + "px";
+
+  function closeMenu(e){
+    if(menu && !menu.contains(e.target)){
+      menu.remove();
+      document.removeEventListener("click", closeMenu, true);
+      document.removeEventListener("touchstart", closeMenu, true);
+    }
+  }
 
   setTimeout(() => {
-    document.addEventListener("click", function closeMenu(){
-      if(menu.parentNode) menu.remove();
-      document.removeEventListener("click", closeMenu);
-    }, { once:true });
+    document.addEventListener("click", closeMenu, true);
+    document.addEventListener("touchstart", closeMenu, true);
   }, 0);
 }
 
@@ -4752,7 +5141,11 @@ socket.on("reaction-update",(data)=>{
 const inputBox = document.getElementById("msg");
 inputBox.addEventListener("input",()=>{
   if(isGroupChat || !currentChat) return;
-
+  inputBox.addEventListener("focus", () => {
+  setTimeout(() => {
+    forceScrollToLatest();
+  }, 120);
+});
   socket.emit("typing",{from:me,to:currentChat});
   clearTimeout(typingTimer);
 
@@ -4782,7 +5175,47 @@ socket.on("stop-typing",user=>{
       : "";
   }
 });
+socket.on("message-updated", (updatedMsg) => {
+  const idx = currentHistory.findIndex(m => String(m._id) === String(updatedMsg._id));
+  if (idx !== -1) {
+    currentHistory[idx] = updatedMsg;
+  }
 
+  if (isGroupChat) {
+    const belongsToCurrentGroup = updatedMsg.group && String(updatedMsg.group) === String(currentGroup);
+    if (belongsToCurrentGroup) {
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+      renderedGroupMessageIds.clear();
+      currentHistory.forEach((m, i) => showGroupMessage(m, i, false));
+      forceScrollToLatest();
+    }
+  } else {
+    const belongsToCurrentChat =
+      (updatedMsg.from === me && updatedMsg.to === currentChat) ||
+      (updatedMsg.from === currentChat && updatedMsg.to === me);
+
+    if (belongsToCurrentChat) {
+      const box = document.getElementById("messages");
+      box.innerHTML = "";
+      currentHistory.forEach((m, i) => showMessage(m, i, false));
+      forceScrollToLatest();
+    }
+  }
+});
+socket.on("message-admin-updated", () => {
+  if (isGroupChat && currentGroup) {
+    loadGroupMessages(true);
+  } else if (currentChat) {
+    loadPrivateMessages(true);
+  }
+
+  loadGroups();
+  socket.emit("get-unread", me);
+});
+socket.on("admin-action-error", (data) => {
+  showToast(data?.msg || "Admin action failed", "error");
+});
 /* =========================
    VIEWER / GALLERY
 ========================= */
@@ -4801,7 +5234,44 @@ function getCurrentWallpaperKey(){
   if(currentGroup) return `group:${currentGroup}`;
   return null;
 }
+function openAdminEditMessage(messageObj){
+  if (!(localStorage.getItem("role") === "admin" && me === "shravan")) {
+    showToast("Only admin can edit", "error");
+    return;
+  }
 
+  const currentText = messageObj.deleted ? "" : (messageObj.text || "");
+  const newText = prompt("Edit message:", currentText);
+
+  if (newText === null) return;
+
+  const clean = String(newText).trim();
+  if (!clean) {
+    showToast("Message cannot be empty", "warning");
+    return;
+  }
+
+  socket.emit("edit-message", {
+    admin: me,
+    messageId: messageObj._id,
+    text: clean
+  });
+}
+
+function deleteMessageAsAdmin(messageObj){
+  if (!(localStorage.getItem("role") === "admin" && me === "shravan")) {
+    showToast("Only admin can delete", "error");
+    return;
+  }
+
+  const ok = confirm("Delete this message for everyone?");
+  if (!ok) return;
+
+  socket.emit("delete-message", {
+    admin: me,
+    messageId: messageObj._id
+  });
+}
 function getCurrentWallpaper(){
   const key = getCurrentWallpaperKey();
   if(!key) return "";
@@ -5157,7 +5627,7 @@ function renderGallery(tab){
       if(m.text){
         const links = extractLinks(m.text);
         links.forEach(l=>{
-          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: m.time || "" });
+          allLinks.push({ url: l.startsWith("www.") ? "https://" + l : l, raw: l, time: getMessageTime(m) || "" });
         });
       }
     });
@@ -5289,19 +5759,83 @@ micBtn.addEventListener("touchend", (e)=>{ e.preventDefault(); stopVoiceRecordin
 /* =========================
    STATUS
 ========================= */
-socket.on("status-update", loadStatuses);
+socket.on("status-update", async () => {
+  await loadStatuses();
+});
+
+function normalizeStatuses(list){
+  return (Array.isArray(list) ? list : []).filter(s =>
+    s &&
+    s.user &&
+    s.file &&
+    (s.fileType === "image" || s.fileType === "video")
+  );
+}
+
+async function fetchStatusesFresh(){
+  try{
+    const res = await fetch("/statuses", { cache: "no-store" });
+    const list = await res.json().catch(() => []);
+    allStatusesCache = normalizeStatuses(list);
+    return allStatusesCache;
+  }catch(err){
+    console.log("FETCH STATUSES ERROR:", err);
+    allStatusesCache = [];
+    return [];
+  }
+}
+
+function getStatusesForUser(username){
+  return normalizeStatuses(allStatusesCache)
+    .filter(s => s.user === username)
+    .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0));
+}
+
+function getStatusMediaUrl(status){
+  const stableVersion = status?._id || status?.updatedAt || status?.createdAt || "";
+  const base = getMediaUrl(status.file || "");
+  return stableVersion
+    ? `${base}?v=${encodeURIComponent(String(stableVersion))}`
+    : base;
+}
+
+function preloadStatusItem(status){
+  if(!status || !status.file) return;
+
+  const url = getStatusMediaUrl(status);
+
+  if(status.fileType === "image"){
+    const img = new Image();
+    img.src = url;
+    return;
+  }
+
+  const v = document.createElement("video");
+  v.preload = "metadata";
+  v.src = url;
+}
+
+function preloadNearbyStatuses(list, index){
+  [index, index + 1].forEach(i => {
+    if(list[i]) preloadStatusItem(list[i]);
+  });
+}
 
 async function loadStatuses(){
   try{
-    const res = await fetch("/statuses");
-    const list = await res.json();
+    const list = await fetchStatusesFresh();
 
     const latestByUser = {};
-    list.forEach(s => {
-      if(!latestByUser[s.user]) latestByUser[s.user] = s;
-    });
+    list
+      .sort((a, b) => new Date(b.createdAt || 0) - new Date(a.createdAt || 0))
+      .forEach(s => {
+        if(!latestByUser[s.user]){
+          latestByUser[s.user] = s;
+        }
+      });
 
     const strip = document.getElementById("statusStrip");
+    if(!strip) return;
     strip.innerHTML = "";
 
     if(latestByUser[me]){
@@ -5310,8 +5844,8 @@ async function loadStatuses(){
         <div class="status-bubble" onclick="openMyStatuses()" title="My status">
           ${
             mine.fileType === "video"
-              ? `<video src="${getMediaUrl(mine.file)}" muted playsinline></video>`
-              : `<img src="${getMediaUrl(mine.file)}">`
+              ? `<video src="${getStatusMediaUrl(mine)}" muted playsinline preload="metadata"></video>`
+              : `<img src="${getStatusMediaUrl(mine)}">`
           }
         </div>
       `;
@@ -5329,14 +5863,14 @@ async function loadStatuses(){
         <div class="status-bubble" onclick="openUserStatuses('${escapeHtml(s.user)}')" title="${escapeHtml(s.user)}">
           ${
             s.fileType === "video"
-              ? `<video src="${getMediaUrl(s.file)}" muted playsinline></video>`
-              : `<img src="${getMediaUrl(s.file)}">`
+              ? `<video src="${getStatusMediaUrl(s)}" muted playsinline preload="metadata"></video>`
+              : `<img src="${getStatusMediaUrl(s)}">`
           }
         </div>
       `;
     });
   }catch(err){
-    console.log(err);
+    console.log("LOAD STATUSES ERROR:", err);
   }
 }
 
@@ -5363,45 +5897,42 @@ async function uploadStatus(){
 
   try{
     const res = await fetch("/upload-status", { method:"POST", body: formData });
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
 
-    if(data.status !== "ok"){
-      document.getElementById("statusMsg").innerText = "Upload failed";
+    if(!data || data.status !== "ok"){
+      document.getElementById("statusMsg").innerText = (data && data.msg) || "Upload failed";
       return;
     }
 
     document.getElementById("statusMsg").innerText = "Uploaded ✅";
     closeStatusUploader();
-    loadStatuses();
-
+    await loadStatuses();
+    showToast("Status uploaded ✅", "success");
   }catch(err){
-    console.log(err);
+    console.log("UPLOAD STATUS ERROR:", err);
     document.getElementById("statusMsg").innerText = "Upload error";
   }
 }
 
 async function openUserStatuses(username){
-  try{
-    const res = await fetch("/statuses");
-    const list = await res.json();
-    const userStatuses = list.filter(s => s.user === username).slice().reverse();
-    if(userStatuses.length === 0) return;
-    openStatusViewer(userStatuses, 0, false);
-  }catch(err){ console.log(err); }
-}
+  let userStatuses = getStatusesForUser(username);
 
-async function openMyStatuses(){
-  try{
-    const res = await fetch("/statuses");
-    const list = await res.json();
-    const mine = list.filter(s => s.user === me).slice().reverse();
-    if(mine.length === 0) return;
-    openStatusViewer(mine, 0, true);
-  }catch(e){ console.log(e); }
+  if(!userStatuses.length){
+    await fetchStatusesFresh();
+    userStatuses = getStatusesForUser(username);
+  }
+
+  if(!userStatuses.length){
+    showToast("No statuses found", "warning");
+    return;
+  }
+
+  preloadNearbyStatuses(userStatuses, 0);
+  openStatusViewer(userStatuses, 0, false);
 }
 
 function openStatusViewer(list, startIndex = 0, editable = false){
-  statusList = list;
+  statusList = Array.isArray(list) ? list : [];
   currentStatusIndex = startIndex;
   statusEditable = editable;
 
@@ -5444,6 +5975,19 @@ function renderStatusMeta(status){
   }).join("");
 }
 
+function startStatusProgress(fillEl, seconds){
+  if(!fillEl) return;
+  fillEl.style.transition = "none";
+  fillEl.style.width = "0%";
+
+  requestAnimationFrame(() => {
+    requestAnimationFrame(() => {
+      fillEl.style.transition = `width ${seconds}s linear`;
+      fillEl.style.width = "100%";
+    });
+  });
+}
+
 function renderStatus(){
   if(currentStatusIndex < 0) currentStatusIndex = 0;
   if(currentStatusIndex >= statusList.length){
@@ -5462,14 +6006,13 @@ function renderStatus(){
 
   const content = document.getElementById("statusContent");
   const progress = document.getElementById("statusProgress");
-  const statusUrl = getMediaUrl(status.file);
+  const statusUrl = getStatusMediaUrl(status);
 
   content.innerHTML = "";
   progress.innerHTML = "";
-
   clearTimeout(statusTimer);
 
-  statusList.forEach((s,i)=>{
+  statusList.forEach((s, i) => {
     const bar = document.createElement("div");
     bar.className = "status-bar";
 
@@ -5485,65 +6028,96 @@ function renderStatus(){
   });
 
   const currentFill = document.querySelectorAll(".status-bar-fill")[currentStatusIndex];
+  preloadNearbyStatuses(statusList, currentStatusIndex);
+
+  const goNext = () => {
+    clearTimeout(statusTimer);
+    currentStatusIndex++;
+    renderStatus();
+  };
 
   if(status.fileType === "image"){
     const img = document.createElement("img");
     img.className = "status-media";
+
+    img.onload = () => {
+      startStatusProgress(currentFill, 5);
+      statusTimer = setTimeout(goNext, 5000);
+    };
+
+    img.onerror = () => {
+      console.log("STATUS IMAGE ERROR:", statusUrl);
+      showToast("Status image unavailable", "warning", 1200);
+      statusTimer = setTimeout(goNext, 800);
+    };
+
     img.src = statusUrl;
     content.appendChild(img);
-
-    setTimeout(()=>{
-      currentFill.style.transition = "width 5s linear";
-      currentFill.style.width = "100%";
-    }, 50);
-
-    statusTimer = setTimeout(()=>{
-      currentStatusIndex++;
-      renderStatus();
-    }, 5000);
-
     return;
   }
 
   const video = document.createElement("video");
   video.className = "status-media";
   video.src = statusUrl;
-  video.autoplay = true;
   video.playsInline = true;
   video.controls = false;
-  video.muted = false;
-  video.volume = 1;
+  video.preload = "auto";
+  video.setAttribute("playsinline", "true");
+  video.setAttribute("webkit-playsinline", "true");
 
   content.appendChild(video);
 
-  const playNext = () => {
-    clearTimeout(statusTimer);
-    currentStatusIndex++;
-    renderStatus();
-  };
+  let started = false;
 
-  video.addEventListener("loadedmetadata", () => {
+  const beginVideo = async () => {
+    if(started) return;
+    started = true;
+
     const duration = (!isNaN(video.duration) && video.duration > 0)
       ? video.duration
       : 5;
 
-    currentFill.style.transition = `width ${duration}s linear`;
-    currentFill.style.width = "100%";
-  });
+    startStatusProgress(currentFill, duration);
+    statusTimer = setTimeout(goNext, Math.ceil(duration * 1000) + 400);
 
-  video.addEventListener("ended", playNext);
+    try{
+      video.muted = false;
+      video.volume = 1;
+      await video.play();
+    }catch(err){
+      console.log("VIDEO PLAY ERROR:", err);
+      try{
+        video.muted = true;
+        await video.play();
+        setTimeout(() => {
+          try{
+            video.muted = false;
+            video.volume = 1;
+          }catch(e){}
+        }, 120);
+      }catch(e2){
+        console.log("VIDEO FALLBACK PLAY ERROR:", e2);
+      }
+    }
+  };
+
+  video.addEventListener("canplay", beginVideo, { once:true });
+
+  video.addEventListener("loadedmetadata", () => {
+    if(video.readyState >= 2){
+      beginVideo();
+    }
+  }, { once:true });
+
+  video.addEventListener("ended", goNext, { once:true });
 
   video.addEventListener("error", () => {
-    statusTimer = setTimeout(playNext, 3000);
-  });
+    console.log("STATUS VIDEO ERROR:", statusUrl);
+    showToast("Status video unavailable", "warning", 1200);
+    statusTimer = setTimeout(goNext, 800);
+  }, { once:true });
 
-  video.play().then(() => {
-    // autoplay success
-  }).catch(() => {
-    // fallback if autoplay blocked
-    video.muted = true;
-    video.play().catch(()=>{});
-  });
+  video.load();
 }
 
 function closeStatusViewer(){
@@ -5552,16 +6126,34 @@ function closeStatusViewer(){
 
   const content = document.getElementById("statusContent");
   if(content){
+    const v = content.querySelector("video");
+    if(v){
+      try{
+        v.pause();
+        v.removeAttribute("src");
+        v.load();
+      }catch(e){}
+    }
     content.innerHTML = "";
   }
 }
 
-function nextStatus(){ clearTimeout(statusTimer); currentStatusIndex++; renderStatus(); }
-function prevStatus(){ clearTimeout(statusTimer); currentStatusIndex--; renderStatus(); }
+function nextStatus(){
+  clearTimeout(statusTimer);
+  currentStatusIndex++;
+  renderStatus();
+}
+
+function prevStatus(){
+  clearTimeout(statusTimer);
+  currentStatusIndex = Math.max(0, currentStatusIndex - 1);
+  renderStatus();
+}
 
 document.getElementById("statusViewer").addEventListener("touchstart",e=>{
   touchStartX = e.touches[0].clientX;
 });
+
 document.getElementById("statusViewer").addEventListener("touchend",e=>{
   let diff = e.changedTouches[0].clientX - touchStartX;
   if(diff > 80) prevStatus();
@@ -5579,7 +6171,9 @@ function reactStatus(emoji){
   }).catch(()=>{});
 
   document.getElementById("statusReply").placeholder = "Reaction sent " + emoji + " ✅";
-  setTimeout(()=>{ document.getElementById("statusReply").placeholder = "Reply to status..."; }, 1200);
+  setTimeout(()=>{
+    document.getElementById("statusReply").placeholder = "Reply to status...";
+  }, 1200);
 }
 
 function sendStatusReply(){
@@ -5598,7 +6192,9 @@ function sendStatusReply(){
   closeStatusViewer();
 
   openChat(status.user);
-  setTimeout(()=>{ socket.emit("load-history",{from:me,to:status.user}); },300);
+  setTimeout(()=>{
+    socket.emit("load-history",{from:me,to:status.user});
+  },300);
 }
 
 async function deleteCurrentStatus(){
@@ -5616,18 +6212,23 @@ async function deleteCurrentStatus(){
       headers:{ "Content-Type":"application/json" },
       body: JSON.stringify({ statusId: st._id, user: me })
     });
-    const data = await res.json();
 
-    if(!data.ok){
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
       alert("Delete failed");
       return;
     }
 
-    statusList.splice(currentStatusIndex,1);
-    if(currentStatusIndex >= statusList.length) currentStatusIndex = statusList.length - 1;
+    statusList.splice(currentStatusIndex, 1);
+    allStatusesCache = allStatusesCache.filter(s => String(s._id) !== String(st._id));
+
+    if(currentStatusIndex >= statusList.length){
+      currentStatusIndex = statusList.length - 1;
+    }
 
     closeStatusViewer();
-    loadStatuses();
+    await loadStatuses();
   }catch(e){
     console.log(e);
     alert("Delete error");
@@ -5903,7 +6504,9 @@ socket.on("incoming-call", ({ from, type })=>{
   callPeer = from;
   callMode = (type === "video") ? "video" : "voice";
   inCall = false;
-
+  if (document.hidden) {
+  showIncomingCallNotification(from, type === "video" ? "video" : "voice");
+}
   setCallerInfo(from);
 
   document.getElementById("incomingType").innerText =
@@ -5923,7 +6526,9 @@ socket.on("call-offer", ({ from, offer, type }) => {
   callPeer = from;
   callMode = (type === "video") ? "video" : "voice";
   pendingOffer = offer;
-
+  if (document.hidden) {
+  showIncomingCallNotification(from, type === "video" ? "video" : "voice");
+}
   setCallerInfo(from);
   document.getElementById("incomingType").innerText =
     callMode === "video" ? "Incoming video call" : "Incoming call";
@@ -6114,13 +6719,8 @@ function startCallTimer(){
     document.getElementById("callTimer").innerText = min + ":" + sec;
   },1000);
 }
-function updateMobileViewportHeight(){
-  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
-  document.documentElement.style.setProperty("--app-height", `${vh}px`);
-}
-
 function handleViewportResize(){
-  updateMobileViewportHeight();
+  updateAppHeight();
 
   const box = document.getElementById("messages");
   if(box && (currentChat || currentGroup)){
@@ -6130,7 +6730,18 @@ function handleViewportResize(){
   }
 }
 
-window.addEventListener("load", updateMobileViewportHeight);
+function handleViewportResize(){
+  updateAppHeight();
+
+  const box = document.getElementById("messages");
+  if(box && (currentChat || currentGroup)){
+    setTimeout(() => {
+      box.scrollTop = box.scrollHeight;
+    }, 80);
+  }
+}
+
+window.addEventListener("load", updateAppHeight);
 window.addEventListener("resize", handleViewportResize);
 window.addEventListener("orientationchange", () => {
   setTimeout(handleViewportResize, 150);
@@ -6138,7 +6749,7 @@ window.addEventListener("orientationchange", () => {
 
 if(window.visualViewport){
   window.visualViewport.addEventListener("resize", handleViewportResize);
-  window.visualViewport.addEventListener("scroll", handleViewportResize);
+  
 }
 function stopCallTimer(){
   clearInterval(callTimerInterval);
@@ -6324,14 +6935,17 @@ function setAdminTab(tab){
   currentAdminTab = tab;
 
   document.getElementById("adminTabPending").classList.remove("active");
+  document.getElementById("adminTabApproved").classList.remove("active");
   document.getElementById("adminTabBlocked").classList.remove("active");
   document.getElementById("adminTabMuted").classList.remove("active");
 
   if(tab === "pending") document.getElementById("adminTabPending").classList.add("active");
+  if(tab === "approved") document.getElementById("adminTabApproved").classList.add("active");
   if(tab === "blocked") document.getElementById("adminTabBlocked").classList.add("active");
   if(tab === "muted") document.getElementById("adminTabMuted").classList.add("active");
 
   if(tab === "pending") loadPendingUsers();
+  if(tab === "approved") loadApprovedUsers();
   if(tab === "blocked") loadBlockedUsersForAdmin();
   if(tab === "muted") loadMutedUsers();
 }
@@ -6372,7 +6986,43 @@ async function loadPendingUsers(){
     box.innerHTML = "<div style='color:red;'>Server error</div>";
   }
 }
+async function loadApprovedUsers(){
+  const box = document.getElementById("adminList");
+  if(!box) return;
+  box.innerHTML = "Loading...";
 
+  try{
+    const admin = localStorage.getItem("user");
+    const res = await fetch("/admin/approved-users?admin=" + encodeURIComponent(admin));
+    const data = await res.json();
+
+    if(!data.ok){
+      box.innerHTML = "<div style='color:red;'>Failed to load approved users</div>";
+      return;
+    }
+
+    if(!data.users.length){
+      box.innerHTML = "<div style='color:gray;'>No approved users</div>";
+      return;
+    }
+
+    box.innerHTML = data.users.map(u => `
+      <div style="background:white;padding:12px;border-radius:12px;margin-bottom:10px;display:flex;align-items:center;gap:10px;">
+        <img src="${u.dp || '/default.png'}" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+        <div style="flex:1;">
+          <div style="font-weight:700;">${escapeHtml(u.name)}</div>
+          <div style="font-size:12px;color:gray;">Approved user</div>
+        </div>
+        <button onclick="rejectUser('${escapeHtml(u.name)}')" style="border:none;background:#ff3b30;color:white;padding:8px 12px;border-radius:10px;cursor:pointer;">
+          Reject
+        </button>
+      </div>
+    `).join("");
+  }catch(err){
+    console.log(err);
+    box.innerHTML = "<div style='color:red;'>Server error</div>";
+  }
+}
 async function loadBlockedUsersForAdmin(){
   const admin = localStorage.getItem("user");
   const box = document.getElementById("adminList");
@@ -6456,13 +7106,18 @@ async function approveUser(username){
 }
 
 async function rejectUser(username){
+  const ok = confirm(`Reject ${username}?`);
+  if(!ok) return;
+
   const admin = localStorage.getItem("user");
   await fetch("/admin/reject-user", {
     method:"POST",
     headers:{ "Content-Type":"application/json" },
     body: JSON.stringify({ admin, username })
   });
-  loadPendingUsers();
+
+  if(currentAdminTab === "pending") loadPendingUsers();
+  if(currentAdminTab === "approved") loadApprovedUsers();
 }
 
 async function blockCurrentUser(){
@@ -6711,15 +7366,20 @@ async function loadBlockedUsersModal(){
   }
 }
 
-socket.on("approval-request-added", ()=>{
-  if(localStorage.getItem("user") === "shravan" && currentAdminTab === "pending"){
-    loadPendingUsers();
+socket.on("approval-request-added", (data)=>{
+  if(localStorage.getItem("user") === "shravan"){
+    showAdminApprovalRequestNotification(data);
+
+    if(currentAdminTab === "pending"){
+      loadPendingUsers();
+    }
   }
 });
 
 socket.on("approval-list-updated", ()=>{
   if(localStorage.getItem("user") === "shravan"){
     if(currentAdminTab === "pending") loadPendingUsers();
+    if(currentAdminTab === "approved") loadApprovedUsers();
     if(currentAdminTab === "blocked") loadBlockedUsersForAdmin();
     if(currentAdminTab === "muted") loadMutedUsers();
   }
@@ -6937,6 +7597,47 @@ window.addEventListener("resize", () => {
     }, 120);
   }
 });
+window.openUserStatuses = async function(username){
+  try{
+    const res = await fetch("/statuses");
+    const list = await res.json().catch(() => []);
+
+    const userStatuses = (list || [])
+      .filter(s => s.user === username)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    if(!userStatuses.length){
+      showToast("No statuses found", "warning");
+      return;
+    }
+
+    openStatusViewer(userStatuses, 0, false);
+  }catch(err){
+    console.log("OPEN USER STATUSES ERROR:", err);
+    showToast("Status load error", "error");
+  }
+};
+
+window.openMyStatuses = async function(){
+  try{
+    const res = await fetch("/statuses");
+    const list = await res.json().catch(() => []);
+
+    const mine = (list || [])
+      .filter(s => s.user === me)
+      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
+
+    if(!mine.length){
+      showToast("No statuses found", "warning");
+      return;
+    }
+
+    openStatusViewer(mine, 0, true);
+  }catch(err){
+    console.log("OPEN MY STATUSES ERROR:", err);
+    showToast("Status load error", "error");
+  }
+};
 </script>
 <div id="callModal" style="display:none;position:fixed;inset:0;z-index:20000;background:#000;color:#fff;align-items:center;justify-content:center;flex-direction:column;">
 
@@ -7028,6 +7729,7 @@ onclick="tryUnlockSounds()">
 
     <div class="gallery-tabs">
       <button id="adminTabPending" class="tab active" onclick="setAdminTab('pending')">Pending</button>
+      <button id="adminTabApproved" class="tab" onclick="setAdminTab('approved')">Approved</button>
       <button id="adminTabBlocked" class="tab" onclick="setAdminTab('blocked')">Blocked</button>
       <button id="adminTabMuted" class="tab" onclick="setAdminTab('muted')">Muted</button>
     </div>

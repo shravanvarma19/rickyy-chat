@@ -144,6 +144,13 @@ const messageSchema = new mongoose.Schema({
   reaction: String,
   seenBy: [String],
   deliveredTo: [String],
+
+  edited: { type: Boolean, default: false },
+  editedAt: { type: Date, default: null },
+  deleted: { type: Boolean, default: false },
+  deletedAt: { type: Date, default: null },
+  deletedBy: { type: String, default: null },
+
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -199,7 +206,8 @@ const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
     const safeExt = path.extname(file.originalname || "").toLowerCase();
-    cb(null, Date.now() + safeExt);
+    const unique = `${Date.now()}-${crypto.randomBytes(6).toString("hex")}${safeExt}`;
+    cb(null, unique);
   }
 });
 
@@ -252,7 +260,19 @@ async function getUsers() {
     approvalStatus: "approved"
   });
 }
+async function isRealAdmin(username) {
+  if (!username) return false;
 
+  const user = await User.findOne({ name: username }).select("name role approvalStatus blocked");
+  if (!user) return false;
+
+  return (
+    user.name === ADMIN_NAME &&
+    user.role === "admin" &&
+    user.approvalStatus === "approved" &&
+    !user.blocked
+  );
+}
 async function isUserOnline(username) {
   return !!(userSocketIds[username] && userSocketIds[username].size > 0);
 }
@@ -357,7 +377,30 @@ function sendUploadError(res, err) {
   }
   return res.status(400).json({ status: "error", msg: err.message || "Upload failed" });
 }
+function getAbsoluteUploadPath(filePath = "") {
+  const clean = String(filePath || "").replace(/^\/+uploads\/+/i, "").trim();
+  return path.join(uploadDir, clean);
+}
 
+function publicUploadFileExists(filePath = "") {
+  try {
+    const abs = getAbsoluteUploadPath(filePath);
+    return fs.existsSync(abs);
+  } catch (err) {
+    return false;
+  }
+}
+
+function removeUploadFileIfExists(filePath = "") {
+  try {
+    const abs = getAbsoluteUploadPath(filePath);
+    if (fs.existsSync(abs)) {
+      fs.unlinkSync(abs);
+    }
+  } catch (err) {
+    console.log("REMOVE FILE ERROR:", err.message);
+  }
+}
 function getClientIp(req) {
   return (
     req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
@@ -492,6 +535,28 @@ app.post("/upload-media", (req, res) => {
   });
 });
 
+app.post("/admin/cleanup-missing-status-files", async (req, res) => {
+  try {
+    const allStatuses = await Status.find({});
+    let removed = 0;
+
+    for (const st of allStatuses) {
+      const filename = String(st.file || "").replace("/uploads/", "").trim();
+      const abs = path.join(uploadDir, filename);
+
+      if (!filename || !fs.existsSync(abs)) {
+        await Status.deleteOne({ _id: st._id });
+        removed++;
+      }
+    }
+
+    io.emit("status-update");
+    res.json({ ok: true, removed });
+  } catch (err) {
+    console.log("CLEANUP STATUS ERROR:", err);
+    res.status(500).json({ ok: false, removed: 0 });
+  }
+});
 /* ---------- USER DP UPLOAD ---------- */
 app.post("/upload-dp", (req, res) => {
   upload.single("dp")(req, res, async err => {
@@ -533,17 +598,45 @@ app.post("/upload-status", (req, res) => {
 
     try {
       const username = normalizeUsername(req.body.username);
+
       if (!isValidUsername(username)) {
         return res.status(400).json({ status: "error", msg: "Invalid username" });
       }
 
-      if (!req.file) return res.status(400).json({ status: "no_file" });
+      if (!req.file) {
+        return res.status(400).json({ status: "no_file" });
+      }
+
+      const mime = String(req.file.mimetype || "").toLowerCase();
+      const ext = path.extname(req.file.filename || "").toLowerCase();
+
+      const imageExts = [".jpg", ".jpeg", ".png", ".webp", ".gif"];
+      const videoExts = [".mp4", ".webm", ".mov"];
+
+      const isImage = mime.startsWith("image/") || imageExts.includes(ext);
+      const isVideo = mime.startsWith("video/") || videoExts.includes(ext);
+
+      if (!isImage && !isVideo) {
+        removeUploadFileIfExists("/uploads/" + req.file.filename);
+        return res.status(400).json({
+          status: "error",
+          msg: "Only image or video allowed for status"
+        });
+      }
 
       const filePath = "/uploads/" + req.file.filename;
-      const ext = (req.file.originalname.split(".").pop() || "").toLowerCase();
-      const fileType = ["mp4", "webm", "mov"].includes(ext) ? "video" : "image";
+      const absoluteFilePath = getAbsoluteUploadPath(filePath);
 
-      await Status.create({
+      if (!fs.existsSync(absoluteFilePath)) {
+        return res.status(500).json({
+          status: "error",
+          msg: "Uploaded file not found on server"
+        });
+      }
+
+      const fileType = isVideo ? "video" : "image";
+
+      const newStatus = await Status.create({
         user: username,
         file: filePath,
         fileType,
@@ -551,11 +644,25 @@ app.post("/upload-status", (req, res) => {
         reactions: []
       });
 
+      console.log("STATUS STORED:", {
+        user: username,
+        filePath,
+        fileType,
+        exists: fs.existsSync(absoluteFilePath)
+      });
+
       io.emit("status-update");
-      res.json({ status: "ok", filePath, fileType });
+
+      return res.json({
+        status: "ok",
+        filePath,
+        fileType,
+        statusId: newStatus._id,
+        createdAt: newStatus.createdAt
+      });
     } catch (e) {
-      console.log(e);
-      res.status(500).json({ status: "error" });
+      console.log("UPLOAD STATUS ERROR:", e);
+      return res.status(500).json({ status: "error", msg: "Status upload failed" });
     }
   });
 });
@@ -563,14 +670,48 @@ app.post("/upload-status", (req, res) => {
 app.get("/statuses", async (req, res) => {
   try {
     const now = new Date();
-    const list = await Status.find({ expiresAt: { $gt: now } }).sort({ createdAt: -1 });
-    res.json(list);
+
+    const rawList = await Status.find({
+      expiresAt: { $gt: now }
+    }).sort({ createdAt: 1 });
+
+    const validList = [];
+    const invalidIds = [];
+
+    for (const st of rawList) {
+      if (publicUploadFileExists(st.file)) {
+        validList.push(st);
+      } else {
+        console.log("MISSING STATUS FILE AUTO CLEAN:", st.file, String(st._id));
+        invalidIds.push(st._id);
+      }
+    }
+
+    if (invalidIds.length) {
+      await Status.deleteMany({ _id: { $in: invalidIds } });
+    }
+
+    return res.json(validList);
+  } catch (err) {
+    console.log("GET STATUSES ERROR:", err);
+    return res.status(500).json([]);
+  }
+});
+app.get("/debug-statuses", async (req, res) => {
+  try {
+    const list = await Status.find({}).sort({ createdAt: -1 });
+    res.json(list.map(s => ({
+      id: s._id,
+      user: s.user,
+      file: s.file,
+      fileType: s.fileType,
+      createdAt: s.createdAt
+    })));
   } catch (err) {
     console.log(err);
     res.status(500).json([]);
   }
-});
-
+}); 
 app.post("/status-view", async (req, res) => {
   try {
     const { statusId, viewer } = req.body;
@@ -637,17 +778,24 @@ app.post("/status-reply", async (req, res) => {
 app.post("/status-delete", async (req, res) => {
   try {
     const { statusId, user } = req.body;
-    if (!statusId || !user) return res.status(400).json({ ok: false });
+
+    if (!statusId || !user) {
+      return res.status(400).json({ ok: false });
+    }
 
     const st = await Status.findById(statusId);
     if (!st) return res.json({ ok: false, msg: "not_found" });
     if (st.user !== user) return res.status(403).json({ ok: false, msg: "not_owner" });
 
+    const filePath = st.file;
+
     await Status.deleteOne({ _id: statusId });
+    removeUploadFileIfExists(filePath);
+
     io.emit("status-update");
     return res.json({ ok: true });
   } catch (err) {
-    console.log(err);
+    console.log("STATUS DELETE ERROR:", err);
     res.status(500).json({ ok: false });
   }
 });
@@ -1512,7 +1660,20 @@ app.get("/admin/muted-users", requireAdmin, async (req, res) => {
     res.status(500).json({ ok: false, users: [] });
   }
 });
+app.get("/admin/approved-users", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({
+      approvalStatus: "approved",
+      blocked: { $ne: true },
+      name: { $ne: ADMIN_NAME }
+    }).select("name dp approvalStatus blocked muted online lastSeen");
 
+    return res.json({ ok: true, users });
+  } catch (err) {
+    console.log("APPROVED USERS ERROR:", err);
+    return res.status(500).json({ ok: false, users: [] });
+  }
+});
 app.get("/admin/pending-users", requireAdmin, async (req, res) => {
   try {
     const users = await User.find({
@@ -1574,24 +1735,33 @@ app.post("/admin/approve-user", requireAdmin, async (req, res) => {
 app.post("/admin/reject-user", requireAdmin, async (req, res) => {
   try {
     const { username } = req.body;
+
+    if (!username || username === ADMIN_NAME) {
+      return res.status(400).json({ ok: false, msg: "Invalid user" });
+    }
+
     const cooldownUntil = new Date(Date.now() + 60 * 60 * 1000);
 
-    const user = await User.findOneAndUpdate(
-      { name: username },
-      {
-        approvalStatus: "rejected",
-        role: "user",
-        rejectCooldownUntil: cooldownUntil,
-        lastRejectedAt: new Date(),
-        online: false
-      },
-      { new: true }
-    );
+    const user = await User.findOne({ name: username });
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
 
-    if (!user) return res.json({ ok: false, msg: "User not found" });
+    user.approvalStatus = "rejected";
+    user.role = "user";
+    user.online = false;
+    user.authToken = null;
+    user.rejectCooldownUntil = cooldownUntil;
+    user.lastRejectedAt = new Date();
+
+    await user.save();
 
     io.to(username).emit("approval-rejected", {
-      msg: "Shravan aithee reject chesinduu. ooh 1 hour tharuvatha chudu."
+      msg: "Shravan rejected your access. 1 hour tharuvatha malli request pettu."
+    });
+
+    io.to(username).emit("force-logout", {
+      msg: "Shravan rejected your access"
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
@@ -1599,11 +1769,123 @@ app.post("/admin/reject-user", requireAdmin, async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.log(err);
+    console.log("REJECT USER ERROR:", err);
     res.status(500).json({ ok: false });
   }
 });
+app.post("/admin/message/edit", requireAdmin, async (req, res) => {
+  try {
+    const { messageId, text } = req.body;
 
+    if (!messageId) {
+      return res.status(400).json({ ok: false, msg: "Message ID missing" });
+    }
+
+    const cleanText = sanitizeText(text || "", 2000);
+    if (!cleanText) {
+      return res.status(400).json({ ok: false, msg: "Message text required" });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ ok: false, msg: "Message not found" });
+    }
+
+    if (msg.file) {
+      return res.status(400).json({ ok: false, msg: "Media messages cannot be edited" });
+    }
+
+    msg.text = cleanText;
+    await msg.save();
+
+    if (msg.group) {
+      io.to(roomNameForGroup(msg.group)).emit("message-admin-updated", {
+        type: "edit",
+        messageId: msg._id,
+        groupId: msg.group
+      });
+    } else {
+      io.to(msg.from).emit("message-admin-updated", {
+        type: "edit",
+        messageId: msg._id,
+        userA: msg.from,
+        userB: msg.to
+      });
+      io.to(msg.to).emit("message-admin-updated", {
+        type: "edit",
+        messageId: msg._id,
+        userA: msg.from,
+        userB: msg.to
+      });
+    }
+
+    return res.json({ ok: true, msg: "Message edited" });
+  } catch (err) {
+    console.log("ADMIN MESSAGE EDIT ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Edit failed" });
+  }
+});
+
+app.post("/admin/message/delete", requireAdmin, async (req, res) => {
+  try {
+    const { messageId } = req.body;
+
+    if (!messageId) {
+      return res.status(400).json({ ok: false, msg: "Message ID missing" });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ ok: false, msg: "Message not found" });
+    }
+
+    const filePath = msg.file ? path.join(__dirname, "public", msg.file.replace(/^\/+/, "")) : null;
+    const groupId = msg.group || null;
+    const fromUser = msg.from || null;
+    const toUser = msg.to || null;
+
+    await Message.deleteOne({ _id: messageId });
+
+    if (filePath && fs.existsSync(filePath)) {
+      try {
+        fs.unlinkSync(filePath);
+      } catch (e) {
+        console.log("DELETE MESSAGE FILE ERROR:", e);
+      }
+    }
+
+    if (groupId) {
+      io.to(roomNameForGroup(groupId)).emit("message-admin-updated", {
+        type: "delete",
+        messageId,
+        groupId
+      });
+    } else {
+      if (fromUser) {
+        io.to(fromUser).emit("message-admin-updated", {
+          type: "delete",
+          messageId,
+          userA: fromUser,
+          userB: toUser
+        });
+      }
+
+      if (toUser) {
+        io.to(toUser).emit("message-admin-updated", {
+          type: "delete",
+          messageId,
+          userA: fromUser,
+          userB: toUser
+        });
+      }
+    }
+
+    return res.json({ ok: true, msg: "Message deleted" });
+  } catch (err) {
+    console.log("ADMIN MESSAGE DELETE ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Delete failed" });
+  }
+});
 app.post("/admin/block-user", async (req, res) => {
   try {
     const { admin, username } = req.body;
@@ -1691,7 +1973,6 @@ app.post("/admin/unmute-user", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
-
 /* ---------- TEST ---------- */
 app.get("/test", (req, res) => {
   res.send("SERVER OK");
@@ -1981,7 +2262,89 @@ io.on("connection", socket => {
       console.log("HEARTBEAT ERROR:", err);
     }
   });
+  socket.on("edit-message", async data => {
+  try {
+    const { admin, messageId, text } = data || {};
 
+    if (!(await isRealAdmin(admin))) {
+      socket.emit("admin-action-error", { msg: "Only admin can edit messages" });
+      return;
+    }
+
+    const cleanText = sanitizeText(text, 2000);
+    if (!cleanText) {
+      socket.emit("admin-action-error", { msg: "Message text empty ga undakudadhu" });
+      return;
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      socket.emit("admin-action-error", { msg: "Message not found" });
+      return;
+    }
+
+    msg.text = cleanText;
+    msg.file = null;
+    msg.fileType = null;
+    msg.edited = true;
+    msg.editedAt = new Date();
+    msg.deleted = false;
+    msg.deletedAt = null;
+    msg.deletedBy = null;
+
+    await msg.save();
+
+    if (msg.group) {
+      io.to(roomNameForGroup(msg.group)).emit("message-updated", msg);
+    } else {
+      io.to(msg.from).emit("message-updated", msg);
+      io.to(msg.to).emit("message-updated", msg);
+    }
+  } catch (err) {
+    console.log("EDIT MESSAGE ERROR:", err);
+    socket.emit("admin-action-error", { msg: "Edit failed" });
+  }
+});
+
+socket.on("delete-message", async data => {
+  try {
+    const { admin, messageId } = data || {};
+
+    if (!(await isRealAdmin(admin))) {
+      socket.emit("admin-action-error", { msg: "Only admin can delete messages" });
+      return;
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      socket.emit("admin-action-error", { msg: "Message not found" });
+      return;
+    }
+
+    msg.text = "This message was deleted by admin";
+    msg.file = null;
+    msg.fileType = null;
+    msg.replyTo = null;
+    msg.reaction = null;
+    msg.edited = false;
+    msg.editedAt = null;
+    msg.deleted = true;
+    msg.deletedAt = new Date();
+    msg.deletedBy = admin;
+
+    await msg.save();
+
+    if (msg.group) {
+      io.to(roomNameForGroup(msg.group)).emit("message-updated", msg);
+    } else {
+      io.to(msg.from).emit("message-updated", msg);
+      io.to(msg.to).emit("message-updated", msg);
+    }
+  } catch (err) {
+    console.log("DELETE MESSAGE ERROR:", err);
+    socket.emit("admin-action-error", { msg: "Delete failed" });
+  }
+});
   socket.on("join-group", groupId => {
     try {
       if (!groupId) return;
@@ -2244,7 +2607,14 @@ for (const member of offlineRecipients) {
       setCall(from, to, "ringing", callType);
       io.to(from).emit("call-ringing", { to, type: callType });
       io.to(to).emit("incoming-call", { from, type: callType });
-
+      await sendPushToUser(to, {
+  title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
+  body: `${from} is calling you`,
+  url: `/chat.html?user=${encodeURIComponent(from)}`,
+  tag: `incoming-call-${from}`,
+  icon: "/icons/icon-192.png",
+  badge: "/icons/icon-192.png"
+});
       setTimeout(async () => {
         try {
           if (callState[from] && callState[from].status === "ringing") {
