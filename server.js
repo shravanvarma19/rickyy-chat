@@ -2585,64 +2585,66 @@ for (const member of offlineRecipients) {
   });
 
   socket.on("call-user", async ({ to, from, type }) => {
-    try {
-      const callType = type === "video" ? "video" : "voice";
+  try {
+    const callType = type === "video" ? "video" : "voice";
 
-      if (isBusy(from)) {
-        socket.emit("call-busy", { to, reason: "you_busy" });
-        return;
-      }
-
-      const online = await isUserOnline(to);
-      if (!online) {
-        socket.emit("call-unavailable", { to, reason: "offline" });
-        return;
-      }
-
-      if (isBusy(to)) {
-        socket.emit("call-busy", { to, reason: "user_busy" });
-        return;
-      }
-
-      setCall(from, to, "ringing", callType);
-      io.to(from).emit("call-ringing", { to, type: callType });
-      io.to(to).emit("incoming-call", { from, type: callType });
-      await sendPushToUser(to, {
-  title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
-  body: `${from} is calling you`,
-  url: `/chat.html?user=${encodeURIComponent(from)}`,
-  tag: `incoming-call-${from}`,
-  icon: "/icons/icon-192.png",
-  badge: "/icons/icon-192.png"
-});
-      setTimeout(async () => {
-        try {
-          if (callState[from] && callState[from].status === "ringing") {
-            clearCall(from);
-
-            await Call.create({
-              from,
-              to,
-              type: callType,
-              status: "missed",
-              time: formatTime()
-            });
-
-            await pushCallMessage(
-              from,
-              to,
-              callType === "video" ? "🎥 Missed video call" : "📞 Missed voice call"
-            );
-          }
-        } catch (err) {
-          console.log(err);
-        }
-      }, 25000);
-    } catch (e) {
-      console.log("call-user error", e);
-      socket.emit("call-unavailable", { to, reason: "error" });
+    if (isBusy(from)) {
+      socket.emit("call-busy", { to, reason: "you_busy" });
+      return;
     }
-  });
+
+    const online = await isUserOnline(to);
+    if (!online) {
+      socket.emit("call-unavailable", { to, reason: "offline" });
+      return;
+    }
+
+    if (isBusy(to)) {
+      socket.emit("call-busy", { to, reason: "user_busy" });
+      return;
+    }
+
+    setCall(from, to, "ringing", callType);
+    io.to(from).emit("call-ringing", { to, type: callType });
+    io.to(to).emit("incoming-call", { from, type: callType });
+
+    await sendPushToUser(to, {
+      title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
+      body: `${from} is calling you`,
+      url: `/chat.html?user=${encodeURIComponent(from)}`,
+      tag: `incoming-call-${from}`,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png"
+    });
+
+    setTimeout(async () => {
+      try {
+        if (callState[from] && callState[from].status === "ringing") {
+          clearCall(from);
+
+          await Call.create({
+            from,
+            to,
+            type: callType,
+            status: "missed",
+            time: formatTime()
+          });
+
+          await pushCallMessage(
+            from,
+            to,
+            callType === "video" ? "🎥 Missed video call" : "📞 Missed voice call"
+          );
+        }
+      } catch (err) {
+        console.log(err);
+      }
+    }, 25000);
+  } catch (e) {
+    console.log("call-user error", e);
+    socket.emit("call-unavailable", { to, reason: "error" });
+  }
+});
 
   socket.on("call-offer", ({ to, from, offer, type }) => {
     if (!callState[from] || callState[from].peer !== to) return;

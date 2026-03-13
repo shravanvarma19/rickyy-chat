@@ -1505,20 +1505,25 @@ body.dark .history-loader{
 /* =========================
    MOBILE
 ========================= */
+/* =========================
+   MOBILE
+========================= */
 @media (max-width: 768px) {
+  :root{
+    --app-height: 100dvh;
+    --header-h: 64px;
+    --input-h: 64px;
+  }
+
   html,
   body{
     width:100%;
     height:100%;
-    margin: 0;
-    padding: 0;
+    margin:0;
+    padding:0;
     overflow:hidden;
   }
-  :root{
-    --app-height:100vh;
-    --header-h: 68px;
-    --input-h: 68px;
-  }
+
   body{
     min-height:100dvh;
     overflow:hidden;
@@ -1541,27 +1546,71 @@ body.dark .history-loader{
     width:100%;
     height:var(--app-height);
     z-index:20;
-    border-radius:0;
     border:none;
+    border-radius:0;
     margin:0;
+    min-width:0;
   }
 
   .sidebar-header{
-    padding:16px 14px;
+    padding:calc(14px + env(safe-area-inset-top)) 12px 12px 12px;
     min-height:64px;
     border-radius:0;
+    gap:8px;
   }
 
   .logo{
-    font-size:22px;
+    font-size:21px;
+    min-width:0;
+    white-space:nowrap;
+    overflow:hidden;
+    text-overflow:ellipsis;
+  }
+
+  .header-buttons{
+    gap:6px;
+    flex:0 0 auto;
+  }
+
+  .header-buttons button,
+  .header-buttons span,
+  #adminBtn{
+    width:38px;
+    height:38px;
+    min-width:38px;
+    min-height:38px;
+    border-radius:12px;
+    font-size:16px;
+  }
+
+  .status-panel{
+    padding:10px 10px 8px;
+  }
+
+  #statusStrip{
+    gap:10px;
+    margin-top:8px;
+    padding:4px 0 6px;
+  }
+
+  .status-bubble{
+    width:52px;
+    height:52px;
+    border-radius:16px;
+  }
+
+  .status-bubble::after{
+    border-radius:16px;
   }
 
   .search-box{
-    padding:10px 12px;
+    padding:10px;
   }
 
   .search-box input{
     font-size:16px;
+    padding:12px 14px;
+    border-radius:16px;
   }
 
   #users{
@@ -1575,6 +1624,7 @@ body.dark .history-loader{
   .user{
     gap:10px;
     padding:12px;
+    margin-bottom:8px;
     border-radius:18px;
   }
 
@@ -1589,64 +1639,76 @@ body.dark .history-loader{
     border-radius:14px;
   }
 
-  .status-panel{
-    padding:10px;
-  }
-
   .user-name{
-    font-size:16px;
+    font-size:15px;
   }
 
   .user-status{
     font-size:12px;
+    margin-top:3px;
+  }
+
+  .badge{
+    font-size:11px;
+    padding:4px 8px;
   }
 
   .chat{
-  position:relative;
-  width:100%;
-  height:var(--app-height);
-  min-height:var(--app-height);
-  margin:0;
-  border:none;
-  border-radius:0;
-  display:grid;
-  grid-template-rows:auto minmax(0, 1fr) auto;
-  overflow:hidden;
-  background:#111827;
-}
-
-.chat-header{
     position:relative;
-    z-index:1002;
-    min-height:calc(var(--header-h) + env(safe-area-inset-top));
-    padding:
-      calc(10px + env(safe-area-inset-top))
-      8px
-      8px
-      8px;
+    width:100%;
+    height:var(--app-height);
+    min-height:var(--app-height);
+    margin:0;
+    border:none;
     border-radius:0;
+    display:flex;
+    flex-direction:column;
+    overflow:hidden;
+    background:rgba(17,24,39,.98);
+  }
+
+  .chat-header{
+    position:sticky;
+    top:0;
+    z-index:1005;
+    flex:0 0 auto;
+    min-height:var(--header-h);
+    padding:calc(8px + env(safe-area-inset-top)) 8px 8px 8px;
     display:grid;
-    grid-template-columns:auto auto minmax(0,1fr) auto;
+    grid-template-columns:32px 40px minmax(0,1fr) auto;
     align-items:center;
     gap:8px;
-    overflow:hidden;
+    border-radius:0;
+    overflow:visible;
+  }
+
+  .back-btn{
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    width:32px;
+    height:32px;
+    margin:0;
+    padding:0;
+    font-size:20px;
+    flex:0 0 32px;
   }
 
   .chat-header img{
     width:40px;
     height:40px;
-    border-radius:12px;
     margin:0;
+    border-radius:12px;
     flex:0 0 40px;
   }
 
-   .chat-info{
+  .chat-info{
     min-width:0;
     overflow:hidden;
   }
 
   .chat-header .name{
-    font-size:16px;
+    font-size:15px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -1654,6 +1716,7 @@ body.dark .history-loader{
 
   .chat-header .typing{
     font-size:11px;
+    margin-top:3px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -1664,14 +1727,16 @@ body.dark .history-loader{
     align-items:center;
     justify-content:flex-end;
     gap:4px;
-    min-width:0;
-    max-width:40vw;
+    flex:0 0 auto;
+    min-width:max-content;
+    max-width:42vw;
     overflow-x:auto;
     overflow-y:hidden;
     scrollbar-width:none;
+    -webkit-overflow-scrolling:touch;
   }
 
-   .header-icons::-webkit-scrollbar{
+  .header-icons::-webkit-scrollbar{
     display:none;
   }
 
@@ -1685,18 +1750,23 @@ body.dark .history-loader{
     flex:0 0 34px;
   }
 
-  .back-btn{
-    display:inline-flex;
-    align-items:center;
-    justify-content:center;
-    width:32px;
-    height:32px;
-    margin:0;
-    font-size:20px;
-    flex:0 0 32px;
+  .no-chat-screen{
+    position:absolute;
+    top:calc(var(--header-h) + env(safe-area-inset-top));
+    left:10px;
+    right:10px;
+    bottom:10px;
+    padding:16px;
+    border-radius:18px;
+    font-size:16px;
   }
 
-.messages{
+  .no-chat-screen::before{
+    font-size:40px;
+  }
+
+  .messages{
+    flex:1 1 auto;
     min-height:0;
     overflow-y:auto;
     overflow-x:hidden;
@@ -1704,6 +1774,9 @@ body.dark .history-loader{
     margin:0;
     -webkit-overflow-scrolling:touch;
     scroll-behavior:smooth;
+    background-size:cover;
+    background-position:center;
+    background-repeat:no-repeat;
   }
 
   .message{
@@ -1714,64 +1787,59 @@ body.dark .history-loader{
     padding:10px 12px;
     margin:6px 0;
     font-size:14px;
+    line-height:1.4;
   }
+
   .me{
-    border-radius:20px 20px 7px 20px;
+    border-radius:18px 18px 7px 18px;
   }
 
   .other{
-    border-radius:20px 20px 20px 7px;
+    border-radius:18px 18px 18px 7px;
   }
 
   .me::before{
-    border-radius:20px 20px 7px 20px;
+    border-radius:18px 18px 7px 18px;
   }
 
   .other::before{
-    border-radius:20px 20px 20px 7px;
+    border-radius:18px 18px 18px 7px;
   }
-  .me .time{
-  color:rgba(255,255,255,.78);
-}
 
-.other .time{
-  color:#cbd5e1;
-}
+  .group-sender-name{
+    font-size:11px;
+    margin-bottom:4px;
+  }
+
   .time{
     font-size:11px;
+    margin-top:5px;
   }
 
   .msg-media{
     max-width:220px;
     width:100%;
     height:auto;
+    border-radius:14px;
   }
 
   .input-area{
-    position:relative;
-    z-index:1003;
+    position:sticky;
+    bottom:0;
+    z-index:1005;
+    flex:0 0 auto;
     display:grid;
     grid-template-columns:42px minmax(0,1fr) 42px auto;
     align-items:center;
     gap:6px;
     width:100%;
-    min-height:calc(var(--input-h) + env(safe-area-inset-bottom));
+    min-height:var(--input-h);
     padding:8px 8px calc(8px + env(safe-area-inset-bottom));
     box-sizing:border-box;
-    padding-bottom: calc(8px + env(safe-area-inset-bottom));
     border-radius:0;
     background:rgba(17,24,39,.98);
     border-top:1px solid rgba(255,255,255,.08);
     backdrop-filter:blur(10px);
-  }
-
-  .input-area input{
-    flex:1;
-    min-width:0;
-    height:44px;
-    padding:12px 14px;
-    font-size:16px;
-    border-radius:16px;
   }
 
   .input-area input#msg{
@@ -1794,7 +1862,7 @@ body.dark .history-loader{
     flex:0 0 42px;
   }
 
-  .input-area button.send-btn{
+  .input-area .send-btn{
     height:42px;
     min-width:64px;
     padding:0 12px;
@@ -1810,12 +1878,12 @@ body.dark .history-loader{
     right:8px !important;
     bottom:calc(100% + 6px) !important;
     margin:0 !important;
-    z-index:1004;
+    z-index:1006;
+    border-radius:12px !important;
   }
 
-
   .search-panel{
-    top:68px;
+    top:calc(var(--header-h) + env(safe-area-inset-top) + 4px);
     left:8px;
     right:8px;
     transform:none;
@@ -1824,8 +1892,14 @@ body.dark .history-loader{
     border-radius:14px;
   }
 
+  .search-panel-top{
+    gap:8px;
+    padding:10px;
+  }
+
   .search-panel-top input{
     font-size:16px;
+    padding:10px 12px;
   }
 
   .gallery-modal,
@@ -1836,20 +1910,35 @@ body.dark .history-loader{
 
   .gallery-box{
     width:100%;
-    height:100dvh;
+    height:var(--app-height);
     max-width:none;
     border-radius:0;
   }
 
+  .gallery-top{
+    padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
+  }
+
+  .gallery-tabs{
+    gap:8px;
+    padding:8px;
+  }
+
+  .gallery-tabs .tab{
+    padding:10px 8px;
+    font-size:14px;
+  }
+
   .gallery-grid{
     grid-template-columns:repeat(2, minmax(0, 1fr));
-    grid-auto-rows:150px;
+    grid-auto-rows:140px;
     gap:8px;
     padding:10px;
   }
 
   .g-item{
-    height:150px;
+    height:140px;
+    border-radius:10px;
   }
 
   #groupFab{
@@ -1861,16 +1950,18 @@ body.dark .history-loader{
     font-size:22px;
   }
 
-  #soundUnlock{
+  #soundUnlock,
+  #speakerFab{
     left:12px;
     bottom:16px;
     width:54px;
     height:54px;
     border-radius:16px;
+    font-size:20px;
   }
 
   #groupDrawer{
-    width:86%;
+    width:88%;
     max-width:320px;
     left:-100%;
     top:0;
@@ -1880,6 +1971,7 @@ body.dark .history-loader{
 
   .groupDrawerHeader{
     min-height:64px;
+    padding:calc(12px + env(safe-area-inset-top)) 14px 12px;
   }
 
   .group-row{
@@ -1889,6 +1981,7 @@ body.dark .history-loader{
   .group-row-left img{
     width:40px;
     height:40px;
+    border-radius:14px;
   }
 
   .wallpaper-grid{
@@ -1901,27 +1994,44 @@ body.dark .history-loader{
 
   .recording-pill{
     right:12px;
-    bottom:84px;
+    bottom:82px;
     font-size:13px;
     padding:9px 12px;
   }
 
-  .status-bubble{
-    width:52px;
-    height:52px;
+  .status-progress{
+    top:calc(8px + env(safe-area-inset-top));
+  }
+
+  .status-close{
+    top:calc(16px + env(safe-area-inset-top));
+    right:18px;
+  }
+
+  #statusContent{
+    inset:0;
+  }
+
+  .status-media{
+    width:100%;
+    height:100%;
+    object-fit:contain;
+  }
+
+  #statusReactions{
+    bottom:108px !important;
+    font-size:22px !important;
+    gap:12px !important;
+  }
+
+  #statusMetaBox{
+    left:12px !important;
+    right:12px !important;
+    bottom:145px !important;
   }
 
   #callModal{
-    padding:16px;
-  }
-
-  .no-chat-screen{
-    top:0;
-    left: 8px;
-    right:8px;
-    bottom:0;
-    padding:14px;
-    font-size:16px;
+    padding:0;
   }
 
   #centerPopup{
@@ -1930,6 +2040,43 @@ body.dark .history-loader{
     padding:14px 16px;
     font-size:14px;
     border-radius:16px;
+  }
+
+  .date-separator{
+    top:8px;
+    font-size:11px;
+    padding:5px 10px;
+  }
+
+  .message-admin-actions{
+    max-width:calc(100vw - 20px);
+  }
+
+  .reaction-menu{
+    max-width:calc(100vw - 20px);
+  }
+}
+
+@media (display-mode: standalone) and (max-width: 768px){
+  :root{
+    --app-height: 100dvh;
+  }
+
+  .sidebar-header{
+    padding-top:calc(14px + env(safe-area-inset-top));
+  }
+
+  .chat-header{
+    padding-top:calc(8px + env(safe-area-inset-top));
+  }
+
+  .gallery-top,
+  .groupDrawerHeader{
+    padding-top:calc(12px + env(safe-area-inset-top));
+  }
+
+  .input-area{
+    padding-bottom:calc(8px + env(safe-area-inset-bottom));
   }
 }
 </style>
@@ -6530,43 +6677,50 @@ async function startVideoCall(){
   }
 }
 
-socket.on("incoming-call", ({ from, type })=>{
+socket.on("incoming-call", async ({ from, type })=>{
   if(callPeer && callPeer !== from) return;
 
   callPeer = from;
   callMode = (type === "video") ? "video" : "voice";
   inCall = false;
-  if (document.hidden) {
-  showIncomingCallNotification(from, type === "video" ? "video" : "voice");
-}
+
+  if(document.hidden || !document.hasFocus()){
+    await showIncomingCallNotification(from, callMode);
+  }
+
   setCallerInfo(from);
 
-  document.getElementById("incomingType").innerText =
+  const incomingType = document.getElementById("incomingType");
+  if(incomingType) incomingType.innerText =
     callMode === "video" ? "Incoming video call" : "Incoming voice call";
 
   setCallUI({
     title: from,
     sub: "Ringing…",
     showAccept: true,
-    showInCallControls:false
+    showInCallControls: false
   });
 
   startRingtone();
 });
 
-socket.on("call-offer", ({ from, offer, type }) => {
+socket.on("call-offer", async ({ from, offer, type }) => {
   callPeer = from;
   callMode = (type === "video") ? "video" : "voice";
   pendingOffer = offer;
-  if (document.hidden) {
-  showIncomingCallNotification(from, type === "video" ? "video" : "voice");
-}
+
+  if(document.hidden || !document.hasFocus()){
+    await showIncomingCallNotification(from, callMode);
+  }
+
   setCallerInfo(from);
-  document.getElementById("incomingType").innerText =
-    callMode === "video" ? "Incoming video call" : "Incoming call";
+
+  const incomingType = document.getElementById("incomingType");
+  if(incomingType) incomingType.innerText =
+    callMode === "video" ? "Incoming video call" : "Incoming voice call";
 
   setCallUI({
-    title: callMode === "video" ? "Incoming video call" : "Incoming call",
+    title: callMode === "video" ? "Incoming video call" : "Incoming voice call",
     sub: "From: " + from,
     showAccept: true,
     showInCallControls: false
