@@ -1,7 +1,7 @@
 <!DOCTYPE html>
 <html>
 <head>
-<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover, interactive-widget=resize-content">
 <title>RickyY Chat</title>
 <link rel="icon" type="image" href="./default.png">
 <script src="/socket.io/socket.io.js"></script>
@@ -1530,8 +1530,7 @@ body.dark .history-loader{
   }
 
   .app{
-    display:flex;
-    flex-direction:column;
+    
     width:100%;
     height:var(--app-height);
     min-height:var(--app-height);
@@ -1661,17 +1660,18 @@ body.dark .history-loader{
     margin:0;
     border:none;
     border-radius:0;
-    display:flex;
-    flex-direction:column;
+    display:grid;
+    grid-template-rows: auto minmax(0,1fr) auto;
     overflow:hidden;
     background:rgba(17,24,39,.98);
   }
 
   .chat-header{
-    position:sticky;
-    top:0;
-    z-index:1005;
-    flex:0 0 auto;
+    position:relative;
+    top:auto;
+    left: auto;
+    right: auto;
+    z-index:1002;
     min-height:var(--header-h);
     padding:calc(8px + env(safe-area-inset-top)) 8px 8px 8px;
     display:grid;
@@ -1766,12 +1766,10 @@ body.dark .history-loader{
   }
 
   .messages{
-    flex:1 1 auto;
     min-height:0;
     overflow-y:auto;
     overflow-x:hidden;
-    padding:10px 8px 10px;
-    margin:0;
+    padding:10px 8px ;
     -webkit-overflow-scrolling:touch;
     scroll-behavior:smooth;
     background-size:cover;
@@ -1824,10 +1822,11 @@ body.dark .history-loader{
   }
 
   .input-area{
-    position:sticky;
-    bottom:0;
-    z-index:1005;
-    flex:0 0 auto;
+    position:relative;
+    bottom:auto;
+    left: auto;
+    right: auto;
+    z-index:1002;
     display:grid;
     grid-template-columns:42px minmax(0,1fr) 42px auto;
     align-items:center;
@@ -1878,7 +1877,7 @@ body.dark .history-loader{
     right:8px !important;
     bottom:calc(100% + 6px) !important;
     margin:0 !important;
-    z-index:1006;
+    z-index:1004;
     border-radius:12px !important;
   }
 
@@ -3628,22 +3627,23 @@ function handleViewportResize(){
   }
 }
 function updateAppHeight(){
-  const vh = window.innerHeight;
-  document.documentElement.style.setProperty("--app-height", `${vh}px`);
+  const vh = window.visualViewport ? window.visualViewport.height : window.innerHeight;
+  document.documentElement.style.setProperty("--app-height", `${Math.round(vh)}px`);
+}
+
+function handleViewportResize(){
+  updateAppHeight();
 }
 
 window.addEventListener("load", updateAppHeight);
-window.addEventListener("resize", () => {
-  updateAppHeight();
-
-  const box = document.getElementById("messages");
-  if(box && (currentChat || currentGroup)){
-    setTimeout(() => {
-      box.scrollTop = box.scrollHeight;
-    }, 120);
-  }
+window.addEventListener("resize", handleViewportResize);
+window.addEventListener("orientationchange", () => {
+  setTimeout(handleViewportResize, 150);
 });
 
+if(window.visualViewport){
+  window.visualViewport.addEventListener("resize", handleViewportResize);
+}
 window.addEventListener("orientationchange", () => {
   setTimeout(updateAppHeight, 200);
 });
