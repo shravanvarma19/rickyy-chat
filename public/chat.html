@@ -46,7 +46,73 @@ body{
   color:#f8fafc;
   text-shadow:0 6px 18px rgba(0,0,0,.18);
 }
+.approval-user-card{
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:12px;
+}
 
+.approval-user-top{
+  display:flex;
+  align-items:center;
+  gap:12px;
+}
+
+.approval-user-top img{
+  width:52px;
+  height:52px;
+  border-radius:16px;
+  object-fit:cover;
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.approval-user-meta{
+  flex:1;
+  min-width:0;
+}
+
+.approval-user-name{
+  font-size:16px;
+  font-weight:800;
+  color:#fff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.approval-user-sub{
+  font-size:13px;
+  color:#94a3b8;
+  margin-top:4px;
+  word-break:break-word;
+}
+
+.approval-user-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  flex-wrap:wrap;
+}
+
+.approval-accept-btn,
+.approval-reject-btn{
+  border:none;
+  color:#fff;
+  padding:10px 14px;
+  border-radius:12px;
+  cursor:pointer;
+  font-weight:800;
+}
+
+.approval-accept-btn{
+  background:linear-gradient(135deg,#22c55e,#10b981);
+}
+
+.approval-reject-btn{
+  background:linear-gradient(135deg,#ef4444,#dc2626);
+}
 .sidebar{
   width:30%;
   background:rgba(17,24,39,.78);
@@ -664,7 +730,11 @@ body{
   font-size:30px;
   cursor:pointer;
 }
-
+body.admin-modal-open #groupFab,
+body.admin-modal-open #speakerFab,
+body.admin-modal-open #soundUnlock{
+  display:none !important;
+}
 .gallery-modal{
   position:fixed;
   top:0;
@@ -706,29 +776,50 @@ body{
   font-size:22px;
 }
 
-.gallery-tabs{
-  display:flex;
-  gap:10px;
-  padding:10px;
-  background:#fff;
-  border-bottom:1px solid #eee;
+
+
+.gallery-tabs::before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.04);
+  pointer-events:none;
 }
 
-.gallery-tabs .tab{
-  flex:1;
-  padding:10px;
-  border:none;
-  border-radius:10px;
-  cursor:pointer;
-  background:#f2f2f2;
-  font-weight:600;
+
+.gallery-tabs .tab::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(135deg, rgba(255,255,255,.06), transparent 55%);
+  opacity:.8;
+  pointer-events:none;
 }
 
-.gallery-tabs .tab.active{
-  background:#075e54;
-  color:white;
+.gallery-tabs .tab:hover{
+  transform:translateY(-1px);
+  background:rgba(255,255,255,.10);
+  color:#ffffff;
+  border-color:rgba(52,211,153,.16);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.08),
+    0 12px 20px rgba(0,0,0,.18);
 }
 
+
+.gallery-tabs .tab.active::after{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  bottom:6px;
+  height:3px;
+  border-radius:999px;
+  background:rgba(255,255,255,.92);
+  box-shadow:0 0 12px rgba(255,255,255,.55);
+}
 .gallery-grid{
   padding:12px;
   overflow:auto;
@@ -1299,15 +1390,145 @@ body.dark .search-item:hover{
   background:#1f2937;
 }
 
+.gallery-tabs{
+  position:relative;
+  display:grid;
+  grid-template-columns:repeat(3, 1fr);
+  gap:10px;
+  padding:10px;
+  background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(34,211,238,.06));
+  border-bottom:1px solid rgba(255,255,255,.08);
+  backdrop-filter:blur(12px);
+  border-radius:0 0 18px 18px;
+  overflow:hidden;
+}
+
+.gallery-tabs::before{
+  content:"";
+  position:absolute;
+  inset:8px;
+  border-radius:18px;
+  background:rgba(255,255,255,.03);
+  border:1px solid rgba(255,255,255,.04);
+  pointer-events:none;
+}
+
+.gallery-tab-indicator{
+  position:absolute;
+  top:10px;
+  left:10px;
+  width:calc((100% - 40px) / 3);
+  height:calc(100% - 20px);
+  border-radius:16px;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  box-shadow:
+    0 14px 24px rgba(16,185,129,.24),
+    0 8px 18px rgba(6,182,212,.16),
+    inset 0 1px 0 rgba(255,255,255,.20);
+  transition:left .28s ease, transform .22s ease, width .22s ease;
+  z-index:0;
+}
+
+.gallery-tab-indicator::after{
+  content:"";
+  position:absolute;
+  left:18%;
+  right:18%;
+  bottom:6px;
+  height:3px;
+  border-radius:999px;
+  background:rgba(255,255,255,.95);
+  box-shadow:0 0 12px rgba(255,255,255,.55);
+}
+
+.gallery-tabs .tab{
+  position:relative;
+  z-index:1;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:8px;
+  min-height:50px;
+  padding:12px 14px;
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  background:transparent;
+  color:#dbeafe;
+  font-weight:800;
+  font-size:14px;
+  letter-spacing:.2px;
+  transition:.22s ease;
+  overflow:hidden;
+}
+
+.gallery-tabs .tab::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  border-radius:16px;
+  background:linear-gradient(135deg, rgba(255,255,255,.06), transparent 55%);
+  opacity:0;
+  transition:.22s ease;
+  pointer-events:none;
+}
+
+.gallery-tabs .tab:hover{
+  transform:translateY(-1px);
+  color:#ffffff;
+}
+
+.gallery-tabs .tab:hover::before{
+  opacity:1;
+}
+
+.gallery-tabs .tab.active{
+  color:#ffffff;
+  transform:translateY(-1px) scale(1.01);
+}
+
+.gallery-tabs .tab:not(.active){
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.05);
+  box-shadow:
+    inset 0 1px 0 rgba(255,255,255,.04),
+    0 8px 18px rgba(0,0,0,.10);
+}
+
+.gallery-tabs .tab-icon{
+  font-size:16px;
+  line-height:1;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+
+.gallery-tabs .tab-label{
+  line-height:1;
+  white-space:nowrap;
+}
+
 body.dark .gallery-tabs{
-  background:#111827;
-  border-bottom:1px solid #1f2937;
+  background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(34,211,238,.05));
+  border-bottom:1px solid rgba(255,255,255,.08);
 }
 
 body.dark .gallery-tabs .tab{
-  background:#1f2937;
+  color:#dbeafe;
+}
+
+body.dark .gallery-tabs .tab.active{
   color:#fff;
 }
+
+
+
+body.dark .gallery-tabs .tab:hover{
+  background:rgba(255,255,255,.09);
+  color:#fff;
+}
+
+
 
 body.dark .gallery-grid{
   background:#0f1720;
@@ -1530,7 +1751,6 @@ body.dark .history-loader{
   }
 
   .app{
-    
     width:100%;
     height:var(--app-height);
     min-height:var(--app-height);
@@ -1581,7 +1801,69 @@ body.dark .history-loader{
     border-radius:12px;
     font-size:16px;
   }
+  @media (max-width: 768px){
+  #adminControlsModal,
+  #adminModal,
+  #adminPanel,
+  #adminControlsPopup{
+    inset:0 !important;
+    width:100% !important;
+    height:100dvh !important;
+    max-width:none !important;
+    max-height:none !important;
+    border-radius:0 !important;
+    margin:0 !important;
+  }
 
+  .admin-controls-box,
+  .admin-controls-card,
+  .admin-panel-box{
+    width:100% !important;
+    height:100dvh !important;
+    max-width:none !important;
+    max-height:none !important;
+    border-radius:0 !important;
+    overflow:hidden !important;
+  }
+
+  .admin-controls-header,
+  .admin-panel-header{
+    padding:calc(14px + env(safe-area-inset-top)) 14px 12px !important;
+    min-height:68px !important;
+  }
+
+  .admin-controls-tabs,
+  .admin-tabs-wrap,
+  #adminTabs{
+    display:grid !important;
+    grid-template-columns:repeat(2, minmax(0, 1fr)) !important;
+    gap:10px !important;
+    padding:12px !important;
+    background:linear-gradient(135deg, rgba(16,185,129,.10), rgba(34,211,238,.06)) !important;
+    border-bottom:1px solid rgba(255,255,255,.08) !important;
+  }
+
+  .admin-controls-tabs button,
+  .admin-tabs-wrap button,
+  #adminTabs button{
+    width:100% !important;
+    min-width:0 !important;
+    min-height:56px !important;
+    padding:12px 10px !important;
+    border-radius:16px !important;
+    font-size:14px !important;
+    font-weight:800 !important;
+    white-space:nowrap !important;
+  }
+
+  .admin-controls-body,
+  .admin-panel-body,
+  #adminBody{
+    height:calc(100dvh - 140px) !important;
+    overflow:auto !important;
+    -webkit-overflow-scrolling:touch !important;
+  }
+}
   .status-panel{
     padding:10px 10px 8px;
   }
@@ -1661,23 +1943,20 @@ body.dark .history-loader{
     border:none;
     border-radius:0;
     display:grid;
-    grid-template-rows: auto minmax(0,1fr) auto;
+    grid-template-rows:auto minmax(0,1fr) auto;
     overflow:hidden;
     background:rgba(17,24,39,.98);
   }
 
   .chat-header{
     position:relative;
-    top:auto;
-    left: auto;
-    right: auto;
     z-index:1002;
     min-height:var(--header-h);
     padding:calc(8px + env(safe-area-inset-top)) 8px 8px 8px;
     display:grid;
-    grid-template-columns:32px 40px minmax(0,1fr) auto;
+    grid-template-columns:30px 38px minmax(0,1fr) auto;
     align-items:center;
-    gap:8px;
+    gap:6px;
     border-radius:0;
     overflow:visible;
   }
@@ -1686,20 +1965,22 @@ body.dark .history-loader{
     display:inline-flex;
     align-items:center;
     justify-content:center;
-    width:32px;
-    height:32px;
+    width:30px;
+    height:30px;
+    min-width:30px;
+    min-height:30px;
     margin:0;
     padding:0;
-    font-size:20px;
-    flex:0 0 32px;
+    font-size:18px;
+    flex:0 0 30px;
   }
 
   .chat-header img{
-    width:40px;
-    height:40px;
+    width:38px;
+    height:38px;
     margin:0;
     border-radius:12px;
-    flex:0 0 40px;
+    flex:0 0 38px;
   }
 
   .chat-info{
@@ -1708,7 +1989,7 @@ body.dark .history-loader{
   }
 
   .chat-header .name{
-    font-size:15px;
+    font-size:14px;
     white-space:nowrap;
     overflow:hidden;
     text-overflow:ellipsis;
@@ -1724,12 +2005,14 @@ body.dark .history-loader{
 
   .header-icons{
     display:flex;
+    flex-direction:row;
+    flex-wrap:nowrap;
     align-items:center;
     justify-content:flex-end;
     gap:4px;
     flex:0 0 auto;
     min-width:max-content;
-    max-width:42vw;
+    max-width:48vw;
     overflow-x:auto;
     overflow-y:hidden;
     scrollbar-width:none;
@@ -1741,13 +2024,35 @@ body.dark .history-loader{
   }
 
   .header-icons span{
-    width:34px;
-    height:34px;
-    min-width:34px;
-    min-height:34px;
+    width:32px;
+    height:32px;
+    min-width:32px;
+    min-height:32px;
     border-radius:10px;
-    font-size:15px;
-    flex:0 0 34px;
+    font-size:14px;
+    flex:0 0 32px;
+  }
+
+  #chatAdminMenu{
+    top:56px !important;
+    right:8px !important;
+    left:auto !important;
+    width:min(240px, calc(100vw - 16px)) !important;
+    min-width:unset !important;
+    max-width:calc(100vw - 16px) !important;
+    border-radius:14px !important;
+    overflow:hidden !important;
+  }
+
+  #chatAdminMenu button{
+    display:flex !important;
+    align-items:center !important;
+    gap:10px !important;
+    width:100% !important;
+    min-height:46px !important;
+    padding:12px 14px !important;
+    font-size:14px !important;
+    white-space:nowrap !important;
   }
 
   .no-chat-screen{
@@ -1769,7 +2074,7 @@ body.dark .history-loader{
     min-height:0;
     overflow-y:auto;
     overflow-x:hidden;
-    padding:10px 8px ;
+    padding:10px 8px;
     -webkit-overflow-scrolling:touch;
     scroll-behavior:smooth;
     background-size:cover;
@@ -1823,9 +2128,6 @@ body.dark .history-loader{
 
   .input-area{
     position:relative;
-    bottom:auto;
-    left: auto;
-    right: auto;
     z-index:1002;
     display:grid;
     grid-template-columns:42px minmax(0,1fr) 42px auto;
@@ -1919,13 +2221,35 @@ body.dark .history-loader{
   }
 
   .gallery-tabs{
-    gap:8px;
+    display:grid;
+    grid-template-columns:repeat(3, 1fr);
+    gap:6px;
     padding:8px;
+    border-radius:0;
+  }
+
+  .gallery-tab-indicator{
+    top:8px;
+    left:8px;
+    width:calc((100% - 28px) / 3);
+    height:calc(100% - 16px);
+    border-radius:12px;
   }
 
   .gallery-tabs .tab{
-    padding:10px 8px;
-    font-size:14px;
+    min-height:42px;
+    padding:8px 6px;
+    gap:4px;
+    border-radius:12px;
+    font-size:12px;
+  }
+
+  .gallery-tabs .tab-icon{
+    font-size:13px;
+  }
+
+  .gallery-tabs .tab-label{
+    font-size:12px;
   }
 
   .gallery-grid{
@@ -2202,11 +2526,24 @@ body.dark .history-loader{
       <span class="gallery-close" onclick="closeGallery()">✕</span>
     </div>
 
-    <div class="gallery-tabs">
-      <button id="tabMedia" class="tab active" onclick="setGalleryTab('media')">Media</button>
-      <button id="tabLinks" class="tab" onclick="setGalleryTab('links')">Links</button>
-      <button id="tabDocs" class="tab" onclick="setGalleryTab('docs')">Docs</button>
-    </div>
+    <div class="gallery-tabs" id="galleryTabs">
+  <div class="gallery-tab-indicator" id="galleryTabIndicator"></div>
+
+  <button id="tabMedia" class="tab active" onclick="setGalleryTab('media')">
+    <span class="tab-icon">🖼️</span>
+    <span class="tab-label">Media</span>
+  </button>
+
+  <button id="tabLinks" class="tab" onclick="setGalleryTab('links')">
+    <span class="tab-icon">🔗</span>
+    <span class="tab-label">Links</span>
+  </button>
+
+  <button id="tabDocs" class="tab" onclick="setGalleryTab('docs')">
+    <span class="tab-icon">📄</span>
+    <span class="tab-label">Docs</span>
+  </button>
+</div>
 
     <div class="gallery-grid" id="galleryGrid"></div>
   </div>
@@ -2452,7 +2789,135 @@ async function verifyLogin(){
     return true;
   }
 }
+function openAdminPanel(){
+  if(me !== "shravan"){
+    showToast("Only Shravan can open admin approvals", "warning", 2500);
+    return;
+  }
+  document.body.classList.add("admin-modal-open");
+  document.getElementById("adminApprovalModal").style.display = "flex";
+  loadPendingUsers();
+}
 
+function closeAdminApprovalModal(){
+  document.getElementById("adminApprovalModal").style.display = "none";
+  document.body.classList.remove("admin-modal-open");
+}
+function setFloatingButtonsVisible(show){
+  const groupFab = document.getElementById("groupFab");
+  const speakerFab = document.getElementById("speakerFab");
+  const soundUnlock = document.getElementById("soundUnlock");
+
+  if(groupFab) groupFab.style.display = show ? "flex" : "none";
+  if(speakerFab) speakerFab.style.display = show ? "flex" : "none";
+  if(soundUnlock) soundUnlock.style.display = show ? "flex" : "none";
+}
+async function loadPendingUsers(){
+  const list = document.getElementById("adminPendingUsersList");
+  if(!list) return;
+
+  list.innerHTML = `<div style="padding:14px;color:gray;">Loading pending requests...</div>`;
+
+  try{
+    const res = await fetch("/admin/pending-users?admin=" + encodeURIComponent(me));
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      list.innerHTML = `<div style="padding:14px;color:#fca5a5;">Failed to load pending users</div>`;
+      return;
+    }
+
+    const users = Array.isArray(data.users) ? data.users : [];
+
+    if(!users.length){
+      list.innerHTML = `<div style="padding:14px;color:gray;">No pending requests right now.</div>`;
+      return;
+    }
+
+    list.innerHTML = users.map(user => `
+      <div class="approval-user-card">
+        <div class="approval-user-top">
+          <img src="${user.dp || "/default.png"}" onerror="this.src='/default.png'">
+          <div class="approval-user-meta">
+            <div class="approval-user-name">${escapeHtml(user.name || "Unknown")}</div>
+            <div class="approval-user-sub">
+              ${(user.contact && String(user.contact).trim()) ? "Contact: " + escapeHtml(user.contact) + "<br>" : ""}
+              Status: ${escapeHtml(user.approvalStatus || "pending")}
+            </div>
+          </div>
+        </div>
+
+        <div class="approval-user-actions">
+          <button class="approval-accept-btn" onclick="approvePendingUser('${encodeURIComponent(user.name || "")}')">Accept</button>
+          <button class="approval-reject-btn" onclick="rejectPendingUser('${encodeURIComponent(user.name || "")}')">Reject</button>
+        </div>
+      </div>
+    `).join("");
+  }catch(err){
+    console.log("LOAD PENDING USERS ERROR:", err);
+    list.innerHTML = `<div style="padding:14px;color:#fca5a5;">Server error while loading requests</div>`;
+  }
+}
+
+async function approvePendingUser(encodedUsername){
+  const username = decodeURIComponent(encodedUsername || "");
+  if(!username) return;
+
+  try{
+    const res = await fetch("/admin/approve-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        admin: me,
+        username
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(data && data.ok){
+      showToast(`${username} approved successfully`, "success", 2500);
+      loadPendingUsers();
+    }else{
+      showToast((data && data.msg) || "Approve failed", "error", 3000);
+    }
+  }catch(err){
+    console.log("APPROVE USER ERROR:", err);
+    showToast("Server error while approving user", "error", 3000);
+  }
+}
+
+async function rejectPendingUser(encodedUsername){
+  const username = decodeURIComponent(encodedUsername || "");
+  if(!username) return;
+
+  try{
+    const res = await fetch("/admin/reject-user", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json"
+      },
+      body: JSON.stringify({
+        admin: me,
+        username
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(data && data.ok){
+      showToast(`${username} rejected`, "warning", 2500);
+      loadPendingUsers();
+    }else{
+      showToast((data && data.msg) || "Reject failed", "error", 3000);
+    }
+  }catch(err){
+    console.log("REJECT USER ERROR:", err);
+    showToast("Server error while rejecting user", "error", 3000);
+  }
+}
 /* =========================
    HELPERS
 ========================= */
@@ -2616,6 +3081,30 @@ socket.on("approval-request-added", (data)=>{
       loadPendingUsers();
     }
   }
+});
+socket.on("approval-list-updated", () => {
+  if(localStorage.getItem("user") === "shravan"){
+    const modal = document.getElementById("adminApprovalModal");
+    if(modal && modal.style.display === "flex"){
+      loadPendingUsers();
+    }
+  }
+});
+
+socket.on("approval-approved", (data) => {
+  showToast(data?.msg || "Shravan accepted your request", "success", 3000);
+});
+
+socket.on("approval-rejected", (data) => {
+  showToast(data?.msg || "Shravan rejected your request", "warning", 3500);
+});
+
+socket.on("force-logout", (data) => {
+  localStorage.removeItem("user");
+  localStorage.removeItem("role");
+  localStorage.removeItem("authToken");
+  alert(data?.msg || "You have been logged out");
+  location.href = "/index.html";
 });
 function getStartOfDay(date){
   const d = new Date(date);
@@ -5690,7 +6179,24 @@ function setActiveTab(tab){
 function setGalleryTab(tab){
   currentGalleryTab = tab;
   setActiveTab(tab);
-  renderGallery(tab);
+  
+  window.addEventListener("load", moveGalleryTabIndicator);
+window.addEventListener("resize", moveGalleryTabIndicator);
+renderGallery(tab);
+  moveGalleryTabIndicator();
+}
+function moveGalleryTabIndicator() {
+  const indicator = document.getElementById("galleryTabIndicator");
+  const activeTab = document.querySelector(".gallery-tabs .tab.active");
+  const tabsWrap = document.getElementById("galleryTabs");
+
+  if (!indicator || !activeTab || !tabsWrap) return;
+
+  const wrapRect = tabsWrap.getBoundingClientRect();
+  const activeRect = activeTab.getBoundingClientRect();
+
+  indicator.style.left = (activeRect.left - wrapRect.left) + "px";
+  indicator.style.width = activeRect.width + "px";
 }
 function isSameDate(d1, d2){
   return d1.getDate() === d2.getDate() &&
@@ -7141,8 +7647,17 @@ function openAdminPanel(){
   document.getElementById("adminModal").style.display = "flex";
   currentAdminTab = "pending";
   setAdminTab("pending");
+  setFloatingButtonsVisible(false);
+  
 }
+function closeAdminApprovalModal(){
+  const modal = document.getElementById("adminApprovalModal") || document.getElementById("adminControlsModal");
+  if(modal){
+    modal.style.display = "none";
+  }
 
+  setFloatingButtonsVisible(true);
+}
 function closeAdminPanel(){
   document.getElementById("adminModal").style.display = "none";
 }
@@ -8139,6 +8654,24 @@ z-index:99999;
       <div style="text-align:left;background:#f8f8f8;padding:14px;border-radius:12px;">
         <div style="font-size:12px;color:gray;margin-bottom:6px;">Status</div>
         <div id="userProfileStatus" style="font-size:15px;color:#222;">-</div>
+      </div>
+    </div>
+  </div>
+</div>
+<div class="gallery-modal" id="adminApprovalModal">
+  <div class="gallery-box" style="max-width:640px;height:auto;max-height:88vh;">
+    <div class="gallery-top">
+      <span>Admin Approval Requests</span>
+      <span class="gallery-close" onclick="closeAdminApprovalModal()">✕</span>
+    </div>
+
+    <div style="padding:16px;overflow:auto;">
+      <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
+        <button class="small-btn" type="button" onclick="loadPendingUsers()">Refresh</button>
+      </div>
+
+      <div id="adminPendingUsersList">
+        <div style="padding:14px;color:gray;">Loading pending requests...</div>
       </div>
     </div>
   </div>

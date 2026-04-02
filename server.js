@@ -86,7 +86,21 @@ function normalizeUsername(name) {
 function isValidPin(pin) {
   return /^\d{4}$/.test(String(pin || ""));
 }
+function isValidContact(contact) {
+  return /^\d{10}$/.test(String(contact || "").trim());
+}
 
+function isValidPassword(password) {
+  return typeof password === "string" && password.trim().length >= 4;
+}
+
+function generateOtp() {
+  return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+function generateCaptchaValue() {
+  return crypto.randomBytes(3).toString("hex").toUpperCase();
+}
 function isImageFile(file) {
   return file && file.mimetype && file.mimetype.startsWith("image/");
 }
@@ -94,7 +108,10 @@ function isImageFile(file) {
 /* ---------- SCHEMAS ---------- */
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
-  pin: String,
+  contact: { type: String, default: "", unique: true, sparse: true },
+  password: { type: String, default: "" },
+  pin: { type: String, default: "" },
+
   online: { type: Boolean, default: false },
   lastSeen: { type: Date, default: null },
   dp: { type: String, default: "/default.png" },
@@ -109,7 +126,19 @@ const userSchema = new mongoose.Schema({
   authToken: { type: String, default: null },
   pushSubscriptions: { type: [Object], default: [] },
   rejectCooldownUntil: { type: Date, default: null },
-lastRejectedAt: { type: Date, default: null }
+  lastRejectedAt: { type: Date, default: null },
+
+  otp: { type: String, default: "" },
+  otpExpiresAt: { type: Date, default: null },
+
+  notifications: {
+    type: [{
+      text: { type: String, default: "" },
+      read: { type: Boolean, default: false },
+      createdAt: { type: Date, default: Date.now }
+    }],
+    default: []
+  }
 });
 
 
@@ -276,7 +305,26 @@ async function isRealAdmin(username) {
 async function isUserOnline(username) {
   return !!(userSocketIds[username] && userSocketIds[username].size > 0);
 }
+async function setAdminPasswordOnce() {
+  try {
+    const hashedPassword = await bcrypt.hash("1234", 10); // ikkad new password pettu
 
+    const result = await User.updateOne(
+      { name: "shravan" },
+      {
+        $set: {
+          password: hashedPassword,
+          role: "admin",
+          approvalStatus: "approved"
+        }
+      }
+    );
+
+    console.log("Admin password updated:", result);
+  } catch (err) {
+    console.log("ADMIN PASSWORD UPDATE ERROR:", err);
+  }
+}
 async function calculateUnread(username) {
   const msgs = await Message.find({
     to: username,
@@ -912,7 +960,8 @@ app.get("/api/me", async (req, res) => {
       user: {
         name: user.name,
         dp: user.dp,
-        role: user.role || "user"
+        role: user.role || "user",
+        approvalStatus: user.approvalStatus || "approved"
       }
     });
   } catch (err) {
@@ -920,7 +969,160 @@ app.get("/api/me", async (req, res) => {
     res.status(500).json({ ok: false, msg: "Server error" });
   }
 });
+app.get("/api/captcha", (req, res) => {
+  try {
+    const captcha = generateCaptchaValue();
+    return res.json({ ok: true, captcha });
+  } catch (err) {
+    return res.status(500).json({ ok: false, msg: "Captcha error" });
+  }
+});
+app.post("/api/signup-request", async (req, res) => {
+  try {
+    const name = normalizeUsername(req.body.name);
+    const contact = String(req.body.contact || "").trim();
+    const password = String(req.body.password || "");
+    const confirmPassword = String(req.body.confirmPassword || "");
+    const acceptedTerms = !!req.body.acceptedTerms;
 
+    if (!isValidUsername(name)) {
+      return res.json({ ok: false, msg: "Enter valid name" });
+    }
+
+    if (!isValidContact(contact)) {
+      return res.json({ ok: false, msg: "Contact must be 10 digits" });
+    }
+
+    if (!isValidPassword(password)) {
+      return res.json({ ok: false, msg: "Password must be at least 4 characters" });
+    }
+
+    if (password !== confirmPassword) {
+      return res.json({ ok: false, msg: "Passwords do not match" });
+    }
+
+    if (!acceptedTerms) {
+      return res.json({ ok: false, msg: "Accept all terms to continue" });
+    }
+
+    const existingName = await User.findOne({ name });
+    if (existingName) {
+      return res.json({ ok: false, msg: "Username already exists" });
+    }
+
+    const existingContact = await User.findOne({ contact });
+    if (existingContact) {
+      return res.json({ ok: false, msg: "Contact already exists" });
+    }
+
+    const otp = generateOtp();
+
+    return res.json({
+      ok: true,
+      otp,
+      tempData: {
+        name,
+        contact,
+        password,
+        otp,
+        otpExpiresAt: Date.now() + (4 * 60 * 1000)
+      }
+    });
+  } catch (err) {
+    console.log("SIGNUP REQUEST ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.post("/api/verify-signup-otp", async (req, res) => {
+  try {
+    const name = normalizeUsername(req.body.name);
+    const contact = String(req.body.contact || "").trim();
+    const password = String(req.body.password || "");
+    const otp = String(req.body.otp || "").trim();
+    const originalOtp = String(req.body.originalOtp || "").trim();
+    const otpExpiresAt = Number(req.body.otpExpiresAt || 0);
+
+    if (!name || !contact || !password || !otp || !originalOtp || !otpExpiresAt) {
+      return res.json({ ok: false, msg: "Missing OTP data" });
+    }
+
+    if (Date.now() > otpExpiresAt) {
+      return res.json({ ok: false, msg: "OTP expired. Generate again." });
+    }
+
+    if (otp !== originalOtp) {
+      return res.json({ ok: false, msg: "Invalid OTP" });
+    }
+
+    const existingName = await User.findOne({ name });
+    if (existingName) {
+      return res.json({ ok: false, msg: "Username already exists" });
+    }
+
+    const existingContact = await User.findOne({ contact });
+    if (existingContact) {
+      return res.json({ ok: false, msg: "Contact already exists" });
+    }
+
+    const hashedPassword = await bcrypt.hash(password, 10);
+
+    const user = new User({
+      name,
+      contact,
+      password: hashedPassword,
+      pin: "",
+      online: false,
+      lastSeen: null,
+      dp: "/default.png",
+      role: "user",
+      approvalStatus: "pending",
+      notifications: [
+        { text: "Request sent to admin. Wait for approval from Shravan." }
+      ]
+    });
+
+    await user.save();
+
+    io.to(ADMIN_NAME).emit("approval-request-added", {
+      name: user.name,
+      dp: user.dp
+    });
+
+    io.to(ADMIN_NAME).emit("approval-list-updated");
+
+    return res.json({
+      ok: true,
+      msg: "Request sent to admin. Wait for approval from Shravan."
+    });
+  } catch (err) {
+    console.log("VERIFY SIGNUP OTP ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.get("/api/notifications", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "No token" });
+    }
+
+    const user = await User.findOne({ authToken: token }).select("name notifications approvalStatus role");
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Invalid token" });
+    }
+
+    return res.json({
+      ok: true,
+      notifications: Array.isArray(user.notifications) ? user.notifications : [],
+      approvalStatus: user.approvalStatus,
+      role: user.role || "user"
+    });
+  } catch (err) {
+    console.log("NOTIFICATIONS ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
 /* ---------- USERS ---------- */
 app.get("/users-data", async (req, res) => {
   try {
@@ -1679,7 +1881,7 @@ app.get("/admin/pending-users", requireAdmin, async (req, res) => {
     const users = await User.find({
       approvalStatus: "pending",
       name: { $ne: ADMIN_NAME }
-    }).select("name dp role approvalStatus");
+    }).select("name contact dp role approvalStatus");
 
     res.json({ ok: true, users });
   } catch (err) {
@@ -1704,22 +1906,26 @@ app.post("/admin/approve-user", requireAdmin, async (req, res) => {
   try {
     const { username } = req.body;
 
-    const user = await User.findOneAndUpdate(
-      { name: username },
-      {
-        approvalStatus: "approved",
-        role: "user",
-        blocked: false,
-        rejectCooldownUntil: null,
-        lastRejectedAt: null
-      },
-      { new: true }
-    );
-
+    const user = await User.findOne({ name: username });
     if (!user) return res.json({ ok: false, msg: "User not found" });
 
+    user.approvalStatus = "approved";
+    user.role = "user";
+    user.blocked = false;
+    user.rejectCooldownUntil = null;
+    user.lastRejectedAt = null;
+
+    user.notifications = Array.isArray(user.notifications) ? user.notifications : [];
+    user.notifications.push({
+      text: "Shravan accepted your request",
+      read: false,
+      createdAt: new Date()
+    });
+
+    await user.save();
+
     io.to(username).emit("approval-approved", {
-      msg: "shravan approved your request"
+      msg: "Shravan accepted your request"
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
@@ -1727,11 +1933,10 @@ app.post("/admin/approve-user", requireAdmin, async (req, res) => {
 
     res.json({ ok: true });
   } catch (err) {
-    console.log(err);
+    console.log("APPROVE USER ERROR:", err);
     res.status(500).json({ ok: false });
   }
 });
-
 app.post("/admin/reject-user", requireAdmin, async (req, res) => {
   try {
     const { username } = req.body;
@@ -1754,10 +1959,17 @@ app.post("/admin/reject-user", requireAdmin, async (req, res) => {
     user.rejectCooldownUntil = cooldownUntil;
     user.lastRejectedAt = new Date();
 
+    user.notifications = Array.isArray(user.notifications) ? user.notifications : [];
+    user.notifications.push({
+      text: "Shravan rejected your request",
+      read: false,
+      createdAt: new Date()
+    });
+
     await user.save();
 
     io.to(username).emit("approval-rejected", {
-      msg: "Shravan rejected your access. 1 hour tharuvatha malli request pettu."
+      msg: "Shravan rejected your request. 1 hour tharuvatha malli request pettu."
     });
 
     io.to(username).emit("force-logout", {
@@ -1986,84 +2198,38 @@ app.get("/api-check", (req, res) => {
 app.post("/api/login", async (req, res) => {
   try {
     const rawName = normalizeUsername(req.body.name);
-    const pin = String(req.body.pin || "");
+    const password = String(req.body.password || "");
+    const captchaInput = String(req.body.captchaInput || "").trim().toUpperCase();
+    const captchaValue = String(req.body.captchaValue || "").trim().toUpperCase();
 
-    if (!isValidUsername(rawName) || !isValidPin(pin)) {
-      return res.json({ ok: false, msg: "Enter valid username and 4 digit PIN" });
+    if (!isValidUsername(rawName) || !password || !captchaInput || !captchaValue) {
+      return res.json({ ok: false, msg: "Enter username, password and captcha" });
     }
 
-    let user = await User.findOne({ name: rawName });
+    if (captchaInput !== captchaValue) {
+      return res.json({ ok: false, msg: "Captcha does not match" });
+    }
+
+    const user = await User.findOne({ name: rawName });
 
     if (!user) {
-      const isAdmin = rawName === ADMIN_NAME;
-      const hashedPin = await bcrypt.hash(pin, 10);
-
-      user = new User({
-        name: rawName,
-        pin: hashedPin,
-        online: false,
-        lastSeen: null,
-        dp: "/default.png",
-        role: isAdmin ? "admin" : "user",
-        approvalStatus: isAdmin ? "approved" : "pending",
-        loginAttempts: 0,
-        lockUntil: null,
-        authToken: null,
-        rejectCooldownUntil: null,
-        lastRejectedAt: null
-      });
-
-      await user.save();
-
-      if (!isAdmin) {
-        io.to(ADMIN_NAME).emit("approval-request-added", {
-          name: user.name,
-          dp: user.dp
-        });
-
-        io.to(ADMIN_NAME).emit("approval-list-updated");
-
-        return res.json({
-          ok: false,
-          pending: true,
-          msg: "Request sent to Shravan. Wait for approval."
-        });
-      }
-
-      const token = generateAuthToken();
-      user.authToken = token;
-      await user.save();
-
-      return res.json({
-        ok: true,
-        user: {
-          name: user.name,
-          dp: user.dp,
-          role: user.role
-        },
-        token
-      });
+      return res.json({ ok: false, msg: "User not found. Send request first." });
     }
 
     if (isLockedUser(user)) {
       return res.json({
         ok: false,
-        msg: `Chala sarluu wrong PIN attempts chesavu. ${minutesRemaining(user.lockUntil)} minutes.Tharuvatha try cheai`
+        msg: `Too many wrong attempts. Try again in ${minutesRemaining(user.lockUntil)} minute(s).`
       });
     }
 
-    let pinMatched = false;
+    let passwordMatched = false;
 
-    if (user.pin && user.pin.startsWith("$2")) {
-      pinMatched = await bcrypt.compare(pin, user.pin);
-    } else {
-      pinMatched = user.pin === pin;
-      if (pinMatched) {
-        user.pin = await bcrypt.hash(pin, 10);
-      }
+    if (user.password && user.password.startsWith("$2")) {
+      passwordMatched = await bcrypt.compare(password, user.password);
     }
 
-    if (!pinMatched) {
+    if (!passwordMatched) {
       user.loginAttempts = (user.loginAttempts || 0) + 1;
 
       if (user.loginAttempts >= 5) {
@@ -2073,14 +2239,14 @@ app.post("/api/login", async (req, res) => {
 
         return res.json({
           ok: false,
-          msg: "chala sarlu worng PIN kottinav. ooh 10 minutes aithee aguu."
+          msg: "Too many wrong password attempts. Wait 10 minutes."
         });
       }
 
       await user.save();
       return res.json({
         ok: false,
-        msg: `Wrong PIN. ${3 - user.loginAttempts} attempt(s) left.`
+        msg: "Wrong password"
       });
     }
 
@@ -2095,74 +2261,32 @@ app.post("/api/login", async (req, res) => {
       });
     }
 
-    if (user.name === ADMIN_NAME || user.role === "admin") {
-      if (user.role !== "admin" || user.approvalStatus !== "approved") {
-        user.role = "admin";
-        user.approvalStatus = "approved";
-      }
-
-      const token = generateAuthToken();
-      user.authToken = token;
-      await user.save();
-
-      return res.json({
-        ok: true,
-        user: {
-          name: user.name,
-          dp: user.dp,
-          role: user.role
-        },
-        token
-      });
-    }
-
     if (user.approvalStatus === "pending") {
       await user.save();
       return res.json({
         ok: false,
         pending: true,
-        msg: "Still waiting for Shravan's approval."
+        msg: "Your request is waiting for Shravan's approval."
       });
     }
 
     if (user.approvalStatus === "rejected") {
-      const now = new Date();
-
-      if (user.rejectCooldownUntil && new Date(user.rejectCooldownUntil) > now) {
-        const mins = Math.ceil(
-          (new Date(user.rejectCooldownUntil).getTime() - now.getTime()) / 60000
-        );
-
-        await user.save();
-        return res.json({
-          ok: false,
-          msg: `Shravan rejected your request. Try again after ${mins} minute(s).`
-        });
-      }
-
-      user.approvalStatus = "pending";
-      user.rejectCooldownUntil = null;
-      user.lastRejectedAt = null;
-      user.loginAttempts = 0;
-      user.lockUntil = null;
       await user.save();
-
-      io.to(ADMIN_NAME).emit("approval-request-added", {
-        name: user.name,
-        dp: user.dp
-      });
-
-      io.to(ADMIN_NAME).emit("approval-list-updated");
-
       return res.json({
         ok: false,
-        pending: true,
-        msg: "Request sent to Shravan's again. Wait for approval."
+        msg: "Your request was rejected by Shravan."
       });
+    }
+
+    if (user.name === ADMIN_NAME || user.role === "admin") {
+      user.role = "admin";
+      user.approvalStatus = "approved";
     }
 
     const token = generateAuthToken();
     user.authToken = token;
+    user.online = true;
+    user.lastSeen = new Date();
     await user.save();
 
     return res.json({
@@ -2170,7 +2294,8 @@ app.post("/api/login", async (req, res) => {
       user: {
         name: user.name,
         dp: user.dp,
-        role: user.role
+        role: user.role || "user",
+        approvalStatus: user.approvalStatus
       },
       token
     });
