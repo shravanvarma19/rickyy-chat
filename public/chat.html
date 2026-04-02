@@ -1295,9 +1295,7 @@ body:not(.dark) .date-separator{
     transform:translateY(0);
   }
 }
-/* =========================
-   THEME + WALLPAPER
-========================= */
+
 body.dark{
   background:#0f1720;
   color:hsl(0, 0%, 3%);
@@ -1613,9 +1611,7 @@ body:not(.dark) .date-separator{
   color:#0f172a;
   border:1px solid rgba(15,23,42,.08);
 }
-/* =========================
-   CENTER POPUP
-========================= */
+
 #centerPopupWrap{
   position:fixed;
   inset:0;
@@ -1723,12 +1719,7 @@ body.dark .history-loader{
   color:#fff;
 }
 
-/* =========================
-   MOBILE
-========================= */
-/* =========================
-   MOBILE
-========================= */
+ 
 @media (max-width: 768px) {
   :root{
     --app-height: 100dvh;
@@ -2745,9 +2736,7 @@ const pageParams = new URLSearchParams(window.location.search);
 const openUserFromUrl = pageParams.get("user");
 const openGroupFromUrl = pageParams.get("group");
 
-/* =========================
-   AUTH / SESSION
-========================= */
+ 
 async function verifyLogin(){
   const token = localStorage.getItem("authToken");
   const savedUser = localStorage.getItem("user");
@@ -2918,9 +2907,7 @@ async function rejectPendingUser(encodedUsername){
     showToast("Server error while rejecting user", "error", 3000);
   }
 }
-/* =========================
-   HELPERS
-========================= */
+ 
 function escapeHtml(str){
   return (str || "").replace(/[&<>"']/g, function(m){
     return ({
@@ -3386,9 +3373,7 @@ function downloadFile(url, filename = ""){
   a.remove();
 }
 
-/* =========================
-   NOTIFICATIONS / SERVICE WORKER
-========================= */
+ 
 async function registerServiceWorkerSafe(){
   if(!("serviceWorker" in navigator)) return null;
   try{
@@ -3513,9 +3498,7 @@ function showNotify(title, body, target = {}){
   };
 }
 
-/* =========================
-   SOUND
-========================= */
+ 
 async function tryUnlockSounds(){
   if(soundUnlocked) return true;
   const m = document.getElementById("msgSound");
@@ -3558,9 +3541,7 @@ function playMsgSound(){
   a.play().catch(()=>{});
 }
 
-/* =========================
-   GROUPS
-========================= */
+ 
 function toggleGroupDrawer(){
   const drawer = document.getElementById("groupDrawer");
   if(groupDrawerOpen){
@@ -4138,9 +4119,7 @@ if(window.visualViewport){
 window.addEventListener("orientationchange", () => {
   setTimeout(updateAppHeight, 200);
 });
-/* =========================
-   GROUP EDIT / MEMBERS
-========================= */
+ 
 function openEditGroupModal(){
   if(!currentGroupInfoData) return;
 
@@ -4432,9 +4411,7 @@ async function removeGroupAdmin(groupId, member){
   }
 }
 
-/* =========================
-   MESSAGE SEARCH
-========================= */
+ 
 function toggleMessageSearch(){
   if(!currentChat && !currentGroup){
     alert("Open a chat or group first");
@@ -4511,9 +4488,7 @@ function jumpToMessageResult(index, q){
   setTimeout(() => el.classList.remove("message-highlight"), 2500);
 }
 
-/* =========================
-   SOCKET INIT
-========================= */
+ 
 (async function initApp(){
   const ok = await verifyLogin();
   if(!ok) return;
@@ -4596,9 +4571,7 @@ socket.on("group-seen-updated", ({ groupId }) => {
   }
 });
 
-/* =========================
-   USERS
-========================= */
+ 
 function renderUsers(){
   const div = document.getElementById("users");
   div.innerHTML = "";
@@ -4788,9 +4761,7 @@ function goBack(){
   updateFloatingButtonsVisibility();
 }
 
-/* =========================
-   HISTORY / MSG
-========================= */
+ 
 socket.on("history", msgs=>{
   currentHistory = msgs || [];
   oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
@@ -5697,9 +5668,7 @@ forceScrollToLatest();
   }
 }
 
-/* =========================
-   REPLY / REACTIONS / TYPING
-========================= */
+ 
 function setReply(msg){
   replyDraft = {
     messageId: msg._id,
@@ -5886,9 +5855,7 @@ socket.on("message-admin-updated", () => {
 socket.on("admin-action-error", (data) => {
   showToast(data?.msg || "Admin action failed", "error");
 });
-/* =========================
-   VIEWER / GALLERY
-========================= */
+
 function openProfile(){ window.location.href = "/profile.html"; }
 function searchUsers(){ document.getElementById("userSearch").focus(); }
 function openMenu(){ openSettingsModal(); }
@@ -6354,9 +6321,7 @@ function renderGallery(tab){
   }
 }
 
-/* =========================
-   VOICE RECORD
-========================= */
+
 let mediaRecorder = null;
 let recChunks = [];
 let isRecording = false;
@@ -6443,9 +6408,7 @@ document.addEventListener("mouseup", stopVoiceRecording);
 micBtn.addEventListener("touchstart", (e)=>{ e.preventDefault(); startVoiceRecording(); }, { passive:false });
 micBtn.addEventListener("touchend", (e)=>{ e.preventDefault(); stopVoiceRecording(); }, { passive:false });
 
-/* =========================
-   STATUS
-========================= */
+
 socket.on("status-update", async () => {
   await loadStatuses();
 });
@@ -6922,9 +6885,7 @@ async function deleteCurrentStatus(){
   }
 }
 
-/* =========================
-   CALL SYSTEM
-========================= */
+
 let pc = null;
 let localStream = null;
 let callPeer = null;
@@ -7517,9 +7478,7 @@ async function switchCamera(){
   }
 }
 
-/* =========================
-   DP / PROFILE / LOGOUT
-========================= */
+
 function openDpPreview(src, name){
   const modal = document.getElementById("dpModal");
   document.getElementById("dpViewerImg").src = src;
@@ -7628,9 +7587,7 @@ if ("serviceWorker" in navigator) {
     .then(() => console.log("SW ready for push"))
     .catch(err => console.log("SW ready error:", err));
 }
-/* =========================
-   ADMIN
-========================= */
+
 const isAdmin = (localStorage.getItem("role") === "admin");
 
 window.addEventListener("load", ()=>{
@@ -8163,7 +8120,7 @@ if (groupInfoModalEl) {
   });
 }
 
-/* CALL BUTTON EVENTS */
+
 const voiceBtn = document.getElementById("voiceCallBtn");
 const videoBtn = document.getElementById("videoCallBtn");
 
@@ -8213,9 +8170,7 @@ if(videoBtn){
   });
 }
 
-/* =========================
-   TOAST / POPUP
-========================= */
+
 let centerPopupTimer = null;
 
 function showToast(message, type = "info", duration = 2200){
@@ -8270,9 +8225,7 @@ if(messagesBoxEl){
   });
 }
 
-/* =========================
-   MESSAGE INFO / SEEN INFO
-========================= */
+
 function closeSeenInfoModal(){
   document.getElementById("seenInfoModal").style.display = "none";
 }
@@ -8318,9 +8271,7 @@ async function openSeenInfo(messageId){
   }
 }
 
-/* =========================
-   MOBILE RESIZE FIX
-========================= */
+
 window.addEventListener("resize", () => {
   if(currentChat || currentGroup){
     setTimeout(() => {

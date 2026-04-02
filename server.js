@@ -12,11 +12,11 @@ const mongoose = require("mongoose");
 const crypto = require("crypto");
 const webpush = require("web-push");
 
-/* ---------- CONFIG ---------- */
+
 const ADMIN_NAME = "shravan";
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
-/* ---------- EXPRESS APP ---------- */
+
 const app = express();
 const server = http.createServer(app);
 
@@ -32,13 +32,13 @@ app.use(express.static("public"));
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 app.use(express.static(path.join(__dirname, "public")));
 
-/* ---------- ENSURE UPLOADS FOLDER ---------- */
+
 const uploadDir = path.join(__dirname, "public", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
 }
 
-/* ---------- MONGODB CONNECT ---------- */
+
 if (!process.env.MONGODB_URI) {
   console.log("MongoDB Error: MONGODB_URI is missing in .env file");
 } else {
@@ -105,7 +105,7 @@ function isImageFile(file) {
   return file && file.mimetype && file.mimetype.startsWith("image/");
 }
 
-/* ---------- SCHEMAS ---------- */
+
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
   contact: { type: String, default: "", unique: true, sparse: true },
@@ -209,7 +209,7 @@ const Message = mongoose.model("Message", messageSchema);
 const Call = mongoose.model("Call", callSchema);
 const Status = mongoose.model("Status", statusSchema);
 
-/* ---------- HOME ROUTE ---------- */
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -221,7 +221,7 @@ app.get("/debug-files", (req, res) => {
   });
 });
 
-/* ---------- SERVER + SOCKET ---------- */
+
 const io = new Server(server, {
   cors: {
     origin: true,
@@ -230,7 +230,7 @@ const io = new Server(server, {
   }
 });
 
-/* ---------- MULTER ---------- */
+
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
   filename: (req, file, cb) => {
@@ -282,12 +282,17 @@ const upload = multer({
   fileFilter
 });
 
-/* ---------- HELPERS ---------- */
+
 async function getUsers() {
   return await User.find({
     blocked: { $ne: true },
     approvalStatus: "approved"
   });
+}
+function isStrongPassword(password) {
+  const value = String(password || "").trim();
+
+  return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(value);
 }
 async function isRealAdmin(username) {
   if (!username) return false;
@@ -550,7 +555,7 @@ function isGroupOwner(group, username) {
   return group && group.admin === username;
 }
 
-/* ---------- MEDIA UPLOAD ---------- */
+
 app.post("/upload-media", (req, res) => {
   upload.single("file")(req, res, err => {
     if (err) {
@@ -605,7 +610,7 @@ app.post("/admin/cleanup-missing-status-files", async (req, res) => {
     res.status(500).json({ ok: false, removed: 0 });
   }
 });
-/* ---------- USER DP UPLOAD ---------- */
+
 app.post("/upload-dp", (req, res) => {
   upload.single("dp")(req, res, async err => {
     if (err) return sendUploadError(res, err);
@@ -639,7 +644,7 @@ app.post("/upload-dp", (req, res) => {
   });
 });
 
-/* ---------- STATUS ---------- */
+
 app.post("/upload-status", (req, res) => {
   upload.single("file")(req, res, async err => {
     if (err) return sendUploadError(res, err);
@@ -848,7 +853,7 @@ app.post("/status-delete", async (req, res) => {
   }
 });
 
-/* ---------- AUTH ROUTES ---------- */
+
 app.post("/api/logout", async (req, res) => {
   try {
     const { name } = req.body;
@@ -993,9 +998,12 @@ app.post("/api/signup-request", async (req, res) => {
       return res.json({ ok: false, msg: "Contact must be 10 digits" });
     }
 
-    if (!isValidPassword(password)) {
-      return res.json({ ok: false, msg: "Password must be at least 4 characters" });
-    }
+   if (!isStrongPassword(password)) {
+  return res.json({
+    ok: false,
+    msg: "Password must be at least 8 characters and include uppercase, lowercase, number and special character."
+  });
+}
 
     if (password !== confirmPassword) {
       return res.json({ ok: false, msg: "Passwords do not match" });
@@ -1123,7 +1131,7 @@ app.get("/api/notifications", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Server error" });
   }
 });
-/* ---------- USERS ---------- */
+
 app.get("/users-data", async (req, res) => {
   try {
     const allUsers = await User.find({
@@ -1214,7 +1222,7 @@ app.get("/profile/:username", async (req, res) => {
   }
 });
 
-/* ---------- GROUPS ---------- */
+
 app.post("/create-group", async (req, res) => {
   try {
     const { name, admin, members, description } = req.body;
@@ -1596,7 +1604,7 @@ app.post("/delete-group", async (req, res) => {
   }
 });
 
-/* ---------- FRONTEND COMPATIBILITY ROUTES ---------- */
+
 app.post("/group/add-members", async (req, res) => {
   try {
     const { groupId, admin, members } = req.body;
@@ -1642,7 +1650,7 @@ app.post("/group/remove-member", async (req, res) => {
   }
 });
 
-/* ---------- GROUP LAST MESSAGE PREVIEW ---------- */
+
 app.get("/groups-last-msg", async (req, res) => {
   try {
     const user = req.query.user;
@@ -1738,7 +1746,7 @@ app.post("/group/:id/regenerate-invite", async (req, res) => {
   }
 });
 
-/* ---------- MESSAGE SEARCH ---------- */
+
 app.get("/search-messages", async (req, res) => {
   try {
     const { type, user, peer, groupId, q } = req.query;
@@ -1838,7 +1846,7 @@ app.get("/messages/group", async (req, res) => {
   }
 });
 
-/* ---------- ADMIN ROUTES ---------- */
+
 app.get("/admin/blocked-users", requireAdmin, async (req, res) => {
   try {
     const users = await User.find({ blocked: true }).select("name dp blocked muted");
@@ -2185,7 +2193,7 @@ app.post("/admin/unmute-user", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
-/* ---------- TEST ---------- */
+
 app.get("/test", (req, res) => {
   res.send("SERVER OK");
 });
@@ -2194,7 +2202,7 @@ app.get("/api-check", (req, res) => {
   res.json({ ok: true, msg: "API working" });
 });
 
-/* ---------- AUTH ---------- */
+
 app.post("/api/login", async (req, res) => {
   try {
     const rawName = normalizeUsername(req.body.name);
@@ -2219,36 +2227,42 @@ app.post("/api/login", async (req, res) => {
     if (isLockedUser(user)) {
       return res.json({
         ok: false,
-        msg: `Too many wrong attempts. Try again in ${minutesRemaining(user.lockUntil)} minute(s).`
+        msg: `chala sarlu try chesavu so, Try again in ${minutesRemaining(user.lockUntil)} minute(s).`
       });
     }
 
     let passwordMatched = false;
 
-    if (user.password && user.password.startsWith("$2")) {
-      passwordMatched = await bcrypt.compare(password, user.password);
-    }
+if (!user.password || !String(user.password).startsWith("$2")) {
+  return res.json({
+    ok: false,
+    msg: "Password aithe match aithalee ee account. Please contact Shravan or create a new request."
+  });
+}
 
+passwordMatched = await bcrypt.compare(password, user.password);
     if (!passwordMatched) {
-      user.loginAttempts = (user.loginAttempts || 0) + 1;
+  user.loginAttempts = (user.loginAttempts || 0) + 1;
 
-      if (user.loginAttempts >= 5) {
-        user.lockUntil = new Date(Date.now() + 10 * 60 * 1000);
-        user.loginAttempts = 0;
-        await user.save();
+  if (user.loginAttempts >= 3) {
+    user.lockUntil = new Date(Date.now() + 24 * 60 * 1000);
+    user.loginAttempts = 0;
+    await user.save();
 
-        return res.json({
-          ok: false,
-          msg: "Too many wrong password attempts. Wait 10 minutes."
-        });
-      }
+    return res.json({
+      ok: false,
+      msg: "Enduku endukuuu koduthavu anni sarluu worng gaa😏. Try again after 24 minutes."
+    });
+  }
 
-      await user.save();
-      return res.json({
-        ok: false,
-        msg: "Wrong password"
-      });
-    }
+  const attemptsLeft = 3 - user.loginAttempts;
+
+  await user.save();
+  return res.json({
+    ok: false,
+    msg: `Wrong password. ${attemptsLeft} attempt(s) left.`
+  });
+}
 
     user.loginAttempts = 0;
     user.lockUntil = null;
@@ -2305,11 +2319,11 @@ app.post("/api/login", async (req, res) => {
   }
 });
 
-/* ---------- SOCKET USERS STORE ---------- */
+
 let sockets = {};
 let userSocketIds = {};
 
-/* ---------- CALL STATE ---------- */
+
 let callState = {};
 let pendingCallOffers = {};
 
@@ -2333,7 +2347,7 @@ function clearCall(user) {
   }
 }
 
-/* ---------- SOCKET ---------- */
+
 io.on("connection", socket => {
   socket.on("join", async username => {
     try {
@@ -2910,7 +2924,7 @@ for (const member of offlineRecipients) {
   });
 });
 
-/* ---------- START SERVER ---------- */
+
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, () => {
   console.log(`Server running on port ${PORT}`);
