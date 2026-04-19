@@ -3209,9 +3209,17 @@ function showNoChatUI(){
 
 function getMediaUrl(filePath) {
   if (!filePath) return "";
-  if (filePath.startsWith("http://") || filePath.startsWith("https://")) return filePath;
-  if (filePath.startsWith("/uploads/")) return filePath;
-  return "/uploads/" + filePath;
+
+  let value = String(filePath).trim();
+
+  value = value.replace(/^https?:\/\/localhost:5000/i, window.location.origin);
+  value = value.replace(/^https?:\/\/127\.0\.0\.1:5000/i, window.location.origin);
+
+  if (/^https?:\/\//i.test(value)) return value;
+  if (value.startsWith("/uploads/")) return value;
+  if (value.startsWith("uploads/")) return "/" + value;
+
+  return "/uploads/" + value.replace(/^\/+/, "");
 }
 
 function formatLastSeenSmart(dateString) {
@@ -5424,6 +5432,7 @@ function attachSwipeReply(div, messageObj){
 }
 function showGroupMessage(m, index, scrollToBottom = true){
   const box = document.getElementById("messages");
+  if(!box) return;
 
   if(shouldShowDateSeparator(currentHistory, index)){
     const label = formatChatDateLabel(m.createdAt);
@@ -5432,94 +5441,89 @@ function showGroupMessage(m, index, scrollToBottom = true){
     }
   }
 
-  if (m._id && renderedGroupMessageIds.has(m._id)) {
-    return;
-  }
-
-  if (m._id) {
-    renderedGroupMessageIds.add(m._id);
-  }
+  if (m._id && renderedGroupMessageIds.has(m._id)) return;
+  if (m._id) renderedGroupMessageIds.add(m._id);
 
   const div = document.createElement("div");
   div.className = "message " + (m.from === me ? "me" : "other");
   div.setAttribute("data-msg-index", index);
 
-  let senderName = "";
-  if(m.from !== me){
-    senderName = `<div class="group-sender-name">${escapeHtml(m.from)}</div>`;
+  const senderName = m.from !== me
+    ? `<div class="group-sender-name">${escapeHtml(m.from || "User")}</div>`
+    : "";
+
+  let replyHtml = "";
+  if(m.replyTo){
+    const replyText = m.replyTo.text
+      ? m.replyTo.text
+      : (m.replyTo.fileType ? `Attachment: ${m.replyTo.fileType}` : "Message");
+
+    replyHtml = `
+      <div style="background:rgba(0,0,0,0.05);padding:8px;border-radius:10px;margin-bottom:6px;border-left:4px solid #25d366;">
+        <div style="font-weight:700;font-size:12px;">${escapeHtml(m.replyTo.from || "User")}</div>
+        <div style="font-size:12px;color:#d5c5c5;word-break:break-word;">${escapeHtml(replyText)}</div>
+      </div>
+    `;
   }
 
   let content = "";
   if (m.deleted) {
-  content = `<div class="msg-text" style="font-style:italic;opacity:.8;">${escapeHtml(m.text || "This message was deleted by Shravan")}</div>`;
-} else if (m.file && m.fileType === "image") {
-  const mediaUrl = getMediaUrl(m.file);
-  content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
-} else if (m.file && m.fileType === "video") {
-  const mediaUrl = getMediaUrl(m.file);
-  content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
-} else if (m.file && m.fileType === "audio") {
-  const mediaUrl = getMediaUrl(m.file);
-  content = `<audio src="${mediaUrl}" controls></audio>`;
-} else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
-  const mediaUrl = getMediaUrl(m.file);
-  const filename = mediaUrl.split("/").pop();
-  content = `
-    <div style="display:flex;gap:10px;align-items:center;">
-      <div style="font-size:22px;">📄</div>
-      <div>
-        <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
-        <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
+    content = `<div class="msg-text" style="font-style:italic;opacity:.8;">${escapeHtml(m.text || "This message was deleted by Shravan")}</div>`;
+  } else if (m.file && m.fileType === "image") {
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<img class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','image')" />`;
+  } else if (m.file && m.fileType === "video") {
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
+  } else if (m.file && m.fileType === "audio") {
+    const mediaUrl = getMediaUrl(m.file);
+    content = `<audio src="${mediaUrl}" controls></audio>`;
+  } else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
+    const mediaUrl = getMediaUrl(m.file);
+    const filename = mediaUrl.split("/").pop();
+    content = `
+      <div style="display:flex;gap:10px;align-items:center;">
+        <div style="font-size:22px;">📄</div>
+        <div>
+          <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
+          <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
+        </div>
       </div>
-    </div>
-  `;
-} else {
-  content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
-}
-const timeText = getMessageTime(m);
-
-div.innerHTML = `
-  ${senderName}
-  ${replyHtml}
-  ${content}
-  ${seenInfoHtml}
-  <div class="time">${escapeHtml(timeText)}</div>
-  <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
-`;
-
-const duplicateTimes = div.querySelectorAll(".time");
-duplicateTimes.forEach((el, i) => {
-  if (i > 0) el.remove();
-});
+    `;
+  } else {
+    content = `<div class="msg-text" data-original-text="${escapeHtml(m.text || "")}">${escapeHtml(m.text || "")}</div>`;
+  }
 
   let seenInfoHtml = "";
-  if(m.from === me && Array.isArray(m.seenBy) && m.seenBy.length){
-    seenInfoHtml = `<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">Seen by ${m.seenBy.length}</div>`;
+  if (m.from === me && Array.isArray(m.seenBy) && m.seenBy.length) {
+    const seenCount = m.seenBy.filter(name => name && name !== me).length;
+    if (seenCount > 0) {
+      seenInfoHtml = `<div style="font-size:11px;color:#cbd5e1;margin-top:4px;">Seen by ${seenCount}</div>`;
+    }
   }
+
+  const timeText = getMessageTime(m);
+  const editedHtml = m.edited ? " <span style='opacity:.8'>(edited)</span>" : "";
 
   div.innerHTML = `
     ${senderName}
     ${replyHtml}
     ${content}
     ${seenInfoHtml}
-    <div class="time">${escapeHtml(getMessageTime(m))}</div>
+    <div class="time">${escapeHtml(timeText)}${editedHtml}</div>
     <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
-    <div class="time">
-  ${escapeHtml(getMessageTime(m))} ${m.edited ? "<span style='opacity:.8'>(edited)</span>" : ""} ${ticks}
-</div>
   `;
 
-  div.addEventListener("contextmenu",(e)=>{
+  div.addEventListener("contextmenu", (e) => {
     e.preventDefault();
     showReactionMenu(m, e);
   });
 
-  div.addEventListener("dblclick",(e)=>{
+  div.addEventListener("dblclick", (e) => {
     showReactionMenu(m, e);
   });
 
   attachSwipeReply(div, m);
-
   box.appendChild(div);
   bindMediaAutoScroll(div);
 
