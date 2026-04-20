@@ -11,7 +11,10 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 const webpush = require("web-push");
-
+const {
+  verifyRegistrationResponse,
+  verifyAuthenticationResponse,
+} = require("@simplewebauthn/server");
 
 const ADMIN_NAME = "shravan";
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
@@ -74,7 +77,14 @@ function formatTime(date = new Date()) {
 function generateAuthToken() {
   return crypto.randomBytes(32).toString("hex");
 }
+function getExpectedOrigin(req) {
+  const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+  return `${proto}://${req.get("host")}`;
+}
 
+function getExpectedRPID(req) {
+  return req.hostname;
+}
 function isValidUsername(name) {
   return typeof name === "string" && /^[a-zA-Z0-9_ ]{3,20}$/.test(name.trim());
 }
@@ -115,6 +125,7 @@ const userSchema = new mongoose.Schema({
   online: { type: Boolean, default: false },
   lastSeen: { type: Date, default: null },
   dp: { type: String, default: "/default.png" },
+  coverImage: { type: String, default: "" },
   role: { type: String, default: "user" },
   approvalStatus: { type: String, default: "pending" },
   blocked: { type: Boolean, default: false },
@@ -130,6 +141,19 @@ const userSchema = new mongoose.Schema({
 
   otp: { type: String, default: "" },
   otpExpiresAt: { type: Date, default: null },
+
+  passkeys: {
+    type: [{
+      credentialID: String,
+      publicKey: String,
+      counter: { type: Number, default: 0 },
+      transports: { type: [String], default: [] },
+      backedUp: { type: Boolean, default: false }
+    }],
+    default: []
+  },
+
+  webauthnChallenge: { type: String, default: "" },
 
   notifications: {
     type: [{
@@ -168,6 +192,7 @@ const messageSchema = new mongoose.Schema({
     fileType: String,
     replyTo: Object
   },
+  mentions: { type: [String], default: [] },
   time: String,
   status: String,
   reaction: String,
@@ -209,7 +234,87 @@ const Message = mongoose.model("Message", messageSchema);
 const Call = mongoose.model("Call", callSchema);
 const Status = mongoose.model("Status", statusSchema);
 
+const pollSchema = new mongoose.Schema({
+  groupId: String,
+  question: String,
+  options: [{
+    text: String,
+    votes: [String]
+  }],
+  createdBy: String,
+  createdAt: { type: Date, default: Date.now }
+});
 
+const Poll = mongoose.model("Poll", pollSchema);
+app.post("/group/:id/polls", async (req, res) => {
+  try {
+    const groupId = req.params.id;
+    const { createdBy, question, options } = req.body;
+
+    const group = await Group.findById(groupId);
+    if (!group) return res.status(404).json({ ok: false, msg: "Group not found" });
+    if (!(group.members || []).includes(createdBy)) {
+      return res.status(403).json({ ok: false, msg: "Only group members can create poll" });
+    }
+
+    const cleanQuestion = sanitizeText(question || "", 140);
+    const cleanOptions = (Array.isArray(options) ? options : [])
+      .map(o => sanitizeText(o, 60))
+      .filter(Boolean)
+      .slice(0, 6);
+
+    if (!cleanQuestion || cleanOptions.length < 2) {
+      return res.status(400).json({ ok: false, msg: "Question and at least 2 options required" });
+    }
+
+    const poll = await Poll.create({
+      groupId: String(groupId),
+      question: cleanQuestion,
+      options: cleanOptions.map(text => ({ text, votes: [] })),
+      createdBy
+    });
+
+    io.to(roomNameForGroup(groupId)).emit("group-poll-created", poll);
+    return res.json({ ok: true, poll });
+  } catch (err) {
+    console.log("CREATE POLL ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Create poll failed" });
+  }
+});
+
+app.get("/group/:id/polls", async (req, res) => {
+  try {
+    const list = await Poll.find({ groupId: String(req.params.id) }).sort({ createdAt: -1 });
+    return res.json({ ok: true, polls: list });
+  } catch (err) {
+    console.log("GET POLLS ERROR:", err);
+    return res.status(500).json({ ok: false, polls: [] });
+  }
+});
+
+app.post("/poll/:id/vote", async (req, res) => {
+  try {
+    const { user, optionIndex } = req.body;
+    const poll = await Poll.findById(req.params.id);
+    if (!poll) return res.status(404).json({ ok: false, msg: "Poll not found" });
+
+    poll.options.forEach(opt => {
+      opt.votes = (opt.votes || []).filter(v => v !== user);
+    });
+
+    if (poll.options[optionIndex]) {
+      poll.options[optionIndex].votes.push(user);
+    }
+
+    await poll.save();
+
+    io.to(roomNameForGroup(poll.groupId)).emit("group-poll-updated", poll);
+    return res.json({ ok: true, poll });
+  } catch (err) {
+    console.log("VOTE POLL ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Vote failed" });
+  }
+});
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -424,6 +529,10 @@ function roomNameForGroup(groupId) {
   return "group_" + String(groupId);
 }
 
+function roomNameForGroupCall(groupId) {
+  return "group_call_" + String(groupId);
+}
+
 function sendUploadError(res, err) {
   if (err instanceof multer.MulterError) {
     return res.status(400).json({ status: "error", msg: err.message });
@@ -587,7 +696,345 @@ app.post("/upload-media", (req, res) => {
     }
   });
 });
+app.post("/chat/clear", async (req, res) => {
+  try {
+    const { type, me: user, peer, groupId } = req.body;
 
+    if (type === "private") {
+      await Message.deleteMany({
+        $or: [
+          { from: user, to: peer },
+          { from: peer, to: user }
+        ]
+      });
+      return res.json({ ok: true });
+    }
+
+    if (type === "group") {
+      const group = await Group.findById(groupId);
+      if (!group) return res.status(404).json({ ok: false, msg: "Group not found" });
+
+      const isAdminUser = group.admin === user || (group.admins || []).includes(user);
+      if (!isAdminUser) {
+        return res.status(403).json({ ok: false, msg: "Only group admin can clear group chat" });
+      }
+
+      await Message.deleteMany({ group: String(groupId) });
+      io.to(roomNameForGroup(groupId)).emit("group-chat-cleared", { groupId });
+      return res.json({ ok: true });
+    }
+
+    return res.status(400).json({ ok: false, msg: "Invalid type" });
+  } catch (err) {
+    console.log("CLEAR CHAT ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Clear chat failed" });
+  }
+});
+app.post("/api/webauthn/register/options", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const user = await User.findOne({ authToken: token });
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    const challenge = crypto.randomBytes(32).toString("base64url");
+    user.webauthnChallenge = challenge;
+    await user.save();
+
+    return res.json({
+      ok: true,
+      options: {
+        challenge,
+        rp: {
+          name: "RickyY Chat",
+          id: req.hostname
+        },
+        user: {
+          id: Buffer.from(user.name).toString("base64url"),
+          name: user.name,
+          displayName: user.name
+        },
+        pubKeyCredParams: [
+          { type: "public-key", alg: -7 },
+          { type: "public-key", alg: -257 }
+        ],
+        authenticatorSelection: {
+          userVerification: "preferred",
+          residentKey: "preferred"
+        },
+        timeout: 60000,
+        attestation: "none"
+      }
+    });
+  } catch (err) {
+    console.log("WEBAUTHN REGISTER OPTIONS ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.post("/api/webauthn/auth/options", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const user = await User.findOne({ authToken: token });
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    const challenge = crypto.randomBytes(32).toString("base64url");
+    user.webauthnChallenge = challenge;
+    await user.save();
+
+    return res.json({
+      ok: true,
+      options: {
+        challenge,
+        rpId: req.hostname,
+        allowCredentials: (user.passkeys || []).map(p => ({
+          id: p.credentialID,
+          type: "public-key",
+          transports: p.transports || []
+        })),
+        userVerification: "preferred",
+        timeout: 60000
+      }
+    });
+  } catch (err) {
+    console.log("WEBAUTHN AUTH OPTIONS ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.post("/api/webauthn/register/verify", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const user = await User.findOne({ authToken: token });
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    if (!user.webauthnChallenge) {
+      return res.status(400).json({ ok: false, msg: "Missing registration challenge" });
+    }
+
+    let verification;
+    try {
+      verification = await verifyRegistrationResponse({
+        response: req.body,
+        expectedChallenge: user.webauthnChallenge,
+        expectedOrigin: getExpectedOrigin(req),
+        expectedRPID: getExpectedRPID(req),
+        requireUserVerification: false,
+      });
+    } catch (err) {
+      console.log("WEBAUTHN REGISTER VERIFY ERROR:", err);
+      return res.status(400).json({ ok: false, msg: err.message || "Registration verification failed" });
+    }
+
+    const { verified, registrationInfo } = verification;
+
+    if (!verified || !registrationInfo) {
+      user.webauthnChallenge = "";
+      await user.save();
+      return res.status(400).json({ ok: false, msg: "Registration verification failed" });
+    }
+
+    const {
+      credential,
+      credentialBackedUp,
+    } = registrationInfo;
+
+    const alreadyExists = (user.passkeys || []).some(
+      p => p.credentialID === credential.id
+    );
+
+    if (!alreadyExists) {
+      user.passkeys.push({
+        credentialID: credential.id,
+        publicKey: Buffer.from(credential.publicKey).toString("base64"),
+        counter: credential.counter,
+        transports: credential.transports || [],
+        backedUp: !!credentialBackedUp,
+      });
+    }
+
+    user.webauthnChallenge = "";
+    await user.save();
+
+    return res.json({
+      ok: true,
+      verified: true,
+      msg: "Fingerprint / Face ID enabled successfully",
+    });
+  } catch (err) {
+    console.log("WEBAUTHN REGISTER VERIFY FATAL ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.post("/api/webauthn/auth/verify", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const user = await User.findOne({ authToken: token });
+
+    if (!user) {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    if (!user.webauthnChallenge) {
+      return res.status(400).json({ ok: false, msg: "Missing authentication challenge" });
+    }
+
+    const credentialID = String(req.body?.id || "");
+    const passkey = (user.passkeys || []).find(p => p.credentialID === credentialID);
+
+    if (!passkey) {
+      user.webauthnChallenge = "";
+      await user.save();
+      return res.status(404).json({ ok: false, msg: "Passkey not found" });
+    }
+
+    let verification;
+    try {
+      verification = await verifyAuthenticationResponse({
+        response: req.body,
+        expectedChallenge: user.webauthnChallenge,
+        expectedOrigin: getExpectedOrigin(req),
+        expectedRPID: getExpectedRPID(req),
+        credential: {
+          id: passkey.credentialID,
+          publicKey: Buffer.from(passkey.publicKey, "base64"),
+          counter: Number(passkey.counter || 0),
+          transports: passkey.transports || [],
+        },
+        requireUserVerification: false,
+      });
+    } catch (err) {
+      console.log("WEBAUTHN AUTH VERIFY ERROR:", err);
+      return res.status(400).json({ ok: false, msg: err.message || "Authentication verification failed" });
+    }
+
+    const { verified, authenticationInfo } = verification;
+
+    if (!verified) {
+      user.webauthnChallenge = "";
+      await user.save();
+      return res.status(400).json({ ok: false, msg: "Biometric unlock failed" });
+    }
+
+    passkey.counter = authenticationInfo.newCounter;
+    user.webauthnChallenge = "";
+    await user.save();
+
+    return res.json({
+      ok: true,
+      verified: true,
+      msg: "Biometric unlock successful",
+    });
+  } catch (err) {
+    console.log("WEBAUTHN AUTH VERIFY FATAL ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+app.get("/chat/export", async (req, res) => {
+  try {
+    const { type, me: user, peer, groupId } = req.query;
+    let messages = [];
+
+    if (type === "private") {
+      messages = await Message.find({
+        $or: [
+          { from: user, to: peer },
+          { from: peer, to: user }
+        ]
+      }).sort({ createdAt: 1 });
+    } else if (type === "group") {
+      messages = await Message.find({ group: String(groupId) }).sort({ createdAt: 1 });
+    } else {
+      return res.status(400).send("Invalid export type");
+    }
+
+    const lines = messages.map(m => {
+      const when = formatMessageTime(m.createdAt || m.time);
+      const who = m.from || "User";
+      const text = m.text || (
+        m.fileType === "image" ? "📷 Photo" :
+        m.fileType === "video" ? "🎥 Video" :
+        m.fileType === "audio" ? "🎤 Voice message" :
+        m.fileType ? "📄 File" : ""
+      );
+      return `[${when}] ${who}: ${text}`;
+    });
+
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="chat-export-${Date.now()}.txt"`);
+    return res.send(lines.join("\n"));
+  } catch (err) {
+    console.log("EXPORT CHAT ERROR:", err);
+    return res.status(500).send("Export failed");
+  }
+});
+app.post("/admin/cleanup-missing-message-files", async (req, res) => {
+  try {
+    const allMessages = await Message.find({
+      file: { $exists: true, $ne: null, $ne: "" }
+    });
+
+    let fixed = 0;
+
+    for (const msg of allMessages) {
+      if (!publicUploadFileExists(msg.file)) {
+        msg.file = "";
+        msg.fileType = "";
+        msg.text = msg.text || "Media not available";
+        await msg.save();
+        fixed++;
+      }
+    }
+
+    return res.json({ ok: true, fixed });
+  } catch (err) {
+    console.log("CLEANUP MISSING MESSAGE FILES ERROR:", err);
+    return res.status(500).json({ ok: false, fixed: 0 });
+  }
+});
+app.get("/private-last-msg", async (req, res) => {
+  try {
+    const user = normalizeUsername(req.query.user);
+    if (!isValidUsername(user)) return res.json([]);
+
+    const peers = await Message.aggregate([
+      {
+        $match: {
+          $or: [{ from: user }, { to: user }],
+          group: { $in: [null, "", undefined] }
+        }
+      },
+      { $sort: { createdAt: -1 } },
+      {
+        $addFields: {
+          peer: { $cond: [{ $eq: ["$from", user] }, "$to", "$from"] }
+        }
+      },
+      {
+        $group: {
+          _id: "$peer",
+          peer: { $first: "$peer" },
+          from: { $first: "$from" },
+          text: { $first: "$text" },
+          fileType: { $first: "$fileType" },
+          createdAt: { $first: "$createdAt" }
+        }
+      },
+      { $sort: { createdAt: -1 } }
+    ]);
+
+    res.json(peers);
+  } catch (err) {
+    console.log("PRIVATE LAST MSG ERROR:", err);
+    res.json([]);
+  }
+});
 app.post("/admin/cleanup-missing-status-files", async (req, res) => {
   try {
     const allStatuses = await Status.find({});
@@ -2127,7 +2574,26 @@ app.post("/admin/block-user", async (req, res) => {
     res.status(500).json({ ok: false });
   }
 });
+app.get("/api/call-history", async (req, res) => {
+  try {
+    const user = normalizeUsername(req.query.user);
 
+    if (!isValidUsername(user)) {
+      return res.status(400).json({ ok: false, calls: [] });
+    }
+
+    const calls = await Call.find({
+      $or: [{ from: user }, { to: user }]
+    })
+      .sort({ createdAt: -1 })
+      .limit(100);
+
+    return res.json({ ok: true, calls });
+  } catch (err) {
+    console.log("CALL HISTORY ERROR:", err);
+    return res.status(500).json({ ok: false, calls: [] });
+  }
+});
 app.post("/admin/unblock-user", async (req, res) => {
   try {
     const { admin, username } = req.body;
@@ -2326,6 +2792,7 @@ let userSocketIds = {};
 
 let callState = {};
 let pendingCallOffers = {};
+const activeGroupCalls = new Map();
 
 function isBusy(user) {
   return !!callState[user];
@@ -2347,6 +2814,14 @@ function clearCall(user) {
   }
 }
 
+function extractMentionNames(text = "") {
+  const matches = String(text || "").match(/@\[(.*?)\]/g) || [];
+  return [...new Set(
+    matches
+      .map(m => m.replace(/^@\[/, "").replace(/\]$/, "").trim())
+      .filter(Boolean)
+  )];
+}
 
 io.on("connection", socket => {
   socket.on("join", async username => {
@@ -2397,6 +2872,21 @@ io.on("connection", socket => {
           offer: pendingOffer.offer,
           type: pendingOffer.type || "voice"
         });
+      }
+
+      for (const [gid, call] of activeGroupCalls.entries()) {
+        try {
+          const group = await Group.findById(gid).select("name members");
+          const members = Array.isArray(group?.members) ? group.members : [];
+          if (call && members.includes(username) && !call.members.has(username)) {
+            socket.emit("group-call-invite", {
+              groupId: gid,
+              groupName: group?.name || "Group",
+              from: call.host,
+              type: call.type || "voice"
+            });
+          }
+        } catch (e) {}
       }
     } catch (err) {
       console.log("JOIN ERROR:", err);
@@ -2574,7 +3064,7 @@ socket.on("delete-message", async data => {
       }
 
       const receiverOnline = !!userSocketIds[data.to]?.size;
-
+      const mentionNames = extractMentionNames(data.text || "");
       const newMsg = new Message({
         from: data.from,
         to: data.to,
@@ -2582,12 +3072,14 @@ socket.on("delete-message", async data => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
+        mentions: mentionNames,
         
         status: receiverOnline ? "delivered" : "sent",
         reaction: null,
         seenBy: [],
         deliveredTo: receiverOnline ? [data.to] : [],
         createdAt: new Date()
+        
       });
 
       await newMsg.save();
@@ -2632,7 +3124,8 @@ socket.on("delete-message", async data => {
       const onlineRecipients = group.members.filter(
         member => member !== data.from && userSocketIds[member]?.size
       );
-
+      const rawMentions = extractMentionNames(data.text || "");
+      const validMentions = rawMentions.filter(name => group.members.includes(name));
       const newMsg = new Message({
         from: data.from,
         to: null,
@@ -2641,6 +3134,7 @@ socket.on("delete-message", async data => {
         file: data.file || null,
         fileType: data.fileType || null,
         replyTo: data.replyTo || null,
+        mentions: validMentions,
         
         status: "sent",
         reaction: null,
@@ -2653,6 +3147,20 @@ socket.on("delete-message", async data => {
       const offlineRecipients = group.members.filter(
   member => member !== data.from && !userSocketIds[member]?.size
 );
+for (const member of offlineRecipients) {
+  const isMentioned = validMentions.includes(member);
+
+  await sendPushToUser(member, {
+    title: isMentioned ? `🔔 Mention in ${group.name}` : `👥 ${group.name}`,
+    body: isMentioned
+      ? `${data.from} mentioned you: ${safeNotificationBody(newMsg)}`
+      : `${data.from}: ${safeNotificationBody(newMsg)}`,
+    url: `/chat.html?group=${encodeURIComponent(String(data.group))}`,
+    tag: isMentioned ? `mention-${data.group}-${member}` : `group-${data.group}`,
+    icon: "/icons/icon-192.png",
+    badge: "/icons/icon-192.png"
+  });
+}
 
 for (const member of offlineRecipients) {
   await sendPushToUser(member, {
@@ -2666,15 +3174,7 @@ for (const member of offlineRecipients) {
 }
       io.to(roomNameForGroup(data.group)).emit("group-message", newMsg);
 
-      const onlineSeenMembers = group.members.filter(
-        member => member !== data.from && userSocketIds[member]?.size
-      );
-
-      if (onlineSeenMembers.length) {
-        await Message.findByIdAndUpdate(newMsg._id, {
-          $addToSet: { seenBy: { $each: onlineSeenMembers } }
-        });
-      }
+      
 
       await emitGroupUnreadForMembers(data.group);
     } catch (err) {
@@ -2737,6 +3237,134 @@ for (const member of offlineRecipients) {
       io.to(roomNameForGroup(data.group)).emit("group-stop-typing", { from: data.from, group: data.group });
     } else if (data.to) {
       io.to(data.to).emit("stop-typing", data.from);
+    }
+  });
+
+
+  socket.on("start-group-call", async ({ groupId, from, type }) => {
+    try {
+      if (!groupId || !from) return;
+
+      const group = await Group.findById(groupId).select("name members");
+      if (!group) return;
+
+      const members = Array.isArray(group.members) ? group.members : [];
+      if (!members.includes(from)) return;
+
+      const callType = type === "video" ? "video" : "voice";
+
+      activeGroupCalls.set(String(groupId), {
+        host: from,
+        type: callType,
+        members: new Set([from]),
+        startedAt: Date.now()
+      });
+
+      for (const member of members) {
+        if (!member || member === from) continue;
+
+        io.to(member).emit("group-call-invite", {
+          groupId: String(group._id),
+          groupName: group.name || "Group",
+          from,
+          type: callType
+        });
+
+        await sendPushToUser(member, {
+          title: callType === "video" ? "📹 Incoming group video call" : "📞 Incoming group voice call",
+          body: `${from} is calling in ${group.name || "your group"}`,
+          url: `/chat.html?group=${encodeURIComponent(String(group._id))}`,
+          tag: `group-call-${group._id}`,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          requireInteraction: true,
+          vibrate: [300, 120, 300, 120, 500]
+        });
+      }
+    } catch (err) {
+      console.log("START GROUP CALL ERROR:", err);
+    }
+  });
+
+  socket.on("join-group-call", async ({ groupId, user }) => {
+    try {
+      if (!groupId || !user) return;
+
+      const call = activeGroupCalls.get(String(groupId));
+      if (!call) return;
+
+      socket.join(roomNameForGroupCall(groupId));
+
+      const existingMembers = [...call.members].filter(name => name !== user);
+      call.members.add(user);
+      activeGroupCalls.set(String(groupId), call);
+
+      socket.emit("group-call-members", {
+        groupId: String(groupId),
+        type: call.type,
+        members: existingMembers
+      });
+
+      socket.to(roomNameForGroupCall(groupId)).emit("group-call-peer-joined", {
+        groupId: String(groupId),
+        user
+      });
+    } catch (err) {
+      console.log("JOIN GROUP CALL ERROR:", err);
+    }
+  });
+
+  socket.on("group-call-offer", ({ groupId, to, from, offer, type }) => {
+    io.to(to).emit("group-call-offer", { groupId, from, offer, type });
+  });
+
+  socket.on("group-call-answer", ({ groupId, to, from, answer }) => {
+    io.to(to).emit("group-call-answer", { groupId, from, answer });
+  });
+
+  socket.on("group-call-ice", ({ groupId, to, from, candidate }) => {
+    io.to(to).emit("group-call-ice", { groupId, from, candidate });
+  });
+
+  socket.on("end-group-call", async ({ groupId, from }) => {
+    try {
+      const gid = String(groupId || "");
+      const active = activeGroupCalls.get(gid);
+      activeGroupCalls.delete(gid);
+
+      io.to(roomNameForGroupCall(gid)).emit("group-call-ended", { groupId: gid, from });
+
+      const group = await Group.findById(gid).select("members");
+      const members = Array.isArray(group?.members) ? group.members : [...(active?.members || [])];
+
+      for (const member of members) {
+        if (!member) continue;
+        io.to(member).emit("group-call-ended", { groupId: gid, from });
+      }
+    } catch (err) {
+      console.log("END GROUP CALL ERROR:", err);
+    }
+  });
+
+  socket.on("leave-group-call", ({ groupId, user }) => {
+    try {
+      const call = activeGroupCalls.get(String(groupId));
+      if (!call) return;
+
+      call.members.delete(user);
+      socket.leave(roomNameForGroupCall(groupId));
+      io.to(roomNameForGroupCall(groupId)).emit("group-call-peer-left", {
+        groupId: String(groupId),
+        user
+      });
+
+      if (call.members.size === 0) {
+        activeGroupCalls.delete(String(groupId));
+      } else {
+        activeGroupCalls.set(String(groupId), call);
+      }
+    } catch (err) {
+      console.log("LEAVE GROUP CALL ERROR:", err);
     }
   });
 
@@ -2908,6 +3536,30 @@ for (const member of offlineRecipients) {
           if (peer) delete pendingCallOffers[peer];
         }
 
+        for (const [gid, call] of activeGroupCalls.entries()) {
+          if (!call?.members?.has(username)) continue;
+
+          if (call.host === username) {
+            io.to(roomNameForGroupCall(gid)).emit("group-call-ended", {
+              groupId: String(gid),
+              from: username
+            });
+            activeGroupCalls.delete(gid);
+          } else {
+            call.members.delete(username);
+            io.to(roomNameForGroupCall(gid)).emit("group-call-peer-left", {
+              groupId: String(gid),
+              user: username
+            });
+
+            if (call.members.size === 0) {
+              activeGroupCalls.delete(gid);
+            } else {
+              activeGroupCalls.set(gid, call);
+            }
+          }
+        }
+
         if (!userSocketIds[username] || userSocketIds[username].size === 0) {
           await User.findOneAndUpdate(
             { name: username },
@@ -2926,6 +3578,6 @@ for (const member of offlineRecipients) {
 
 
 const PORT = process.env.PORT || 5000;
-server.listen(PORT, () => {
+server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
 });

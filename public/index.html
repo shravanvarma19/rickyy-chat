@@ -925,14 +925,44 @@ body::after{
     font-size:12px;
   }
 }
+
+.install-popup{
+  position:fixed;
+  left:50%;
+  bottom:18px;
+  transform:translateX(-50%);
+  width:min(92vw, 420px);
+  display:none;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px 16px;
+  border-radius:20px;
+  background:rgba(10,18,30,.92);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 22px 40px rgba(0,0,0,.28);
+  backdrop-filter:blur(14px);
+  z-index:120;
+}
+.install-popup-text{font-size:13px;color:#dbeafe;line-height:1.5;}
+.install-popup button{
+  border:none;
+  border-radius:12px;
+  padding:10px 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.install-btn-primary{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;}
+.install-btn-secondary{background:rgba(255,255,255,.08);color:#fff;}
+
 </style>
 </head>
 <body>
   <div class="noise"></div>
 
-  <div class="otp-box" id="otpBox">
+  <div class="otp-box" id="otpBox" style="display:none;">
     <div class="otp-title">Your OTP</div>
-    <div class="otp-number" id="otpValue">0000</div>
+    <div class="otp-number" id="otpValue"></div>
   </div>
 
   <div class="shell">
@@ -1186,7 +1216,7 @@ loginForm.addEventListener("submit", async function(e){
     if(!data.ok){
       setError(loginError, data.msg || "Login failed");
       loginBtn.disabled = false;
-      loginBtn.innerText = "Continue";
+      loginBtn.innerText = "Login";
       await loadCaptcha();
       return;
     }
@@ -1209,7 +1239,7 @@ loginForm.addEventListener("submit", async function(e){
     setError(loginError, "Server error");
     console.log("LOGIN FRONTEND ERROR:", err);
     loginBtn.disabled = false;
-    loginBtn.innerText = "Continue";
+    loginBtn.innerText = "Login";
   }
 });
 
@@ -1223,10 +1253,12 @@ otpInput.addEventListener("input", function(){
 
 function showOtpFloating(otp){
   otpValue.innerText = otp;
+  otpBox.style.display = "block";
   otpBox.classList.add("show");
 
   setTimeout(() => {
     otpBox.classList.remove("show");
+    otpBox.style.display = "none";
     otpSection.classList.add("show");
   }, 4000);
 }
@@ -1256,7 +1288,7 @@ requestForm.addEventListener("submit", async function(e){
     if(!data.ok){
       setError(requestError, data.msg || "Request failed");
       continueBtn.disabled = false;
-      continueBtn.innerText = "Continue";
+      continueBtn.innerText = "Request";
       return;
     }
 
@@ -1269,7 +1301,7 @@ requestForm.addEventListener("submit", async function(e){
     setError(requestError, "Server error");
     console.log("REQUEST ACCESS ERROR:", err);
     continueBtn.disabled = false;
-    continueBtn.innerText = "Continue";
+    continueBtn.innerText = "Request";
   }
 });
 
@@ -1316,7 +1348,7 @@ verifyOtpBtn.addEventListener("click", async function(){
       requestForm.reset();
       requestForm.style.display = "block";
       continueBtn.disabled = false;
-      continueBtn.innerText = "Continue";
+      continueBtn.innerText = "Request";
       verifyOtpBtn.disabled = false;
       verifyOtpBtn.innerText = "Verify OTP";
       otpInput.value = "";
@@ -1401,5 +1433,115 @@ if ("serviceWorker" in navigator) {
   }, 300);
 })();
 </script>
+
+  <div class="install-popup" id="installPopup">
+    <div class="install-popup-text">
+      Install RickyY Chat for faster opening, cleaner notifications, and app-like feel.
+    </div>
+    <div style="display:flex;gap:8px;">
+      <button class="install-btn-secondary" type="button" onclick="hideInstallPopup()">Later</button>
+      <button class="install-btn-primary" type="button" onclick="triggerInstallApp()">Install</button>
+    </div>
+  </div>
+
+
+<script>
+let deferredInstallPrompt = null;
+
+function hideInstallPopup(){
+  const popup = document.getElementById("installPopup");
+  if(popup) popup.style.display = "none";
+}
+
+async function triggerInstallApp(){
+  if(!deferredInstallPrompt) return;
+  deferredInstallPrompt.prompt();
+  try{ await deferredInstallPrompt.userChoice; }catch(err){}
+  deferredInstallPrompt = null;
+  hideInstallPopup();
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+  const popup = document.getElementById("installPopup");
+  if(popup) popup.style.display = "flex";
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  hideInstallPopup();
+});
+let deferredInstallPrompt = null;
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+
+  const dismissed = localStorage.getItem("installSheetDismissed");
+  if(dismissed !== "yes"){
+    document.getElementById("installSheet").style.display = "block";
+  }
+});
+
+function hideInstallSheet(){
+  const el = document.getElementById("installSheet");
+  if(el) el.style.display = "none";
+  localStorage.setItem("installSheetDismissed", "yes");
+}
+
+async function installAppNow(){
+  if(!deferredInstallPrompt){
+    hideInstallSheet();
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+  await deferredInstallPrompt.userChoice.catch(() => null);
+  hideInstallSheet();
+  deferredInstallPrompt = null;
+}
+</script>
+<div id="installSheet" style="
+  position:fixed;
+  left:12px;
+  right:12px;
+  bottom:14px;
+  z-index:50000;
+  display:none;
+">
+  <div style="
+    background:linear-gradient(135deg, rgba(17,24,39,.98), rgba(30,41,59,.96));
+    border:1px solid rgba(255,255,255,.08);
+    border-radius:24px;
+    padding:16px;
+    box-shadow:0 20px 40px rgba(0,0,0,.28);
+    backdrop-filter:blur(16px);
+  ">
+    <div style="display:flex;align-items:center;gap:12px;">
+      <div style="
+        width:48px;height:48px;border-radius:16px;
+        background:linear-gradient(135deg,#10b981,#06b6d4);
+        display:flex;align-items:center;justify-content:center;
+        font-size:22px;
+      ">📲</div>
+
+      <div style="flex:1;min-width:0;">
+        <div style="font-weight:900;color:#fff;">Install RickyY Chat</div>
+        <div style="font-size:13px;color:#cbd5e1;">Fast open, app feel, better notifications.</div>
+      </div>
+
+      <button onclick="hideInstallSheet()" style="
+        border:none;background:none;color:#fff;
+        font-size:18px;cursor:pointer;
+      ">✕</button>
+    </div>
+
+    <div style="display:flex;gap:10px;margin-top:14px;">
+      <button class="continue-btn" style="flex:1;" onclick="installAppNow()">Install</button>
+      <button class="tab-btn" style="flex:1;min-height:46px;" onclick="hideInstallSheet()">Later</button>
+    </div>
+  </div>
+</div>
 </body>
 </html>

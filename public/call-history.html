@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Call History</title>
+  <style>
+    body{
+      margin:0;
+      font-family:Inter, Arial, sans-serif;
+      background:#0b1220;
+      color:#fff;
+    }
+    .topbar{
+      display:flex;
+      align-items:center;
+      gap:12px;
+      padding:16px;
+      background:#111827;
+      border-bottom:1px solid rgba(255,255,255,.08);
+      position:sticky;
+      top:0;
+    }
+    .back-btn{
+      border:none;
+      background:none;
+      color:#fff;
+      font-size:22px;
+      cursor:pointer;
+    }
+    .title{
+      font-size:20px;
+      font-weight:900;
+    }
+    .list{
+      padding:14px;
+    }
+    .call-row{
+      display:flex;
+      justify-content:space-between;
+      gap:12px;
+      padding:14px;
+      margin-bottom:10px;
+      border-radius:18px;
+      background:rgba(255,255,255,.05);
+      border:1px solid rgba(255,255,255,.06);
+    }
+    .call-left{
+      min-width:0;
+      flex:1;
+    }
+    .call-name{
+      font-weight:800;
+      font-size:16px;
+      white-space:nowrap;
+      overflow:hidden;
+      text-overflow:ellipsis;
+    }
+    .call-meta{
+      font-size:13px;
+      color:#a5b4c3;
+      margin-top:4px;
+    }
+    .call-status{
+      font-size:12px;
+      font-weight:800;
+      align-self:center;
+      white-space:nowrap;
+    }
+    .missed{ color:#f87171; }
+    .completed{ color:#4ade80; }
+    .empty{
+      padding:20px;
+      color:#94a3b8;
+      text-align:center;
+    }
+  </style>
+</head>
+<body>
+  <div class="topbar">
+    <button class="back-btn" onclick="location.href='/chat.html'">←</button>
+    <div class="title">Call History</div>
+  </div>
+
+  <div id="callList" class="list">
+    <div class="empty">Loading...</div>
+  </div>
+
+  <script>
+    const me = localStorage.getItem("user");
+    if(!me) location.href = "/index.html";
+
+    async function loadCallHistory(){
+      try{
+        const res = await fetch("/api/call-history?user=" + encodeURIComponent(me));
+        const data = await res.json();
+
+        const box = document.getElementById("callList");
+        if(!data.ok || !Array.isArray(data.calls) || !data.calls.length){
+          box.innerHTML = '<div class="empty">No call history yet</div>';
+          return;
+        }
+
+        box.innerHTML = data.calls.map(call => {
+          const otherUser = call.from === me ? call.to : call.from;
+          const direction = call.from === me ? "Outgoing" : "Incoming";
+          const emoji = call.type === "video" ? "🎥" : "📞";
+
+          return `
+            <div class="call-row">
+              <div class="call-left">
+                <div class="call-name">${otherUser}</div>
+                <div class="call-meta">${emoji} ${direction} • ${call.time || ""}</div>
+              </div>
+              <div class="call-status ${call.status === "missed" ? "missed" : "completed"}">
+                ${call.status || ""}
+              </div>
+            </div>
+          `;
+        }).join("");
+      }catch(err){
+        console.log(err);
+        document.getElementById("callList").innerHTML =
+          '<div class="empty">Failed to load call history</div>';
+      }
+    }
+
+    loadCallHistory();
+  </script>
+</body>
+</html>
