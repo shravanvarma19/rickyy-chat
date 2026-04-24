@@ -1459,20 +1459,7 @@ body::after{
   <div class="footer-line">RickyY Chat • Premium Personal Messaging</div>
   <div class="footer-lines">Designed by Shravan Varma</div>
 
-<script src="/socket.io/socket.io.js">
-window.addEventListener("pageshow", function(){
-  setTimeout(() => {
-    hideStartupSplash();
-  }, 120);
-});
-
-window.addEventListener("load", function(){
-  setTimeout(() => {
-    hideStartupSplash();
-  }, 180);
-});
-
-</script>
+<script src="/socket.io/socket.io.js"></script>
 <script>
 const loginTabBtn = document.getElementById("loginTabBtn");
 const requestTabBtn = document.getElementById("requestTabBtn");
@@ -2197,76 +2184,21 @@ if ("serviceWorker" in navigator) {
 
   hideStartupSplash();
 })();
+
+window.addEventListener("pageshow", function(){
+  setTimeout(() => {
+    hideStartupSplash(true);
+  }, 120);
+});
+
+window.addEventListener("load", function(){
+  setTimeout(() => {
+    hideStartupSplash(true);
+  }, 180);
+});
 </script>
 
-  <div class="install-popup" id="installPopup">
-    <div class="install-popup-text">
-      Install RickyY Chat for faster opening, cleaner notifications, and app-like feel.
-    </div>
-    <div style="display:flex;gap:8px;">
-      <button class="install-btn-secondary" type="button" onclick="hideInstallPopup()">Later</button>
-      <button class="install-btn-primary" type="button" onclick="triggerInstallApp()">Install</button>
-    </div>
-  </div>
-
-
-<script>
-let deferredInstallPrompt = null;
-
-function hideInstallPopup(){
-  const popup = document.getElementById("installPopup");
-  if(popup) popup.style.display = "none";
-}
-
-async function triggerInstallApp(){
-  if(!deferredInstallPrompt) return;
-  deferredInstallPrompt.prompt();
-  try{ await deferredInstallPrompt.userChoice; }catch(err){}
-  deferredInstallPrompt = null;
-  hideInstallPopup();
-}
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-  const popup = document.getElementById("installPopup");
-  if(popup) popup.style.display = "flex";
-});
-
-window.addEventListener("appinstalled", () => {
-  deferredInstallPrompt = null;
-  hideInstallPopup();
-});
-let deferredInstallPrompt = null;
-
-window.addEventListener("beforeinstallprompt", (e) => {
-  e.preventDefault();
-  deferredInstallPrompt = e;
-
-  const dismissed = localStorage.getItem("installSheetDismissed");
-  if(dismissed !== "yes"){
-    document.getElementById("installSheet").style.display = "block";
-  }
-});
-
-function hideInstallSheet(){
-  const el = document.getElementById("installSheet");
-  if(el) el.style.display = "none";
-  localStorage.setItem("installSheetDismissed", "yes");
-}
-
-async function installAppNow(){
-  if(!deferredInstallPrompt){
-    hideInstallSheet();
-    return;
-  }
-
-  deferredInstallPrompt.prompt();
-  await deferredInstallPrompt.userChoice.catch(() => null);
-  hideInstallSheet();
-  deferredInstallPrompt = null;
-}
-</script>
+  
 <div id="installSheet" style="
   position:fixed;
   left:12px;
@@ -2296,17 +2228,63 @@ async function installAppNow(){
         <div style="font-size:13px;color:#cbd5e1;">Fast open, app feel, better notifications.</div>
       </div>
 
-      <button onclick="hideInstallSheet()" style="
+      <button type="button" onclick="hideInstallSheet()" style="
         border:none;background:none;color:#fff;
         font-size:18px;cursor:pointer;
       ">✕</button>
     </div>
 
     <div style="display:flex;gap:10px;margin-top:14px;">
-      <button class="continue-btn" style="flex:1;" onclick="installAppNow()">Install</button>
-      <button class="tab-btn" style="flex:1;min-height:46px;" onclick="hideInstallSheet()">Later</button>
+      <button type="button" class="continue-btn" style="flex:1;" onclick="installAppNow()">Install</button>
+      <button type="button" class="tab-btn" style="flex:1;min-height:46px;" onclick="hideInstallSheet()">Later</button>
     </div>
   </div>
 </div>
+
+<script>
+let deferredInstallPrompt = null;
+
+function hideInstallSheet(){
+  const el = document.getElementById("installSheet");
+  if(el) el.style.display = "none";
+  localStorage.setItem("installSheetDismissed", "yes");
+}
+
+async function installAppNow(){
+  if(!deferredInstallPrompt){
+    hideInstallSheet();
+    return;
+  }
+
+  deferredInstallPrompt.prompt();
+
+  try{
+    const result = await deferredInstallPrompt.userChoice;
+    if(result && result.outcome === "accepted"){
+      hideInstallSheet();
+    }
+  }catch(err){
+    console.log("Install prompt error:", err);
+  }
+
+  deferredInstallPrompt = null;
+}
+
+window.addEventListener("beforeinstallprompt", (e) => {
+  e.preventDefault();
+  deferredInstallPrompt = e;
+
+  const dismissed = localStorage.getItem("installSheetDismissed");
+  if(dismissed !== "yes"){
+    const el = document.getElementById("installSheet");
+    if(el) el.style.display = "block";
+  }
+});
+
+window.addEventListener("appinstalled", () => {
+  deferredInstallPrompt = null;
+  hideInstallSheet();
+});
+</script>
 </body>
 </html>

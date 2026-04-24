@@ -2909,315 +2909,721 @@ body.dark .history-loader{
 
 
 /* =========================
-   WHATSAPP-LIKE MOBILE APP NAV
+   PHASE 2: HIDDEN / PRIVACY / SAVED MEDIA
 ========================= */
-@media (max-width: 768px){
-  body{
-    background:#0b141a !important;
-  }
+.menu-divider{
+  height:1px;
+  background:rgba(15,23,42,.08);
+}
 
-  .app{
-    padding:0 !important;
-    gap:0 !important;
+.saved-media-btn{
+  margin-top:8px;
+  border:none;
+  border-radius:12px;
+  padding:7px 10px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:800;
+  background:rgba(255,255,255,.10);
+  color:#fff;
+  box-shadow:0 8px 16px rgba(0,0,0,.16);
+}
+
+.saved-media-btn.saved{
+  background:linear-gradient(135deg,#f59e0b,#d97706);
+  color:#fff;
+}
+
+.phase2-modal{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(3,8,16,.78);
+  backdrop-filter:blur(10px);
+}
+
+.phase2-card{
+  width:min(460px,100%);
+  max-height:84vh;
+  overflow:auto;
+  background:rgba(15,23,42,.97);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  box-shadow:0 20px 45px rgba(0,0,0,.35);
+  color:#fff;
+}
+
+.phase2-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(135deg, rgba(16,185,129,.18), rgba(34,211,238,.08));
+}
+
+.phase2-title{
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.2px;
+}
+
+.phase2-close{
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.phase2-body{
+  padding:16px;
+}
+
+.phase2-note{
+  color:#cbd5e1;
+  font-size:12px;
+  line-height:1.5;
+  margin-bottom:14px;
+}
+
+.phase2-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:14px;
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  margin-bottom:10px;
+}
+
+.phase2-row-left{
+  min-width:0;
+  flex:1;
+}
+
+.phase2-row-title{
+  font-size:15px;
+  font-weight:800;
+  color:#fff;
+}
+
+.phase2-row-sub{
+  font-size:12px;
+  color:#94a3b8;
+  margin-top:4px;
+}
+
+.phase2-switch{
+  border:none;
+  min-width:88px;
+  padding:10px 12px;
+  border-radius:999px;
+  cursor:pointer;
+  font-weight:800;
+  color:#fff;
+  background:rgba(255,255,255,.08);
+}
+
+.phase2-switch.on{
+  background:linear-gradient(135deg,#10b981,#059669);
+}
+
+.hidden-chat-chip{
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  height:20px;
+  min-width:20px;
+  padding:0 6px;
+  border-radius:999px;
+  background:rgba(96,165,250,.15);
+  color:#bfdbfe;
+  font-size:11px;
+  font-weight:900;
+  border:1px solid rgba(96,165,250,.18);
+}
+
+.saved-media-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(140px,1fr));
+  gap:10px;
+}
+
+.saved-media-item{
+  position:relative;
+  border-radius:16px;
+  overflow:hidden;
+  background:rgba(255,255,255,.05);
+  border:1px solid rgba(255,255,255,.06);
+  min-height:140px;
+}
+
+.saved-media-item img,
+.saved-media-item video{
+  width:100%;
+  height:140px;
+  object-fit:cover;
+  display:block;
+}
+
+.saved-media-tag{
+  position:absolute;
+  left:8px;
+  bottom:8px;
+  background:rgba(0,0,0,.68);
+  color:#fff;
+  font-size:11px;
+  font-weight:800;
+  padding:5px 8px;
+  border-radius:999px;
+}
+
+.saved-media-remove{
+  position:absolute;
+  top:8px;
+  right:8px;
+  border:none;
+  background:rgba(0,0,0,.72);
+  color:#fff;
+  width:30px;
+  height:30px;
+  border-radius:999px;
+  cursor:pointer;
+}
+
+.saved-media-empty{
+  padding:16px;
+  border-radius:18px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  color:#cbd5e1;
+  text-align:center;
+}
+
+@media (max-width:768px){
+  .phase2-card{
     width:100%;
-    height:100dvh;
-    min-height:100dvh;
-    overflow:hidden;
-    background:#0b141a;
+    max-height:88vh;
+    border-radius:22px;
   }
 
-  .app.mobile-wa-ready{
-    position:relative;
+  .saved-media-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
 
-  .app.mobile-wa-ready .sidebar,
-  .app.mobile-wa-ready .chat{
-    position:absolute !important;
-    inset:0 !important;
-    width:100% !important;
-    height:100dvh !important;
-    min-height:100dvh !important;
-    border:none !important;
-    border-radius:0 !important;
-    margin:0 !important;
-    transition:
-      transform .32s cubic-bezier(.2,.8,.2,1),
-      opacity .24s ease,
-      visibility .24s ease !important;
-    will-change:transform, opacity;
-    box-shadow:none !important;
+  .saved-media-item img,
+  .saved-media-item video{
+    height:132px;
+  }
+}
+
+
+/* =========================
+   PHASE 3: DISAPPEAR / FORWARD / SCHEDULE
+========================= */
+.phase3-message-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:8px;
+}
+
+.phase3-action-btn{
+  border:none;
+  border-radius:999px;
+  padding:6px 10px;
+  cursor:pointer;
+  font-size:11px;
+  font-weight:800;
+  color:#fff;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.phase3-action-btn:hover{
+  background:rgba(255,255,255,.16);
+}
+
+.phase3-action-btn.forward{
+  background:rgba(59,130,246,.18);
+  color:#dbeafe;
+}
+
+.phase3-action-btn.schedule{
+  background:rgba(245,158,11,.18);
+  color:#fde68a;
+}
+
+.phase3-modal{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(3,8,16,.78);
+  backdrop-filter:blur(10px);
+}
+
+.phase3-card{
+  width:min(470px,100%);
+  max-height:84vh;
+  overflow:auto;
+  background:rgba(15,23,42,.97);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:24px;
+  box-shadow:0 20px 45px rgba(0,0,0,.35);
+  color:#fff;
+}
+
+.phase3-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:16px 18px;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  background:linear-gradient(135deg, rgba(16,185,129,.18), rgba(34,211,238,.08));
+}
+
+.phase3-title{
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.2px;
+}
+
+.phase3-close{
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:18px;
+}
+
+.phase3-body{
+  padding:16px;
+}
+
+.phase3-note{
+  color:#cbd5e1;
+  font-size:12px;
+  line-height:1.55;
+  margin-bottom:14px;
+}
+
+.phase3-option-grid{
+  display:grid;
+  grid-template-columns:repeat(2,minmax(0,1fr));
+  gap:10px;
+}
+
+.phase3-option{
+  border:none;
+  border-radius:16px;
+  padding:14px;
+  cursor:pointer;
+  font-weight:800;
+  color:#fff;
+  background:rgba(255,255,255,.06);
+  border:1px solid rgba(255,255,255,.07);
+  text-align:center;
+}
+
+.phase3-option.active{
+  background:linear-gradient(135deg,#10b981,#059669);
+  box-shadow:0 12px 22px rgba(16,185,129,.20);
+}
+
+.phase3-target-list{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+}
+
+.phase3-target-row{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+}
+
+.phase3-target-meta{
+  min-width:0;
+  flex:1;
+}
+
+.phase3-target-name{
+  font-size:15px;
+  font-weight:800;
+  color:#fff;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+
+.phase3-target-sub{
+  font-size:12px;
+  color:#94a3b8;
+  margin-top:4px;
+}
+
+.phase3-primary-btn,
+.phase3-ghost-btn{
+  border:none;
+  border-radius:14px;
+  padding:10px 14px;
+  cursor:pointer;
+  font-weight:800;
+}
+
+.phase3-primary-btn{
+  background:linear-gradient(135deg,#10b981,#059669);
+  color:#fff;
+}
+
+.phase3-ghost-btn{
+  background:rgba(255,255,255,.08);
+  color:#fff;
+}
+
+.phase3-field{
+  width:100%;
+  border-radius:16px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  outline:none;
+  padding:14px;
+  font-size:14px;
+  box-sizing:border-box;
+}
+
+.phase3-field::placeholder{
+  color:#94a3b8;
+}
+
+.phase3-queue-item{
+  padding:12px;
+  border-radius:16px;
+  background:rgba(255,255,255,.04);
+  border:1px solid rgba(255,255,255,.06);
+  margin-bottom:10px;
+}
+
+.phase3-queue-top{
+  display:flex;
+  justify-content:space-between;
+  gap:12px;
+  align-items:flex-start;
+}
+
+.phase3-queue-target{
+  font-size:14px;
+  font-weight:800;
+  color:#fff;
+}
+
+.phase3-queue-time{
+  font-size:12px;
+  color:#cbd5e1;
+}
+
+.phase3-queue-text{
+  font-size:13px;
+  color:#dbeafe;
+  margin-top:8px;
+  white-space:pre-wrap;
+  word-break:break-word;
+}
+
+.schedule-btn{
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  width:48px;
+  height:48px;
+  min-width:48px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+}
+
+.schedule-btn:hover{
+  background:rgba(255,255,255,.14);
+}
+
+@media (max-width:768px){
+  .phase3-card{
+    width:100%;
+    max-height:88vh;
+    border-radius:22px;
   }
 
-  .app.mobile-wa-ready .sidebar{
-    z-index:20;
-    transform:translateX(0);
-    opacity:1;
-    visibility:visible;
-    pointer-events:auto;
-    background:#111b21 !important;
+  .phase3-option-grid{
+    grid-template-columns:repeat(2,minmax(0,1fr));
   }
 
-  .app.mobile-wa-ready .chat{
-    z-index:25;
-    transform:translateX(100%);
-    opacity:0;
-    visibility:hidden;
-    pointer-events:none;
-    background:#0b141a !important;
+  .schedule-btn{
+    width:40px;
+    height:40px;
+    min-width:40px;
   }
+}
 
-  body.mobile-chat-open .app.mobile-wa-ready .sidebar{
-    transform:translateX(-16%);
-    opacity:0;
-    visibility:hidden;
-    pointer-events:none;
-  }
 
-  body.mobile-chat-open .app.mobile-wa-ready .chat{
-    transform:translateX(0);
-    opacity:1;
-    visibility:visible;
-    pointer-events:auto;
-  }
+/* =========================
+   PHASE 4: MINI CAMERA
+========================= */
+.camera-btn{
+  border:none;
+  border-radius:16px;
+  cursor:pointer;
+  width:48px;
+  height:48px;
+  min-width:48px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:18px;
+}
 
-  .sidebar-header{
-    min-height:64px !important;
-    padding:calc(12px + env(safe-area-inset-top)) 12px 10px 12px !important;
-    background:#202c33 !important;
-    border-bottom:1px solid rgba(255,255,255,.05) !important;
-  }
+.camera-btn:hover{
+  background:rgba(255,255,255,.14);
+}
 
-  .logo{
-    font-size:22px !important;
-    letter-spacing:.1px !important;
-  }
+.mini-camera-modal{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:18px;
+  background:rgba(3,8,16,.88);
+  backdrop-filter:blur(10px);
+}
 
-  .search-box{
-    padding:10px 12px !important;
-    background:#111b21 !important;
-    border-bottom:1px solid rgba(255,255,255,.04);
-  }
+.mini-camera-card{
+  width:min(520px,100%);
+  max-height:90vh;
+  overflow:hidden;
+  background:rgba(15,23,42,.97);
+  border:1px solid rgba(255,255,255,.08);
+  border-radius:26px;
+  box-shadow:0 22px 48px rgba(0,0,0,.35);
+  color:#fff;
+}
 
-  .search-box input{
-    background:#202c33 !important;
-    border:1px solid rgba(255,255,255,.05) !important;
-    border-radius:12px !important;
-    min-height:44px !important;
-  }
+.mini-camera-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+  padding:16px 18px;
+  background:linear-gradient(135deg, rgba(16,185,129,.18), rgba(34,211,238,.08));
+  border-bottom:1px solid rgba(255,255,255,.08);
+}
 
-  #users{
-    padding:6px 8px 10px !important;
-    background:#111b21 !important;
-  }
+.mini-camera-title{
+  font-size:20px;
+  font-weight:900;
+  letter-spacing:.2px;
+}
 
-  .user{
-    margin-bottom:2px !important;
-    padding:12px 10px !important;
-    border:none !important;
-    border-radius:16px !important;
-    background:transparent !important;
-    box-shadow:none !important;
-  }
+.mini-camera-close{
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  width:40px;
+  height:40px;
+  border-radius:12px;
+  cursor:pointer;
+  font-size:18px;
+}
 
-  .user:hover{
-    transform:none !important;
-    background:rgba(255,255,255,.04) !important;
-  }
+.mini-camera-body{
+  padding:14px;
+}
 
-  .user.active{
-    background:rgba(255,255,255,.06) !important;
-    box-shadow:none !important;
-  }
+.mini-camera-preview{
+  width:100%;
+  aspect-ratio:3/4;
+  max-height:66vh;
+  border-radius:22px;
+  overflow:hidden;
+  background:#000;
+  position:relative;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+}
 
-  .user img,
-  .user-avatar-wrap,
-  .user-avatar-wrap img{
-    width:50px !important;
-    height:50px !important;
-    min-width:50px !important;
-    min-height:50px !important;
-    max-width:50px !important;
-    max-height:50px !important;
-    border-radius:50% !important;
-    flex:0 0 50px !important;
-  }
+.mini-camera-preview video,
+.mini-camera-preview canvas,
+.mini-camera-preview img{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  display:block;
+  background:#000;
+}
 
-  .user-name{
-    font-size:15px !important;
-  }
+.mini-camera-guides{
+  position:absolute;
+  inset:0;
+  pointer-events:none;
+}
 
-  .user-right-time{
-    font-size:11px !important;
-    color:#8696a0 !important;
-  }
+.mini-camera-guides::before,
+.mini-camera-guides::after{
+  content:"";
+  position:absolute;
+  top:0;
+  bottom:0;
+  width:1px;
+  background:rgba(255,255,255,.12);
+}
 
-  .user-last-message{
-    font-size:12px !important;
-    color:#8696a0 !important;
-  }
+.mini-camera-guides::before{ left:33.333%; }
+.mini-camera-guides::after{ right:33.333%; }
 
-  .chat-header{
-    min-height:62px !important;
-    padding:calc(10px + env(safe-area-inset-top)) 8px 8px 8px !important;
-    background:#202c33 !important;
-    border-bottom:1px solid rgba(255,255,255,.04) !important;
-    display:grid !important;
-    grid-template-columns:34px 40px minmax(0,1fr) auto !important;
-    gap:8px !important;
-  }
+.mini-camera-guides span{
+  position:absolute;
+  left:0;
+  right:0;
+  height:1px;
+  background:rgba(255,255,255,.12);
+}
 
-  .back-btn{
-    display:none !important;
-    width:34px !important;
-    height:34px !important;
-    min-width:34px !important;
-    min-height:34px !important;
-    border-radius:10px !important;
-    margin:0 !important;
-    padding:0 !important;
-    background:transparent !important;
-  }
+.mini-camera-guides span.top{ top:33.333%; }
+.mini-camera-guides span.bottom{ bottom:33.333%; }
 
-  body.mobile-chat-open .back-btn{
-    display:inline-flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-  }
+.mini-camera-actions{
+  display:flex;
+  gap:10px;
+  justify-content:center;
+  flex-wrap:wrap;
+  margin-top:14px;
+}
 
-  .chat-header img{
-    width:40px !important;
-    height:40px !important;
-    border-radius:50% !important;
-    margin:0 !important;
-  }
+.mini-camera-btn{
+  border:none;
+  border-radius:16px;
+  padding:12px 16px;
+  cursor:pointer;
+  font-weight:800;
+  color:#fff;
+  background:rgba(255,255,255,.08);
+}
 
-  .chat-header .name{
-    font-size:15px !important;
-  }
+.mini-camera-btn.primary{
+  background:linear-gradient(135deg,#10b981,#059669);
+}
 
-  .chat-header .typing{
-    font-size:11px !important;
-    color:#c7d0d6 !important;
-  }
+.mini-camera-btn.capture{
+  min-width:120px;
+}
 
-  .header-icons{
-    gap:4px !important;
-  }
+.mini-camera-note{
+  color:#cbd5e1;
+  font-size:12px;
+  text-align:center;
+  line-height:1.55;
+  margin-top:12px;
+}
 
-  .header-icons span{
-    width:32px !important;
-    height:32px !important;
-    min-width:32px !important;
-    min-height:32px !important;
-    border-radius:10px !important;
-    background:transparent !important;
-  }
-
-  .messages{
-    padding:10px 8px !important;
-    background-color:#0b141a !important;
-    background-image:
-      radial-gradient(circle at 25% 25%, rgba(255,255,255,.02), transparent 18%),
-      radial-gradient(circle at 80% 15%, rgba(255,255,255,.015), transparent 18%),
-      linear-gradient(180deg, rgba(255,255,255,.01), rgba(255,255,255,.01)) !important;
-    background-size:cover !important;
-  }
-
-  .message{
-    max-width:82% !important;
-    font-size:14px !important;
-    padding:9px 11px !important;
-    margin:5px 0 !important;
-    box-shadow:0 1px 1px rgba(0,0,0,.18) !important;
-  }
-
-  .me{
-    background:#005c4b !important;
-    border-radius:14px 14px 4px 14px !important;
-  }
-
-  .other{
-    background:#202c33 !important;
-    border-radius:14px 14px 14px 4px !important;
-  }
-
-  .me::before,
-  .other::before{
-    display:none !important;
-  }
-
-  .input-area{
-    min-height:60px !important;
-    padding:8px 8px calc(8px + env(safe-area-inset-bottom)) !important;
-    grid-template-columns:40px minmax(0,1fr) 40px auto !important;
-    gap:6px !important;
-    background:#202c33 !important;
-    border-top:none !important;
-  }
-
-  .input-area input,
-  .input-area input#msg{
-    height:42px !important;
-    min-height:42px !important;
-    border-radius:22px !important;
-    background:#2a3942 !important;
-    border:none !important;
-    padding:10px 14px !important;
-    font-size:16px !important;
-  }
-
-  .attach-btn,
-  .mic-btn{
-    width:40px !important;
-    height:40px !important;
-    min-width:40px !important;
-    min-height:40px !important;
-    border-radius:50% !important;
-    background:transparent !important;
-    font-size:18px !important;
-  }
-
-  .input-area button.send-btn{
-    height:40px !important;
-    min-width:40px !important;
-    width:40px !important;
-    padding:0 !important;
-    border-radius:50% !important;
-    display:flex !important;
-    align-items:center !important;
-    justify-content:center !important;
-    font-size:0 !important;
-    background:#00a884 !important;
-    box-shadow:none !important;
-  }
-
-  .input-area button.send-btn::before{
-    content:"➤";
+@media (max-width:768px){
+  .camera-btn{
+    width:40px;
+    height:40px;
+    min-width:40px;
     font-size:16px;
-    color:#fff;
-    transform:translateX(1px);
+    border-radius:50%;
+    background:transparent;
   }
 
-  #replyBox{
-    left:8px !important;
-    right:8px !important;
-    bottom:calc(100% + 6px) !important;
-    border-radius:14px !important;
-    background:#1f2c34 !important;
-    border-left:4px solid #00a884 !important;
+  .mini-camera-card{
+    width:100%;
+    border-radius:22px;
   }
 
-  .no-chat-screen{
-    background:#111b21 !important;
-    border:none !important;
-    border-radius:0 !important;
+  .mini-camera-preview{
+    aspect-ratio:9/14;
+    max-height:62vh;
+    border-radius:20px;
   }
 
-  body.mobile-chat-open #groupFab,
-  body.mobile-chat-open #speakerFab,
-  body.mobile-chat-open #soundUnlock{
-    display:none !important;
+  .mini-camera-actions{
+    gap:8px;
   }
+
+  .mini-camera-btn{
+    padding:11px 14px;
+  }
+}
+
+
+/* Swipe-down quick actions */
+.phase3-swipe-actions-pop{
+  position:fixed;
+  z-index:100002;
+  display:flex;
+  gap:8px;
+  align-items:center;
+  flex-wrap:wrap;
+  padding:8px;
+  border-radius:18px;
+  background:rgba(17,24,39,.98);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 16px 32px rgba(0,0,0,.28);
+  backdrop-filter:blur(12px);
+  max-width:calc(100vw - 20px);
+}
+
+.phase3-swipe-actions-pop button{
+  border:none;
+  border-radius:999px;
+  padding:9px 12px;
+  cursor:pointer;
+  font-size:12px;
+  font-weight:800;
+  color:#fff;
+  background:rgba(255,255,255,.10);
+  border:1px solid rgba(255,255,255,.08);
+}
+
+.phase3-swipe-actions-pop button.forward{
+  background:rgba(59,130,246,.20);
+  color:#dbeafe;
+}
+
+.phase3-swipe-actions-pop button.schedule{
+  background:rgba(245,158,11,.20);
+  color:#fde68a;
 }
 
 </style>
@@ -3313,6 +3719,12 @@ body.dark .history-loader{
 <button id="unmuteBtn" onclick="unmuteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">🔊 Unmute</button>
 <button onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📂 Blocked Users</button>
 <button onclick="openCallHistoryPage()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📞 Call History</button>
+<button id="hideChatBtn" onclick="toggleHideCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🙈 Hide Chat</button>
+<button onclick="openPrivacyControlsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🛡 Privacy Controls</button>
+<button onclick="openSavedMediaModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⭐ Saved Media</button>
+<button id="disappearBtn" onclick="openDisappearSettingsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⏳ Disappearing Messages</button>
+<button onclick="openScheduledQueueModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🗓 Scheduled Messages</button>
+<div class="menu-divider"></div>
 <button onclick="clearCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🧹 Clear Chat</button>
 <button onclick="exportCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📤 Export Chat</button>
 </div>
@@ -3322,6 +3734,7 @@ body.dark .history-loader{
 <div class="messages" id="messages" style="display:none;"></div>
 <div class="input-area" id="inputArea" style="display:none;">
 <button class="attach-btn" onclick="openFilePicker()" title="Attach">📎</button>
+<button class="camera-btn" onclick="openMiniCameraModal()" title="Camera">📷</button>
 <input accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt" hidden="" id="fileInput" type="file"/>
 <div id="replyBox" style="display:none;position:absolute;left:50px;right:225px;bottom:80px;background:#fff;border-radius:12px;padding:10px;border-left:5px solid #25d366;box-shadow:0 1px 8px rgba(0,0,0,0.15);">
 <div style="display:flex;justify-content:space-between;align-items:center;">
@@ -3332,6 +3745,7 @@ body.dark .history-loader{
 </div>
 <input id="msg" placeholder="Type a message..."/>
 <button class="mic-btn" id="micBtn" title="Hold to record">🎤</button>
+<button class="schedule-btn" onclick="openScheduleMessageModal()" title="Schedule message">⏰</button>
 <button class="send-btn" onclick="send()">Send</button>
 </div>
 </div>
@@ -3899,9 +4313,18 @@ function enforceAppLockIfNeeded(){
     theme: localStorage.getItem("theme") || "light",
     mutedChats: JSON.parse(localStorage.getItem("mutedChats") || "[]"),
     lockedChats: JSON.parse(localStorage.getItem("lockedChats") || "[]"),
+    hiddenChats: JSON.parse(localStorage.getItem("hiddenChats") || "[]"),
+    privacyControls: JSON.parse(localStorage.getItem("privacyControls") || '{"showOnline":true,"showLastSeen":true,"showProfilePhoto":true}'),
+    savedMedia: JSON.parse(localStorage.getItem("savedMedia") || "[]"),
+    disappearingChats: JSON.parse(localStorage.getItem("disappearingChats") || "{}"),
+    scheduledMessages: JSON.parse(localStorage.getItem("scheduledMessages") || "[]"),
     chatWallpapers: JSON.parse(localStorage.getItem("chatWallpapers") || "{}")
   };
 
+  let forwardDraftMessage = null;
+  let hiddenChatOpenMode = false;
+  let secretTapCount = 0;
+  let secretTapTimer = null;
   let pendingLockedChat = null;
   let unlockedChatSessions = {};
   let userChatBiometricFailCount = 0;
@@ -4299,50 +4722,7 @@ function getUserListBottomText(u){
       console.log("INIT PUSH ERROR:", err);
     }
   }
-  
-  function isMobileAppNavigation(){
-    return window.innerWidth <= 768;
-  }
-
-  function syncMobileNavigation(){
-    const app = document.querySelector(".app");
-    const sidebar = document.querySelector(".sidebar");
-    const backBtn = document.querySelector(".back-btn");
-
-    if(!app || !sidebar || !backBtn) return;
-
-    if(isMobileAppNavigation()){
-      app.classList.add("mobile-wa-ready");
-
-      if(currentChat || currentGroup){
-        document.body.classList.add("mobile-chat-open");
-      }else{
-        document.body.classList.remove("mobile-chat-open");
-      }
-
-      sidebar.style.display = "flex";
-      backBtn.style.display = "none";
-    }else{
-      app.classList.remove("mobile-wa-ready");
-      document.body.classList.remove("mobile-chat-open");
-      sidebar.style.display = "flex";
-      backBtn.style.display = "none";
-    }
-  }
-
-  function enterMobileChatScreen(){
-    if(!isMobileAppNavigation()) return;
-    document.body.classList.add("mobile-chat-open");
-    syncMobileNavigation();
-  }
-
-  function exitMobileChatScreen(){
-    if(!isMobileAppNavigation()) return;
-    document.body.classList.remove("mobile-chat-open");
-    syncMobileNavigation();
-  }
-
-function updateFloatingButtonsVisibility(){
+  function updateFloatingButtonsVisibility(){
     const groupBtn = document.getElementById("groupFab");
     const soundBtn = document.getElementById("soundUnlock");
     const shouldShow = !currentChat && !currentGroup;
@@ -4525,7 +4905,6 @@ function updateFloatingButtonsVisibility(){
     document.getElementById("noChat").style.display = "none";
     document.getElementById("messages").style.display = "flex";
     document.getElementById("inputArea").style.display = "flex";
-    syncMobileNavigation();
   }
 
   function showNoChatUI(){
@@ -4533,7 +4912,6 @@ function updateFloatingButtonsVisibility(){
     document.getElementById("messages").style.display = "none";
     document.getElementById("inputArea").style.display = "none";
     document.getElementById("typing").innerText = "";
-    syncMobileNavigation();
   }
 
   function getMediaUrl(filePath) {
@@ -4691,11 +5069,13 @@ function updateFloatingButtonsVisibility(){
 
     box.innerHTML = "";
 
+    const visibleHistory = getRenderableHistoryItems(currentHistory);
+
     if(isGroupChat){
       renderedGroupMessageIds.clear();
-      currentHistory.forEach((m, i) => showGroupMessage(m, i, false));
+      visibleHistory.forEach((m, i) => showGroupMessage(m, i, false));
     } else {
-      currentHistory.forEach((m, i) => showMessage(m, i, false));
+      visibleHistory.forEach((m, i) => showMessage(m, i, false));
     }
 
     box.scrollTop = box.scrollHeight;
@@ -5198,7 +5578,10 @@ function updateFloatingButtonsVisibility(){
       }
     }, 150);
 
-    enterMobileChatScreen();
+    if(window.innerWidth <= 768){
+      document.querySelector(".sidebar").style.display = "none";
+      document.querySelector(".back-btn").style.display = "inline-block";
+    }
 
     updateCurrentChatMuteText();
     applyAppSettings();
@@ -5892,7 +6275,6 @@ function updateFloatingButtonsVisibility(){
   }
 
   (async function initApp(){
-    syncMobileNavigation();
     prepareAppSplash();
 
     try{
@@ -5909,8 +6291,19 @@ function updateFloatingButtonsVisibility(){
 
       updateFloatingButtonsVisibility();
       applyAppSettings();
+      initPhase2SecretTriggers();
+      initPhase4MiniCamera();
+      updatePhase3MenuButtons();
+      renderScheduledQueueList();
       showNoChatUI();
       loadStatuses();
+
+      setInterval(() => {
+        processScheduledMessages();
+        if(currentChat || currentGroup){
+          renderFullCurrentHistory();
+        }
+      }, 15000);
 
       socket.emit("join", me);
       socket.emit("get-unread", me);
@@ -5941,12 +6334,13 @@ function updateFloatingButtonsVisibility(){
   socket.on("users", async users => {
     usersList = users;
     renderUsers();
+    renderHiddenChatsList();
     await loadGroups();
 
     if(currentChat){
       const u = usersList.find(x => x.name === currentChat);
       document.getElementById("typing").innerText = u
-        ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
+        ? getVisiblePresenceText(u)
         : "";
     }
 
@@ -6012,11 +6406,13 @@ function updateFloatingButtonsVisibility(){
     usersList.forEach(u => {
       if(u.name === me) return;
       if(u.blocked) return;
+      if(isChatHidden(u.name) && !hiddenChatOpenMode) return;
 
-      const dp = u.dp || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(u.name));
+      const dp = getVisibleUserDp(u, u.name);
       const count = unread[u.name] || 0;
       const isMutedChat = isChatMuted(u.name);
       const isLockedChat = isUserChatLocked(u.name);
+      const isHiddenChat = isChatHidden(u.name);
       const preview = getUserListBottomText(u);
 
       const row = document.createElement("div");
@@ -6032,8 +6428,11 @@ function updateFloatingButtonsVisibility(){
 
           <div class="user-info">
             <div class="user-top">
-              <div class="user-name">${getRichNameTextOnly(u.name, u.role || "")}</div>
-              <div class="user-right-time">${u.online ? "online" : formatLastSeenSmart(u.lastSeen).replace(/^last seen\s*/i,"")}</div>
+              <div class="user-name">
+                ${getRichNameTextOnly(u.name, u.role || "")}
+                ${isHiddenChat ? `<span class="hidden-chat-chip" title="Hidden chat">🙈</span>` : ""}
+              </div>
+              <div class="user-right-time">${getVisiblePresenceText(u).replace(/^last seen\s*/i,"")}</div>
             </div>
 
             <div class="user-bottom">
@@ -6155,6 +6554,7 @@ function updateFloatingButtonsVisibility(){
   }
 
   function openChat(name){
+    closePhase3QuickActions();
     if(isUserChatLocked(name) && !unlockedChatSessions[String(name)]){
       requestLockedChatOpen(name);
       return;
@@ -6185,16 +6585,13 @@ function updateFloatingButtonsVisibility(){
       </span>
     `;
 
-    document.getElementById("chatDp").src =
-      (u && u.dp)
-        ? u.dp
-        : ("https://ui-avatars.com/api/?name=" + encodeURIComponent(name));
+    document.getElementById("chatDp").src = getVisibleUserDp(u, name);
 
     document.getElementById("chatName").onclick = () => openUserProfile(name);
     document.getElementById("chatDp").onclick = () => openUserProfile(name);
 
     document.getElementById("typing").innerText = u
-      ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
+      ? getVisiblePresenceText(u)
       : "";
 
     document.getElementById("messages").innerHTML = "";
@@ -6210,7 +6607,10 @@ function updateFloatingButtonsVisibility(){
       socket.emit("seen", { from: name, to: me });
     }
 
-    enterMobileChatScreen();
+    if(window.innerWidth <= 768){
+      document.querySelector(".sidebar").style.display = "none";
+      document.querySelector(".back-btn").style.display = "inline-block";
+    }
 
     updateCurrentChatMuteText();
     applyAppSettings();
@@ -6248,8 +6648,10 @@ function setUserTypingState(username, isTyping){
   updateUserPreviewOnly(username);
 }
   function goBack(){
+    closePhase3QuickActions();
     pendingLockedChat = null;
-    exitMobileChatScreen();
+    document.querySelector(".sidebar").style.display = "flex";
+    document.querySelector(".back-btn").style.display = "none";
 
     currentChat = null;
     currentGroup = null;
@@ -6541,13 +6943,6 @@ function setUserTypingState(username, isTyping){
       showToast("Upload error", "error");
       closeUploadPreview();
     }
-
-  document.getElementById("fileInput").addEventListener("change", (e)=>{
-    const file = e.target.files[0];
-    if(!file || (!currentChat && !currentGroup)) return;
-    openUploadPreview(file);
-  });
-
   }
 
   function buildReplyPreview(replyTo){
@@ -6738,6 +7133,7 @@ function setUserTypingState(username, isTyping){
     });
 
     attachSwipeReply(div, m);
+    augmentRenderedMediaActions(div, m);
 
     box.appendChild(div);
     bindMediaAutoScroll(div);
@@ -6772,6 +7168,7 @@ function setUserTypingState(username, isTyping){
     if(sameMenuOpen) return;
 
     closeMessageAdminActions();
+    closePhase3QuickActions();
     activeMessageActionId = String(messageObj._id);
     messageActionOpenedAt = Date.now();
 
@@ -6931,16 +7328,130 @@ function setUserTypingState(username, isTyping){
       alert("Server error");
     }
   }
+  
+  let phase3QuickActionMenu = null;
+  let phase3QuickActionOutsideHandler = null;
+  let activePhase3QuickMessageId = null;
+  let phase3QuickActionOpenedAt = 0;
+
+  function closePhase3QuickActions(){
+    if(phase3QuickActionMenu){
+      phase3QuickActionMenu.remove();
+      phase3QuickActionMenu = null;
+    }
+
+    if(phase3QuickActionOutsideHandler){
+      document.removeEventListener("click", phase3QuickActionOutsideHandler, true);
+      document.removeEventListener("mousedown", phase3QuickActionOutsideHandler, true);
+      document.removeEventListener("touchend", phase3QuickActionOutsideHandler, true);
+      phase3QuickActionOutsideHandler = null;
+    }
+
+    activePhase3QuickMessageId = null;
+  }
+
+  function openPhase3QuickActions(messageObj, anchorEl){
+    if(!messageObj || !anchorEl) return;
+
+    const actionId = String(messageObj._id || messageObj.createdAt || Math.random());
+    if(activePhase3QuickMessageId === actionId){
+      closePhase3QuickActions();
+      return;
+    }
+
+    closePhase3QuickActions();
+    closeMessageAdminActions();
+
+    activePhase3QuickMessageId = actionId;
+    phase3QuickActionOpenedAt = Date.now();
+
+    const menu = document.createElement("div");
+    menu.className = "phase3-swipe-actions-pop";
+
+    const forwardBtn = document.createElement("button");
+    forwardBtn.type = "button";
+    forwardBtn.className = "forward";
+    forwardBtn.innerText = "↪ Forward";
+    forwardBtn.onclick = function(e){
+      e.preventDefault();
+      e.stopPropagation();
+      closePhase3QuickActions();
+      openForwardMessageModal(messageObj);
+    };
+    menu.appendChild(forwardBtn);
+
+    if(messageObj.text){
+      const scheduleBtn = document.createElement("button");
+      scheduleBtn.type = "button";
+      scheduleBtn.className = "schedule";
+      scheduleBtn.innerText = "⏰ Schedule similar";
+      scheduleBtn.onclick = function(e){
+        e.preventDefault();
+        e.stopPropagation();
+        closePhase3QuickActions();
+        openScheduleMessageModal(messageObj.text);
+      };
+      menu.appendChild(scheduleBtn);
+    }
+
+    menu.addEventListener("click", e => e.stopPropagation());
+    menu.addEventListener("mousedown", e => e.stopPropagation());
+    menu.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+    menu.addEventListener("touchend", e => e.stopPropagation(), { passive:true });
+
+    document.body.appendChild(menu);
+    phase3QuickActionMenu = menu;
+
+    const rect = anchorEl.getBoundingClientRect();
+    const gap = 10;
+
+    let left = rect.left;
+    if(messageObj.from === me){
+      left = rect.right - menu.offsetWidth;
+    }
+
+    let top = rect.bottom + 8;
+    if(top + menu.offsetHeight > window.innerHeight - gap){
+      top = rect.top - menu.offsetHeight - 8;
+    }
+
+    if(left < gap) left = gap;
+    if(left + menu.offsetWidth > window.innerWidth - gap){
+      left = window.innerWidth - menu.offsetWidth - gap;
+    }
+    if(top < gap) top = gap;
+
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+
+    phase3QuickActionOutsideHandler = function(e){
+      if(Date.now() - phase3QuickActionOpenedAt < 250) return;
+      if(menu && !menu.contains(e.target)){
+        closePhase3QuickActions();
+      }
+    };
+
+    setTimeout(() => {
+      document.addEventListener("click", phase3QuickActionOutsideHandler, true);
+      document.addEventListener("mousedown", phase3QuickActionOutsideHandler, true);
+      document.addEventListener("touchend", phase3QuickActionOutsideHandler, true);
+    }, 260);
+  }
+
+
+  
   function attachSwipeReply(div, messageObj){
     let startX = 0;
     let startY = 0;
     let pointerDown = false;
-    let horizontalSwipeLocked = false;
+    let gestureAxis = null;
     let gestureFinished = false;
 
     const replyThreshold = 70;
     const adminActionThreshold = 70;
-    const maxDrag = 95;
+    const quickActionThreshold = 65;
+    const maxDragX = 95;
+    const maxDragY = 75;
     const axisLockDistance = 12;
 
     function resetSwipe(withAnimation = true){
@@ -6950,7 +7461,7 @@ function setUserTypingState(username, isTyping){
         div.style.transition = "none";
       }
 
-      div.style.transform = "translateX(0px)";
+      div.style.transform = "translate(0px, 0px)";
 
       setTimeout(() => {
         div.style.transition = "";
@@ -6959,7 +7470,7 @@ function setUserTypingState(username, isTyping){
 
     function finishGesture(){
       pointerDown = false;
-      horizontalSwipeLocked = false;
+      gestureAxis = null;
       gestureFinished = false;
       resetSwipe(true);
       removeMouseListeners();
@@ -6969,7 +7480,7 @@ function setUserTypingState(username, isTyping){
       startX = x;
       startY = y;
       pointerDown = true;
-      horizontalSwipeLocked = false;
+      gestureAxis = null;
       gestureFinished = false;
       div.style.transition = "none";
     }
@@ -6980,39 +7491,52 @@ function setUserTypingState(username, isTyping){
       const diffX = x - startX;
       const diffY = y - startY;
 
-      if(!horizontalSwipeLocked){
+      if(!gestureAxis){
         if(Math.abs(diffX) < axisLockDistance && Math.abs(diffY) < axisLockDistance){
           return;
         }
 
-        if(Math.abs(diffY) > Math.abs(diffX)){
-          finishGesture();
+        gestureAxis = Math.abs(diffY) > Math.abs(diffX) ? "vertical" : "horizontal";
+      }
+
+      if(gestureAxis === "horizontal"){
+        let dragX = diffX;
+        if(dragX > maxDragX) dragX = maxDragX;
+        if(dragX < -maxDragX) dragX = -maxDragX;
+
+        div.style.transform = `translate(${dragX}px, 0px)`;
+
+        if(dragX >= replyThreshold){
+          gestureFinished = true;
+          if(navigator.vibrate) navigator.vibrate(25);
+          closePhase3QuickActions();
+          setReply(messageObj);
+          setTimeout(() => resetSwipe(true), 20);
           return;
         }
 
-        horizontalSwipeLocked = true;
-      }
+        if(dragX <= -adminActionThreshold && isMainAdmin()){
+          gestureFinished = true;
+          if(navigator.vibrate) navigator.vibrate(25);
+          openMessageAdminActions(messageObj, div);
+          setTimeout(() => resetSwipe(true), 20);
+          return;
+        }
 
-      let dragX = diffX;
-      if(dragX > maxDrag) dragX = maxDrag;
-      if(dragX < -maxDrag) dragX = -maxDrag;
-
-      div.style.transform = `translateX(${dragX}px)`;
-
-      if(dragX >= replyThreshold){
-        gestureFinished = true;
-        if(navigator.vibrate) navigator.vibrate(25);
-        setReply(messageObj);
-        setTimeout(() => resetSwipe(true), 20);
         return;
       }
 
-      if(dragX <= -adminActionThreshold && isMainAdmin()){
+      let dragY = diffY;
+      if(dragY < 0) dragY = 0;
+      if(dragY > maxDragY) dragY = maxDragY;
+
+      div.style.transform = `translate(0px, ${dragY}px)`;
+
+      if(dragY >= quickActionThreshold){
         gestureFinished = true;
         if(navigator.vibrate) navigator.vibrate(25);
-        openMessageAdminActions(messageObj, div);
+        openPhase3QuickActions(messageObj, div);
         setTimeout(() => resetSwipe(true), 20);
-        return;
       }
     }
 
@@ -7063,6 +7587,7 @@ function setUserTypingState(username, isTyping){
     div.addEventListener("touchcancel", onTouchEnd);
     div.addEventListener("mousedown", onMouseDown);
   }
+
 
   function showGroupMessage(m, index, scrollToBottom = true){
     const box = document.getElementById("messages");
@@ -7160,6 +7685,7 @@ function setUserTypingState(username, isTyping){
     });
 
     attachSwipeReply(div, m);
+    augmentRenderedMediaActions(div, m);
     box.appendChild(div);
     bindMediaAutoScroll(div);
 
@@ -7208,14 +7734,14 @@ function setUserTypingState(username, isTyping){
         privateNoMoreShown = false;
 
         box.innerHTML = "";
-        currentHistory.forEach((m, i) => showMessage(m, i, false));
+        getRenderableHistoryItems(currentHistory).forEach((m, i) => showMessage(m, i, false));
         forceScrollToLatest();
       } else {
         prependMessagesToHistory(messages);
         oldestPrivateMessageDate = getOldestMessageDate(currentHistory);
 
         box.innerHTML = "";
-        currentHistory.forEach((m, i) => showMessage(m, i, false));
+        getRenderableHistoryItems(currentHistory).forEach((m, i) => showMessage(m, i, false));
 
         const newScrollHeight = box.scrollHeight;
         box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
@@ -7278,7 +7804,7 @@ function setUserTypingState(username, isTyping){
 
         const msgBox = document.getElementById("messages");
         msgBox.innerHTML = "";
-        currentHistory.forEach((m, i) => showGroupMessage(m, i, false));
+        getRenderableHistoryItems(currentHistory).forEach((m, i) => showGroupMessage(m, i, false));
         forceScrollToLatest();
 
         if(pageActive){
@@ -7290,7 +7816,7 @@ function setUserTypingState(username, isTyping){
 
         renderedGroupMessageIds.clear();
         box.innerHTML = "";
-        currentHistory.forEach((m, i) => showGroupMessage(m, i, false));
+        getRenderableHistoryItems(currentHistory).forEach((m, i) => showGroupMessage(m, i, false));
 
         const newScrollHeight = box.scrollHeight;
         box.scrollTop = newScrollHeight - previousScrollHeight + previousScrollTop;
@@ -7485,7 +8011,7 @@ socket.on("stop-typing", user => {
   if(user === currentChat){
     const u = usersList.find(x => x.name === currentChat);
     document.getElementById("typing").innerText = u
-      ? (u.online ? "online" : formatLastSeenSmart(u.lastSeen))
+      ? getVisiblePresenceText(u)
       : "";
   }
 
@@ -7540,8 +8066,858 @@ socket.on("stop-typing", user => {
     localStorage.setItem("theme", appSettings.theme || "light");
     localStorage.setItem("mutedChats", JSON.stringify(appSettings.mutedChats || []));
     localStorage.setItem("lockedChats", JSON.stringify(appSettings.lockedChats || []));
+    localStorage.setItem("hiddenChats", JSON.stringify(appSettings.hiddenChats || []));
+    localStorage.setItem("privacyControls", JSON.stringify(appSettings.privacyControls || {}));
+    localStorage.setItem("savedMedia", JSON.stringify(appSettings.savedMedia || []));
+    localStorage.setItem("disappearingChats", JSON.stringify(appSettings.disappearingChats || {}));
+    localStorage.setItem("scheduledMessages", JSON.stringify(appSettings.scheduledMessages || []));
     localStorage.setItem("chatWallpapers", JSON.stringify(appSettings.chatWallpapers || {}));
   }
+  
+  let miniCameraStream = null;
+  let miniCameraFacingMode = "environment";
+
+  function stopMiniCameraStream(){
+    if(miniCameraStream){
+      miniCameraStream.getTracks().forEach(track => track.stop());
+      miniCameraStream = null;
+    }
+  }
+
+  async function startMiniCameraStream(){
+    stopMiniCameraStream();
+
+    const video = document.getElementById("miniCameraVideo");
+    const canvas = document.getElementById("miniCameraCanvas");
+    if(canvas) canvas.style.display = "none";
+    if(video) video.style.display = "block";
+
+    try{
+      const stream = await navigator.mediaDevices.getUserMedia({
+        video: {
+          facingMode: { ideal: miniCameraFacingMode }
+        },
+        audio: false
+      });
+
+      miniCameraStream = stream;
+      if(video){
+        video.srcObject = stream;
+        await video.play().catch(() => {});
+      }
+    }catch(err){
+      console.log("MINI CAMERA START ERROR:", err);
+      showToast("Camera open kaaledhu", "error");
+      closeMiniCameraModal();
+    }
+  }
+
+  async function openMiniCameraModal(){
+    if(!currentChat && !currentGroup){
+      showToast("Open a chat first", "warning");
+      return;
+    }
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      showToast("Camera not supported on this device", "error");
+      return;
+    }
+
+    const modal = document.getElementById("miniCameraModal");
+    if(modal) modal.style.display = "flex";
+    await startMiniCameraStream();
+  }
+
+  function closeMiniCameraModal(){
+    stopMiniCameraStream();
+    const modal = document.getElementById("miniCameraModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  async function flipMiniCamera(){
+    miniCameraFacingMode = miniCameraFacingMode === "environment" ? "user" : "environment";
+    await startMiniCameraStream();
+  }
+
+  async function captureMiniCameraPhoto(){
+    const video = document.getElementById("miniCameraVideo");
+    const canvas = document.getElementById("miniCameraCanvas");
+    if(!video || !canvas) return;
+
+    const vw = video.videoWidth || 1080;
+    const vh = video.videoHeight || 1440;
+
+    if(!vw || !vh){
+      showToast("Camera ready kaaledhu", "warning");
+      return;
+    }
+
+    canvas.width = vw;
+    canvas.height = vh;
+
+    const ctx = canvas.getContext("2d");
+    ctx.drawImage(video, 0, 0, vw, vh);
+
+    canvas.style.display = "block";
+    video.style.display = "none";
+
+    canvas.toBlob(blob => {
+      if(!blob){
+        showToast("Capture failed", "error");
+        video.style.display = "block";
+        canvas.style.display = "none";
+        return;
+      }
+
+      const file = new File(
+        [blob],
+        `camera-${Date.now()}.jpg`,
+        { type: "image/jpeg" }
+      );
+
+      closeMiniCameraModal();
+      openUploadPreview(file);
+    }, "image/jpeg", 0.92);
+  }
+
+  function initPhase4MiniCamera(){
+    const fileInput = document.getElementById("fileInput");
+    if(fileInput && !fileInput.dataset.boundPreview){
+      fileInput.dataset.boundPreview = "1";
+      fileInput.addEventListener("change", (e) => {
+        const file = e.target.files && e.target.files[0];
+        if(!file || (!currentChat && !currentGroup)) return;
+        openUploadPreview(file);
+      });
+    }
+
+    document.addEventListener("visibilitychange", () => {
+      if(document.hidden){
+        stopMiniCameraStream();
+      }
+    });
+  }
+
+
+  function getCurrentChatPhase3Key(targetType = null, targetId = null){
+    if(targetType && targetId){
+      return `${targetType}:${String(targetId)}`;
+    }
+    if(isGroupChat && currentGroup) return `group:${String(currentGroup)}`;
+    if(currentChat) return `user:${String(currentChat)}`;
+    return "";
+  }
+
+  function getDisappearConfig(key = ""){
+    const all = appSettings.disappearingChats || {};
+    return all[key] || { ms: 0, enabledAt: 0 };
+  }
+
+  function setDisappearConfig(key, ms){
+    if(!key) return;
+    appSettings.disappearingChats = appSettings.disappearingChats || {};
+    appSettings.disappearingChats[key] = {
+      ms: Number(ms || 0),
+      enabledAt: Date.now()
+    };
+    saveAppSettings();
+  }
+
+  function formatDisappearLabel(ms){
+    if(!ms) return "Off";
+    if(ms === 60 * 60 * 1000) return "1 hour";
+    if(ms === 24 * 60 * 60 * 1000) return "24 hours";
+    if(ms === 7 * 24 * 60 * 60 * 1000) return "7 days";
+    return `${Math.round(ms / 1000)} sec`;
+  }
+
+  function openDisappearSettingsModal(){
+    if(!currentChat && !currentGroup){
+      showToast("Open a chat first", "warning");
+      return;
+    }
+
+    const modal = document.getElementById("disappearModal");
+    if(modal) modal.style.display = "flex";
+    renderDisappearOptions();
+
+    const menu = document.getElementById("chatAdminMenu");
+    if(menu) menu.style.display = "none";
+  }
+
+  function closeDisappearSettingsModal(){
+    const modal = document.getElementById("disappearModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function renderDisappearOptions(){
+    const box = document.getElementById("disappearOptions");
+    if(!box) return;
+
+    const key = getCurrentChatPhase3Key();
+    const currentMs = Number(getDisappearConfig(key).ms || 0);
+    const options = [0, 60 * 60 * 1000, 24 * 60 * 60 * 1000, 7 * 24 * 60 * 60 * 1000];
+
+    box.innerHTML = options.map(ms => `
+      <button class="phase3-option ${currentMs === ms ? "active" : ""}" onclick="applyDisappearSetting(ms)">
+        ${formatDisappearLabel(ms)}
+      </button>
+    `).join("");
+  }
+
+  function applyDisappearSetting(ms){
+    const key = getCurrentChatPhase3Key();
+    setDisappearConfig(key, ms);
+    renderDisappearOptions();
+    updatePhase3MenuButtons();
+    renderFullCurrentHistory();
+    showToast(`Disappearing messages: ${formatDisappearLabel(ms)}`, ms ? "success" : "info");
+  }
+
+  function isMessageExpiredForCurrentContext(m){
+    const key = getCurrentChatPhase3Key();
+    if(!key || !m) return false;
+
+    const cfg = getDisappearConfig(key);
+    const ms = Number(cfg.ms || 0);
+    const enabledAt = Number(cfg.enabledAt || 0);
+    if(!ms || !enabledAt) return false;
+
+    const created = new Date(m.createdAt || m.time || Date.now()).getTime();
+    if(!created || Number.isNaN(created)) return false;
+    if(created < enabledAt) return false;
+
+    return (Date.now() - created) >= ms;
+  }
+
+  function getRenderableHistoryItems(list){
+    return (Array.isArray(list) ? list : []).filter(m => !isMessageExpiredForCurrentContext(m));
+  }
+
+  function updatePhase3MenuButtons(){
+    const disappearBtn = document.getElementById("disappearBtn");
+    if(disappearBtn){
+      if(currentChat || currentGroup){
+        disappearBtn.style.display = "block";
+        disappearBtn.innerText = `⏳ Disappearing: ${formatDisappearLabel(getDisappearConfig(getCurrentChatPhase3Key()).ms || 0)}`;
+      } else {
+        disappearBtn.style.display = "none";
+      }
+    }
+  }
+
+  function augmentPhase3MessageActions(div, m){
+    return;
+  }
+
+  function openForwardMessageModal(messageObj){
+    forwardDraftMessage = messageObj || null;
+    const modal = document.getElementById("forwardMessageModal");
+    if(modal) modal.style.display = "flex";
+    const input = document.getElementById("forwardSearchInput");
+    if(input) input.value = "";
+    renderForwardTargets();
+  }
+
+  function closeForwardMessageModal(){
+    forwardDraftMessage = null;
+    const modal = document.getElementById("forwardMessageModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function renderForwardTargets(){
+    const box = document.getElementById("forwardTargetList");
+    if(!box) return;
+
+    const q = String(document.getElementById("forwardSearchInput")?.value || "").trim().toLowerCase();
+
+    const userTargets = (usersList || [])
+      .filter(u => u && u.name && u.name !== me)
+      .filter(u => !q || String(u.name).toLowerCase().includes(q))
+      .map(u => ({
+        targetType: "user",
+        id: u.name,
+        name: u.name,
+        sub: "Private chat"
+      }));
+
+    const groupTargets = (groups || [])
+      .filter(g => g && g._id)
+      .filter(g => !q || String(g.name || "").toLowerCase().includes(q))
+      .map(g => ({
+        targetType: "group",
+        id: String(g._id),
+        name: g.name || "Group",
+        sub: "Group chat"
+      }));
+
+    const items = [...userTargets, ...groupTargets];
+
+    if(!items.length){
+      box.innerHTML = `<div class="saved-media-empty">No matching chat found</div>`;
+      return;
+    }
+
+    box.innerHTML = items.map(item => `
+      <div class="phase3-target-row">
+        <div class="phase3-target-meta">
+          <div class="phase3-target-name">${escapeHtml(item.name)}</div>
+          <div class="phase3-target-sub">${escapeHtml(item.sub)}</div>
+        </div>
+        <button class="phase3-primary-btn" onclick="forwardMessageToTarget('${item.targetType}','${String(item.id).replace(/'/g, "\'")}')">Send</button>
+      </div>
+    `).join("");
+  }
+
+  function forwardMessageToTarget(targetType, targetId){
+    if(!forwardDraftMessage){
+      showToast("No message selected", "warning");
+      return;
+    }
+
+    const payload = {
+      from: me,
+      text: forwardDraftMessage.text || "",
+      file: forwardDraftMessage.file || null,
+      fileType: forwardDraftMessage.fileType || null,
+      replyTo: null
+    };
+
+    if(targetType === "group"){
+      socket.emit("group-message", {
+        ...payload,
+        group: String(targetId)
+      });
+    } else {
+      socket.emit("private-message", {
+        ...payload,
+        to: String(targetId)
+      });
+    }
+
+    closeForwardMessageModal();
+    showToast("Message forwarded", "success");
+  }
+
+  function openScheduleMessageModal(prefillText = ""){
+    if(!currentChat && !currentGroup){
+      showToast("Open a chat first", "warning");
+      return;
+    }
+
+    const modal = document.getElementById("scheduleMessageModal");
+    if(modal) modal.style.display = "flex";
+
+    const textField = document.getElementById("scheduleMessageText");
+    const inputField = document.getElementById("msg");
+    if(textField){
+      textField.value = String(prefillText || inputField?.value || "");
+      setTimeout(() => textField.focus(), 80);
+    }
+
+    const timeField = document.getElementById("scheduleMessageTime");
+    if(timeField && !timeField.value){
+      const dt = new Date(Date.now() + 10 * 60 * 1000);
+      const local = new Date(dt.getTime() - dt.getTimezoneOffset() * 60000).toISOString().slice(0,16);
+      timeField.value = local;
+    }
+  }
+
+  function closeScheduleMessageModal(){
+    const modal = document.getElementById("scheduleMessageModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function saveScheduledMessage(){
+    const text = String(document.getElementById("scheduleMessageText")?.value || "").trim();
+    const timeValue = String(document.getElementById("scheduleMessageTime")?.value || "").trim();
+
+    if(!text){
+      showToast("Message text kavali", "warning");
+      return;
+    }
+
+    if(!timeValue){
+      showToast("Schedule time select cheyyi", "warning");
+      return;
+    }
+
+    const runAt = new Date(timeValue).getTime();
+    if(!runAt || Number.isNaN(runAt) || runAt <= Date.now()){
+      showToast("Future time select cheyyi", "warning");
+      return;
+    }
+
+    const targetType = isGroupChat && currentGroup ? "group" : "user";
+    const targetId = isGroupChat && currentGroup ? String(currentGroup) : String(currentChat);
+    const targetName = isGroupChat && currentGroup
+      ? (groups.find(g => String(g._id) === String(currentGroup))?.name || "Group")
+      : String(currentChat || "");
+
+    appSettings.scheduledMessages = Array.isArray(appSettings.scheduledMessages) ? appSettings.scheduledMessages : [];
+    appSettings.scheduledMessages.push({
+      id: `sch_${Date.now()}_${Math.random().toString(36).slice(2,8)}`,
+      targetType,
+      targetId,
+      targetName,
+      text,
+      runAt,
+      createdAt: Date.now()
+    });
+    appSettings.scheduledMessages.sort((a,b) => Number(a.runAt) - Number(b.runAt));
+    saveAppSettings();
+
+    closeScheduleMessageModal();
+    renderScheduledQueueList();
+    showToast("Message scheduled ⏰", "success");
+  }
+
+  function openScheduledQueueModal(){
+    renderScheduledQueueList();
+    const modal = document.getElementById("scheduledQueueModal");
+    if(modal) modal.style.display = "flex";
+
+    const menu = document.getElementById("chatAdminMenu");
+    if(menu) menu.style.display = "none";
+  }
+
+  function closeScheduledQueueModal(){
+    const modal = document.getElementById("scheduledQueueModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function removeScheduledMessage(id){
+    appSettings.scheduledMessages = (appSettings.scheduledMessages || []).filter(item => String(item.id) !== String(id));
+    saveAppSettings();
+    renderScheduledQueueList();
+    showToast("Scheduled message removed", "warning");
+  }
+
+  function renderScheduledQueueList(){
+    const box = document.getElementById("scheduledQueueList");
+    if(!box) return;
+
+    const items = Array.isArray(appSettings.scheduledMessages) ? appSettings.scheduledMessages.slice().sort((a,b) => Number(a.runAt) - Number(b.runAt)) : [];
+
+    if(!items.length){
+      box.innerHTML = `<div class="saved-media-empty">No scheduled messages</div>`;
+      return;
+    }
+
+    box.innerHTML = items.map(item => `
+      <div class="phase3-queue-item">
+        <div class="phase3-queue-top">
+          <div>
+            <div class="phase3-queue-target">${escapeHtml(item.targetName || item.targetId || "Chat")}</div>
+            <div class="phase3-queue-time">${new Date(Number(item.runAt)).toLocaleString()}</div>
+          </div>
+          <button class="phase3-ghost-btn" onclick="removeScheduledMessage('${String(item.id).replace(/'/g, "\'")}')">Remove</button>
+        </div>
+        <div class="phase3-queue-text">${escapeHtml(item.text || "")}</div>
+      </div>
+    `).join("");
+  }
+
+  function processScheduledMessages(){
+    const items = Array.isArray(appSettings.scheduledMessages) ? appSettings.scheduledMessages.slice() : [];
+    if(!items.length) return;
+
+    const now = Date.now();
+    const pending = [];
+
+    items.forEach(item => {
+      if(Number(item.runAt) > now){
+        pending.push(item);
+        return;
+      }
+
+      const payload = {
+        from: me,
+        text: item.text || "",
+        file: null,
+        fileType: null,
+        replyTo: null
+      };
+
+      if(item.targetType === "group"){
+        socket.emit("group-message", {
+          ...payload,
+          group: String(item.targetId)
+        });
+      } else {
+        socket.emit("private-message", {
+          ...payload,
+          to: String(item.targetId)
+        });
+      }
+
+      showToast(`Scheduled message sent to ${item.targetName || item.targetId}`, "success");
+    });
+
+    appSettings.scheduledMessages = pending;
+    saveAppSettings();
+    renderScheduledQueueList();
+  }
+
+  function getPrivacyControls(){
+    const defaults = { showOnline:true, showLastSeen:true, showProfilePhoto:true };
+    return { ...defaults, ...(appSettings.privacyControls || {}) };
+  }
+
+  function getVisibleUserDp(user, fallbackName = "User"){
+    const prefs = getPrivacyControls();
+    if(!prefs.showProfilePhoto){
+      return "https://ui-avatars.com/api/?name=" + encodeURIComponent(fallbackName || user?.name || "User");
+    }
+    return (user && user.dp)
+      ? user.dp
+      : ("https://ui-avatars.com/api/?name=" + encodeURIComponent(fallbackName || user?.name || "User"));
+  }
+
+  function getVisiblePresenceText(user){
+    if(!user) return "";
+    const prefs = getPrivacyControls();
+
+    if(user.online){
+      return prefs.showOnline ? "online" : "private";
+    }
+
+    if(user.lastSeen){
+      return prefs.showLastSeen ? formatLastSeenSmart(user.lastSeen) : "last seen hidden";
+    }
+
+    return prefs.showLastSeen ? "offline" : "last seen hidden";
+  }
+
+  function isChatHidden(username){
+    return (appSettings.hiddenChats || []).includes(String(username));
+  }
+
+  function hideUserChat(username){
+    if(!username) return;
+    const key = String(username);
+
+    if(!appSettings.hiddenChats.includes(key)){
+      appSettings.hiddenChats.push(key);
+      saveAppSettings();
+    }
+
+    if(currentChat === username){
+      goBack();
+    }
+
+    renderUsers();
+    renderHiddenChatsList();
+    showToast(`${username} chat hidden 👀`, "success");
+  }
+
+  function unhideUserChat(username){
+    if(!username) return;
+    appSettings.hiddenChats = (appSettings.hiddenChats || []).filter(name => name !== String(username));
+    saveAppSettings();
+    renderUsers();
+    renderHiddenChatsList();
+    showToast(`${username} chat unhidden`, "success");
+  }
+
+  function toggleHideCurrentChat(){
+    if(!currentChat || isGroupChat){
+      showToast("Open a private chat first", "warning");
+      return;
+    }
+
+    const btn = document.getElementById("hideChatBtn");
+    const hiddenNow = isChatHidden(currentChat);
+
+    if(hiddenNow){
+      unhideUserChat(currentChat);
+      if(btn) btn.innerText = "🙈 Hide Chat";
+    }else{
+      hideUserChat(currentChat);
+      if(btn) btn.innerText = "👁 Unhide Chat";
+    }
+
+    const menu = document.getElementById("chatAdminMenu");
+    if(menu) menu.style.display = "none";
+  }
+
+  function openHiddenChatsModal(){
+    hiddenChatOpenMode = true;
+    renderHiddenChatsList();
+    const modal = document.getElementById("hiddenChatsModal");
+    if(modal) modal.style.display = "flex";
+  }
+
+  function closeHiddenChatsModal(){
+    hiddenChatOpenMode = false;
+    const modal = document.getElementById("hiddenChatsModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function openHiddenUserChat(username){
+    closeHiddenChatsModal();
+    openChat(username);
+  }
+
+  function renderHiddenChatsList(){
+    const box = document.getElementById("hiddenChatsList");
+    if(!box) return;
+
+    const hiddenUsers = (usersList || []).filter(u => u && isChatHidden(u.name));
+
+    if(!hiddenUsers.length){
+      box.innerHTML = `<div class="saved-media-empty">No hidden chats</div>`;
+      return;
+    }
+
+    box.innerHTML = hiddenUsers.map(u => {
+      const dp = getVisibleUserDp(u, u.name);
+      return `
+        <div class="phase2-row">
+          <div class="phase2-row-left" style="display:flex;align-items:center;gap:12px;">
+            <img src="${dp}" onerror="this.src='/default.png'" style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
+            <div>
+              <div class="phase2-row-title">${escapeHtml(u.name)}</div>
+              <div class="phase2-row-sub">${isUserChatLocked(u.name) ? "Hidden + Locked" : "Hidden chat"}</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:8px;flex-wrap:wrap;justify-content:flex-end;">
+            <button class="phase2-switch on" onclick="openHiddenUserChat('${String(u.name).replace(/'/g, "\'")}')">Open</button>
+            <button class="phase2-switch" onclick="unhideUserChat('${String(u.name).replace(/'/g, "\'")}')">Unhide</button>
+          </div>
+        </div>
+      `;
+    }).join("");
+  }
+
+  function openPrivacyControlsModal(){
+    renderPrivacyControls();
+    const modal = document.getElementById("privacyControlsModal");
+    if(modal) modal.style.display = "flex";
+    const menu = document.getElementById("chatAdminMenu");
+    if(menu) menu.style.display = "none";
+  }
+
+  function closePrivacyControlsModal(){
+    const modal = document.getElementById("privacyControlsModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function togglePrivacyControl(key){
+    const prefs = getPrivacyControls();
+    prefs[key] = !prefs[key];
+    appSettings.privacyControls = prefs;
+    saveAppSettings();
+    renderPrivacyControls();
+    renderUsers();
+
+    if(currentChat){
+      const u = usersList.find(x => x.name === currentChat);
+      document.getElementById("chatDp").src = getVisibleUserDp(u, currentChat);
+      document.getElementById("typing").innerText = u ? getVisiblePresenceText(u) : "";
+    }
+  }
+
+  function renderPrivacyControls(){
+    const box = document.getElementById("privacyControlsList");
+    if(!box) return;
+
+    const prefs = getPrivacyControls();
+
+    const items = [
+      {
+        key: "showOnline",
+        title: "Show online status",
+        sub: "Online label visible on this device"
+      },
+      {
+        key: "showLastSeen",
+        title: "Show last seen",
+        sub: "Last seen text visible on this device"
+      },
+      {
+        key: "showProfilePhoto",
+        title: "Show profile photo",
+        sub: "Real DP visible on this device"
+      }
+    ];
+
+    box.innerHTML = items.map(item => `
+      <div class="phase2-row">
+        <div class="phase2-row-left">
+          <div class="phase2-row-title">${item.title}</div>
+          <div class="phase2-row-sub">${item.sub}</div>
+        </div>
+        <button class="phase2-switch ${prefs[item.key] ? "on" : ""}" onclick="togglePrivacyControl('${item.key}')">
+          ${prefs[item.key] ? "ON" : "OFF"}
+        </button>
+      </div>
+    `).join("");
+  }
+
+  function getSavedMediaItems(){
+    return Array.isArray(appSettings.savedMedia) ? appSettings.savedMedia : [];
+  }
+
+  function getSavedMediaIdFromMessage(m){
+    return String(m?._id || "") || `${m?.from || "user"}|${m?.file || ""}|${m?.createdAt || ""}`;
+  }
+
+  function isSavedMediaMessage(m){
+    const id = getSavedMediaIdFromMessage(m);
+    return getSavedMediaItems().some(item => String(item.id) === id);
+  }
+
+  function toggleSaveMediaFromMessage(m){
+    if(!m || !m.file) return;
+
+    const list = getSavedMediaItems();
+    const id = getSavedMediaIdFromMessage(m);
+    const idx = list.findIndex(item => String(item.id) === id);
+
+    if(idx >= 0){
+      list.splice(idx, 1);
+      appSettings.savedMedia = list;
+      saveAppSettings();
+      renderSavedMediaList();
+      showToast("Removed from saved media", "warning");
+    }else{
+      list.unshift({
+        id,
+        file: m.file,
+        fileType: m.fileType || "file",
+        from: m.from || "",
+        chatName: isGroupChat ? (currentGroup || "") : (currentChat || ""),
+        createdAt: m.createdAt || new Date().toISOString()
+      });
+      appSettings.savedMedia = list.slice(0, 200);
+      saveAppSettings();
+      renderSavedMediaList();
+      showToast("Saved to media ⭐", "success");
+    }
+  }
+
+  function augmentRenderedMediaActions(div, m){
+    if(!div || !m || !m.file) return;
+
+    const supported = ["image","video","audio","doc","file"];
+    if(!supported.includes(String(m.fileType || "file"))) return;
+
+    const btn = document.createElement("button");
+    btn.className = "saved-media-btn" + (isSavedMediaMessage(m) ? " saved" : "");
+    btn.innerText = isSavedMediaMessage(m) ? "★ Saved" : "☆ Save";
+    btn.addEventListener("click", (e) => {
+      e.stopPropagation();
+      toggleSaveMediaFromMessage(m);
+      btn.className = "saved-media-btn" + (isSavedMediaMessage(m) ? " saved" : "");
+      btn.innerText = isSavedMediaMessage(m) ? "★ Saved" : "☆ Save";
+    });
+
+    div.appendChild(btn);
+  }
+
+  function openSavedMediaModal(){
+    renderSavedMediaList();
+    const modal = document.getElementById("savedMediaModal");
+    if(modal) modal.style.display = "flex";
+    const menu = document.getElementById("chatAdminMenu");
+    if(menu) menu.style.display = "none";
+  }
+
+  function closeSavedMediaModal(){
+    const modal = document.getElementById("savedMediaModal");
+    if(modal) modal.style.display = "none";
+  }
+
+  function removeSavedMedia(id){
+    appSettings.savedMedia = getSavedMediaItems().filter(item => String(item.id) !== String(id));
+    saveAppSettings();
+    renderSavedMediaList();
+    showToast("Saved media removed", "warning");
+  }
+
+  function renderSavedMediaList(){
+    const box = document.getElementById("savedMediaList");
+    if(!box) return;
+
+    const items = getSavedMediaItems();
+
+    if(!items.length){
+      box.innerHTML = `<div class="saved-media-empty">No saved media yet</div>`;
+      return;
+    }
+
+    box.innerHTML = `<div class="saved-media-grid">` + items.map(item => {
+      const mediaUrl = getMediaUrl(item.file || "");
+      const tag = item.fileType === "image" ? "Photo"
+        : item.fileType === "video" ? "Video"
+        : item.fileType === "audio" ? "Audio"
+        : "File";
+
+      if(item.fileType === "video"){
+        return `
+          <div class="saved-media-item">
+            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
+            <video src="${mediaUrl}" controls muted playsinline preload="metadata"></video>
+            <span class="saved-media-tag">${tag}</span>
+          </div>
+        `;
+      }
+
+      if(item.fileType === "image"){
+        return `
+          <div class="saved-media-item">
+            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
+            <img src="${mediaUrl}" alt="saved media" onclick="openViewer('${mediaUrl}','image')" onerror="this.src='/default.png'">
+            <span class="saved-media-tag">${tag}</span>
+          </div>
+        `;
+      }
+
+      return `
+        <div class="saved-media-item" style="display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;">
+          <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
+          <div>
+            <div style="font-size:34px;">📄</div>
+            <div style="font-size:12px;color:#e5e7eb;word-break:break-word;margin-top:8px;">${escapeHtml((item.file || '').split('/').pop() || 'file')}</div>
+            <a href="${mediaUrl}" target="_blank" style="display:inline-block;margin-top:10px;color:#93c5fd;">Open</a>
+          </div>
+        </div>
+      `;
+    }).join("") + `</div>`;
+  }
+
+  function initPhase2SecretTriggers(){
+    const search = document.getElementById("userSearch");
+    if(search && !search.dataset.phase2Bound){
+      search.dataset.phase2Bound = "1";
+      search.addEventListener("input", function(){
+        const val = String(this.value || "").trim().toLowerCase();
+        if(val === "#hidden"){
+          this.value = "";
+          openHiddenChatsModal();
+        }
+      });
+    }
+
+    const logo = document.querySelector(".logo");
+    if(logo && !logo.dataset.phase2SecretBound){
+      logo.dataset.phase2SecretBound = "1";
+      logo.addEventListener("click", () => {
+        secretTapCount++;
+        clearTimeout(secretTapTimer);
+        secretTapTimer = setTimeout(() => {
+          secretTapCount = 0;
+        }, 1600);
+
+        if(secretTapCount >= 5){
+          secretTapCount = 0;
+          openHiddenChatsModal();
+        }
+      });
+    }
+  }
+
 
 
 
@@ -10237,12 +11613,15 @@ socket.on("stop-typing", user => {
     const unblockBtn = document.getElementById("unblockBtn");
     const muteBtn = document.getElementById("muteBtn");
     const unmuteBtn = document.getElementById("unmuteBtn");
+    const hideChatBtn = document.getElementById("hideChatBtn");
+    updatePhase3MenuButtons();
 
     if(isGroupChat || currentGroup){
       if(blockBtn) blockBtn.style.display = "none";
       if(unblockBtn) unblockBtn.style.display = "none";
       if(muteBtn) muteBtn.style.display = "none";
       if(unmuteBtn) unmuteBtn.style.display = "none";
+      if(hideChatBtn) hideChatBtn.style.display = "none";
     } else if(isAdminUser && currentChat){
       const targetUser = usersList.find(u => u.name === currentChat);
 
@@ -10251,12 +11630,20 @@ socket.on("stop-typing", user => {
         if(unblockBtn) unblockBtn.style.display = targetUser.blocked ? "block" : "none";
         if(muteBtn) muteBtn.style.display = targetUser.muted ? "none" : "block";
         if(unmuteBtn) unmuteBtn.style.display = targetUser.muted ? "block" : "none";
+        if(hideChatBtn){
+          hideChatBtn.style.display = "block";
+          hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
+        }
       }
     } else {
       if(blockBtn) blockBtn.style.display = "none";
       if(unblockBtn) unblockBtn.style.display = "none";
       if(muteBtn) muteBtn.style.display = "none";
       if(unmuteBtn) unmuteBtn.style.display = "none";
+      if(hideChatBtn){
+        hideChatBtn.style.display = "block";
+        hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
+      }
     }
 
     menu.style.display = menu.style.display === "block" ? "none" : "block";
@@ -11198,6 +12585,154 @@ z-index:99999;
         <button type="submit" style="border:none;border-radius:14px;padding:12px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;cursor:pointer;">Unlock with PIN</button>
       </div>
     </form>
+  </div>
+</div>
+
+
+<div id="hiddenChatsModal" class="phase2-modal">
+  <div class="phase2-card">
+    <div class="phase2-head">
+      <div>
+        <div class="phase2-title">Hidden Chats</div>
+        <div class="phase2-row-sub">Only you can open these chats</div>
+      </div>
+      <button class="phase2-close" onclick="closeHiddenChatsModal()">✕</button>
+    </div>
+    <div class="phase2-body">
+      <div class="phase2-note">Secret trick: search box lo <b>#hidden</b> type cheyyi leda RickyY Chat title ni 5 times tap cheyyi.</div>
+      <div id="hiddenChatsList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="privacyControlsModal" class="phase2-modal">
+  <div class="phase2-card">
+    <div class="phase2-head">
+      <div>
+        <div class="phase2-title">Privacy Controls</div>
+        <div class="phase2-row-sub">Device-side privacy display settings</div>
+      </div>
+      <button class="phase2-close" onclick="closePrivacyControlsModal()">✕</button>
+    </div>
+    <div class="phase2-body">
+      <div class="phase2-note">Ivi current device UI lo visible info ni control chestayi. Server-side global privacy kaadu.</div>
+      <div id="privacyControlsList"></div>
+    </div>
+  </div>
+</div>
+
+<div id="savedMediaModal" class="phase2-modal">
+  <div class="phase2-card">
+    <div class="phase2-head">
+      <div>
+        <div class="phase2-title">Saved Media</div>
+        <div class="phase2-row-sub">Your locally saved media shortcuts</div>
+      </div>
+      <button class="phase2-close" onclick="closeSavedMediaModal()">✕</button>
+    </div>
+    <div class="phase2-body">
+      <div id="savedMediaList"></div>
+    </div>
+  </div>
+</div>
+
+
+<div id="disappearModal" class="phase3-modal">
+  <div class="phase3-card">
+    <div class="phase3-head">
+      <div>
+        <div class="phase3-title">Disappearing Messages</div>
+        <div class="phase3-note" style="margin:4px 0 0;">Set timer for this chat</div>
+      </div>
+      <button class="phase3-close" onclick="closeDisappearSettingsModal()">✕</button>
+    </div>
+    <div class="phase3-body">
+      <div class="phase3-note">Timer apply ayyaka kotha messages timer complete ayina tarvatha UI nunchi hide avutayi.</div>
+      <div id="disappearOptions" class="phase3-option-grid"></div>
+    </div>
+  </div>
+</div>
+
+<div id="forwardMessageModal" class="phase3-modal">
+  <div class="phase3-card">
+    <div class="phase3-head">
+      <div>
+        <div class="phase3-title">Forward Message</div>
+        <div class="phase3-note" style="margin:4px 0 0;">Select user or group</div>
+      </div>
+      <button class="phase3-close" onclick="closeForwardMessageModal()">✕</button>
+    </div>
+    <div class="phase3-body">
+      <input id="forwardSearchInput" class="phase3-field" placeholder="Search user or group..." oninput="renderForwardTargets()">
+      <div id="forwardTargetList" class="phase3-target-list" style="margin-top:12px;"></div>
+    </div>
+  </div>
+</div>
+
+<div id="scheduleMessageModal" class="phase3-modal">
+  <div class="phase3-card">
+    <div class="phase3-head">
+      <div>
+        <div class="phase3-title">Schedule Message</div>
+        <div class="phase3-note" style="margin:4px 0 0;">Text message scheduling</div>
+      </div>
+      <button class="phase3-close" onclick="closeScheduleMessageModal()">✕</button>
+    </div>
+    <div class="phase3-body">
+      <div class="phase3-note">Ithi local device schedule. App/server active unnapude exact ga send avvadam best.</div>
+      <div style="display:flex;flex-direction:column;gap:12px;">
+        <textarea id="scheduleMessageText" class="phase3-field" rows="4" placeholder="Type your message..."></textarea>
+        <input id="scheduleMessageTime" class="phase3-field" type="datetime-local">
+        <div style="display:flex;gap:10px;justify-content:flex-end;flex-wrap:wrap;">
+          <button class="phase3-ghost-btn" onclick="closeScheduleMessageModal()">Cancel</button>
+          <button class="phase3-primary-btn" onclick="saveScheduledMessage()">Schedule</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div id="scheduledQueueModal" class="phase3-modal">
+  <div class="phase3-card">
+    <div class="phase3-head">
+      <div>
+        <div class="phase3-title">Scheduled Messages</div>
+        <div class="phase3-note" style="margin:4px 0 0;">Pending local queue</div>
+      </div>
+      <button class="phase3-close" onclick="closeScheduledQueueModal()">✕</button>
+    </div>
+    <div class="phase3-body">
+      <div id="scheduledQueueList"></div>
+    </div>
+  </div>
+</div>
+
+
+<div id="miniCameraModal" class="mini-camera-modal">
+  <div class="mini-camera-card">
+    <div class="mini-camera-head">
+      <div>
+        <div class="mini-camera-title">Mini Camera</div>
+        <div class="phase3-note" style="margin:4px 0 0;">Take a photo and send instantly</div>
+      </div>
+      <button class="mini-camera-close" onclick="closeMiniCameraModal()">✕</button>
+    </div>
+    <div class="mini-camera-body">
+      <div class="mini-camera-preview">
+        <video id="miniCameraVideo" autoplay playsinline muted></video>
+        <canvas id="miniCameraCanvas" style="display:none;"></canvas>
+        <div class="mini-camera-guides">
+          <span class="top"></span>
+          <span class="bottom"></span>
+        </div>
+      </div>
+      <div class="mini-camera-actions">
+        <button class="mini-camera-btn" onclick="flipMiniCamera()">🔄 Flip</button>
+        <button class="mini-camera-btn primary capture" onclick="captureMiniCameraPhoto()">📸 Capture</button>
+        <button class="mini-camera-btn" onclick="closeMiniCameraModal()">Cancel</button>
+      </div>
+      <div class="mini-camera-note">Photo capture ayyaka normal upload preview open avuthundhi.</div>
+    </div>
   </div>
 </div>
 
