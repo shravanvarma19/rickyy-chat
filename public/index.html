@@ -607,7 +607,7 @@ body::after{
   padding:22px 18px;
   border-radius:24px;
   text-align:center;
-  z-index:99;
+  z-index:70001;
   box-shadow:
     0 24px 60px rgba(0,0,0,.48),
     0 0 34px rgba(16,185,129,.18);
@@ -955,9 +955,342 @@ body::after{
 .install-btn-primary{background:linear-gradient(135deg,#10b981,#06b6d4);color:#fff;}
 .install-btn-secondary{background:rgba(255,255,255,.08);color:#fff;}
 
+
+.forgot-link-row{
+  margin-top:10px;
+  text-align:right;
+}
+.forgot-link{
+  border:none;
+  background:none;
+  color:#a7f3d0;
+  font-size:12px;
+  font-weight:800;
+  cursor:pointer;
+  padding:0;
+}
+.forgot-link:hover{
+  color:#fff;
+  text-decoration:underline;
+}
+.forgot-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:16px;
+  z-index:60000;
+  background:rgba(2,8,15,.72);
+  backdrop-filter:blur(10px);
+}
+.forgot-modal.show{
+  display:flex;
+}
+.forgot-card{
+  width:min(100%, 420px);
+  border-radius:26px;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.10);
+  background:
+    linear-gradient(135deg, rgba(255,255,255,.10), rgba(255,255,255,.04)),
+    rgba(8,15,26,.96);
+  box-shadow:0 26px 60px rgba(0,0,0,.45);
+}
+.forgot-top{
+  display:flex;
+  align-items:flex-start;
+  justify-content:space-between;
+  gap:10px;
+  margin-bottom:12px;
+}
+.forgot-title{
+  font-size:22px;
+  font-weight:900;
+  letter-spacing:-.6px;
+  margin:0;
+  color:#fff;
+}
+.forgot-sub{
+  margin:6px 0 0;
+  font-size:12px;
+  line-height:1.6;
+  color:#cbd5e1;
+}
+.forgot-close{
+  border:none;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  width:38px;
+  height:38px;
+  border-radius:12px;
+  font-size:18px;
+  cursor:pointer;
+}
+.forgot-step{display:none}
+.forgot-step.active{display:block}
+.forgot-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+  flex-wrap:wrap;
+}
+.forgot-actions button{
+  flex:1;
+  min-height:44px;
+  border:none;
+  border-radius:14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.forgot-primary{
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  color:#fff;
+}
+.forgot-secondary{
+  background:rgba(255,255,255,.08);
+  color:#fff;
+}
+.forgot-msg{
+  margin-top:12px;
+  min-height:18px;
+  font-size:13px;
+  text-align:center;
+  color:#fca5a5;
+  font-weight:800;
+}
+.forgot-msg.ok{color:#86efac}
+
+
+
+/* App startup splash */
+.app-startup-splash{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:20px;
+  overflow:hidden;
+  background:
+    radial-gradient(circle at 18% 18%, rgba(16,185,129,.22), transparent 24%),
+    radial-gradient(circle at 82% 20%, rgba(59,130,246,.18), transparent 22%),
+    radial-gradient(circle at 50% 85%, rgba(168,85,247,.16), transparent 25%),
+    linear-gradient(145deg,#030712 0%, #081018 42%, #0b1724 100%);
+  transition:opacity .55s ease, visibility .55s ease, transform .55s ease;
+}
+.app-startup-splash.hide{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+  transform:scale(1.03);
+}
+.app-startup-no-scroll{ overflow:hidden !important; }
+.startup-ambient,
+.startup-ambient-2,
+.startup-ambient-3{
+  position:absolute;
+  border-radius:999px;
+  filter:blur(26px);
+  opacity:.8;
+  pointer-events:none;
+}
+.startup-ambient{
+  width:180px;height:180px;left:-30px;top:10%;
+  background:rgba(16,185,129,.30);
+  animation:ambientFloatOne 7s ease-in-out infinite;
+}
+.startup-ambient-2{
+  width:220px;height:220px;right:-70px;top:8%;
+  background:rgba(59,130,246,.22);
+  animation:ambientFloatTwo 8s ease-in-out infinite;
+}
+.startup-ambient-3{
+  width:210px;height:210px;bottom:-70px;left:50%;transform:translateX(-50%);
+  background:rgba(168,85,247,.18);
+  animation:ambientFloatThree 9s ease-in-out infinite;
+}
+.startup-card{
+  position:relative;
+  width:min(430px,100%);
+  padding:30px 24px 26px;
+  border-radius:34px;
+  text-align:center;
+  background:linear-gradient(180deg, rgba(255,255,255,.12), rgba(255,255,255,.05));
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 22px 70px rgba(0,0,0,.42);
+  backdrop-filter:blur(18px);
+}
+.startup-photo-shell{
+  position:relative;
+  width:126px;
+  height:126px;
+  margin:0 auto 18px;
+}
+.startup-wave,
+.startup-wave-2,
+.startup-wave-3{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.12);
+  animation:startupPulse 2.4s infinite ease-out;
+}
+.startup-wave-2{ animation-delay:.45s; }
+.startup-wave-3{ animation-delay:.9s; }
+.startup-rotor{
+  position:absolute;
+  inset:8px;
+  border-radius:50%;
+  background:conic-gradient(from 0deg, rgba(16,185,129,.06), rgba(59,130,246,.95), rgba(16,185,129,.95), rgba(59,130,246,.08), rgba(16,185,129,.06));
+  filter:drop-shadow(0 6px 18px rgba(16,185,129,.20));
+  animation:startupSpin 3.2s linear infinite;
+}
+.startup-photo-ring{
+  position:absolute;
+  inset:14px;
+  padding:4px;
+  border-radius:50%;
+  background:linear-gradient(135deg, #34d399, #60a5fa 55%, #a78bfa);
+  box-shadow:0 10px 24px rgba(0,0,0,.26);
+}
+.startup-photo{
+  width:100%;
+  height:100%;
+  object-fit:cover;
+  border-radius:50%;
+  background:#0f172a;
+  display:block;
+}
+.startup-status-dot{
+  position:absolute;
+  right:16px;
+  bottom:18px;
+  width:18px;
+  height:18px;
+  border-radius:50%;
+  background:#22c55e;
+  border:3px solid #081018;
+  box-shadow:0 0 0 6px rgba(34,197,94,.12);
+}
+.startup-title{
+  margin:0;
+  font-size:28px;
+  line-height:1.05;
+  letter-spacing:-.7px;
+  font-weight:900;
+  color:#fff;
+}
+.startup-name{
+  margin-top:8px;
+  font-size:16px;
+  font-weight:800;
+  color:#a7f3d0;
+}
+.startup-subtitle{
+  margin:10px auto 0;
+  max-width:300px;
+  color:#dbeafe;
+  font-size:13px;
+  line-height:1.6;
+}
+.startup-loading-row{
+  margin-top:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  gap:10px;
+}
+.startup-loading-pill{
+  min-width:140px;
+  padding:10px 14px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.08);
+  color:#fff;
+  font-size:12px;
+  font-weight:800;
+}
+.startup-bars{ display:flex; align-items:flex-end; gap:5px; height:20px; }
+.startup-bars span{
+  width:6px;
+  border-radius:999px;
+  background:linear-gradient(180deg, #34d399, #60a5fa);
+  animation:startupBars 1.1s infinite ease-in-out;
+}
+.startup-bars span:nth-child(1){ height:8px; animation-delay:0s; }
+.startup-bars span:nth-child(2){ height:16px; animation-delay:.15s; }
+.startup-bars span:nth-child(3){ height:12px; animation-delay:.3s; }
+.startup-bars span:nth-child(4){ height:18px; animation-delay:.45s; }
+.startup-bars span:nth-child(5){ height:10px; animation-delay:.6s; }
+.startup-mini-line{
+  width:100%;
+  height:5px;
+  border-radius:999px;
+  margin-top:18px;
+  background:rgba(255,255,255,.08);
+  overflow:hidden;
+}
+.startup-mini-line::before{
+  content:"";
+  display:block;
+  width:42%;
+  height:100%;
+  border-radius:999px;
+  background:linear-gradient(90deg, transparent, #34d399, #60a5fa, transparent);
+  animation:startupLine 1.6s infinite ease-in-out;
+}
+@keyframes startupSpin{ from{transform:rotate(0deg);} to{transform:rotate(360deg);} }
+@keyframes startupPulse{ 0%{transform:scale(.74); opacity:0;} 35%{opacity:.28;} 100%{transform:scale(1.18); opacity:0;} }
+@keyframes startupBars{ 0%,100%{transform:scaleY(.55); opacity:.55;} 50%{transform:scaleY(1.18); opacity:1;} }
+@keyframes startupLine{ 0%{transform:translateX(-140%);} 100%{transform:translateX(280%);} }
+@keyframes ambientFloatOne{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(22px);} }
+@keyframes ambientFloatTwo{ 0%,100%{transform:translateY(0);} 50%{transform:translateY(-18px);} }
+@keyframes ambientFloatThree{ 0%,100%{transform:translateX(-50%) translateY(0);} 50%{transform:translateX(-50%) translateY(-22px);} }
+
+@media (max-width:520px){
+  .startup-card{ padding:26px 18px 22px; border-radius:28px; }
+  .startup-photo-shell{ width:118px; height:118px; }
+  .startup-title{ font-size:24px; }
+  .startup-subtitle{ font-size:12px; }
+  .startup-loading-pill{ min-width:130px; }
+}
+
 </style>
 </head>
-<body>
+
+<body class="app-startup-no-scroll">
+<div id="appStartupSplash" class="app-startup-splash" aria-hidden="true">
+  <div class="startup-ambient"></div>
+  <div class="startup-ambient-2"></div>
+  <div class="startup-ambient-3"></div>
+
+  <div class="startup-card">
+    <div class="startup-photo-shell">
+      <div class="startup-wave"></div>
+      <div class="startup-wave startup-wave-2"></div>
+      <div class="startup-wave startup-wave-3"></div>
+      <div class="startup-rotor"></div>
+      <div class="startup-photo-ring">
+        <img id="startupUserPhoto" class="startup-photo" src="/default.png" alt="User photo">
+      </div>
+      <div class="startup-status-dot"></div>
+    </div>
+
+    <h1 class="startup-title">RickyY Chat</h1>
+    <div id="startupUserName" class="startup-name">Welcome back</div>
+    <div id="startupUserLine" class="startup-subtitle">Securing your space and preparing a smooth app experience...</div>
+
+    <div class="startup-loading-row">
+      <div class="startup-loading-pill">Launching your app</div>
+      <div class="startup-bars"><span></span><span></span><span></span><span></span><span></span></div>
+    </div>
+
+    <div class="startup-mini-line"></div>
+  </div>
+</div>
+
   <div class="noise"></div>
 
   <div class="otp-box" id="otpBox" style="display:none;">
@@ -1023,6 +1356,9 @@ body::after{
             </div>
 
             <button id="loginBtn" type="submit" class="login-btn">Login</button>
+            <div class="forgot-link-row">
+              <button id="forgotPasswordLink" type="button" class="forgot-link">Forgot Password?</button>
+            </div>
           </form>
 
           <div id="loginError" class="err"></div>
@@ -1072,10 +1408,71 @@ body::after{
     </div>
   </div>
 
+  
+  <div class="forgot-modal" id="forgotModal">
+    <div class="forgot-card">
+      <div class="forgot-top">
+        <div>
+          <div class="forgot-title">Forgot Password</div>
+          <div class="forgot-sub" id="forgotSubText">Enter username or contact number to continue.</div>
+        </div>
+        <button type="button" class="forgot-close" onclick="closeForgotPasswordModal()">✕</button>
+      </div>
+
+      <div class="forgot-step active" id="forgotStep1">
+        <div class="field">
+          <input id="forgotIdentifier" placeholder="Username or Contact Number" autocomplete="username">
+        </div>
+        <div class="forgot-actions">
+          <button type="button" id="forgotRequestBtn" class="forgot-primary">Send OTP</button>
+        </div>
+      </div>
+
+      <div class="forgot-step" id="forgotStep2">
+        <div class="field">
+          <input id="forgotOtpInput" placeholder="Enter OTP" inputmode="numeric" maxlength="6">
+        </div>
+        <div class="forgot-actions">
+          <button type="button" id="forgotVerifyBtn" class="forgot-primary">Verify OTP</button>
+          <button type="button" class="forgot-secondary" onclick="showForgotStep(1)">Back</button>
+        </div>
+</div>
+
+      <div class="forgot-step" id="forgotStep3">
+        <div class="field">
+          <input id="forgotNewPassword" type="password" placeholder="New Password" autocomplete="new-password">
+        </div>
+        <div class="field">
+          <input id="forgotConfirmPassword" type="password" placeholder="Confirm New Password" autocomplete="new-password">
+        </div>
+        <div class="forgot-actions">
+          <button type="button" id="forgotResetBtn" class="forgot-primary">Reset Password</button>
+          <button type="button" class="forgot-secondary" onclick="showForgotStep(2)">Back</button>
+        </div>
+      </div>
+
+      <div id="forgotMsg" class="forgot-msg"></div>
+    </div>
+  </div>
+
+
   <div class="footer-line">RickyY Chat • Premium Personal Messaging</div>
   <div class="footer-lines">Designed by Shravan Varma</div>
 
-<script src="/socket.io/socket.io.js"></script>
+<script src="/socket.io/socket.io.js">
+window.addEventListener("pageshow", function(){
+  setTimeout(() => {
+    hideStartupSplash();
+  }, 120);
+});
+
+window.addEventListener("load", function(){
+  setTimeout(() => {
+    hideStartupSplash();
+  }, 180);
+});
+
+</script>
 <script>
 const loginTabBtn = document.getElementById("loginTabBtn");
 const requestTabBtn = document.getElementById("requestTabBtn");
@@ -1111,6 +1508,101 @@ const verifyOtpBtn = document.getElementById("verifyOtpBtn");
 let captchaValue = "";
 let tempSignupData = null;
 let liveSocket = null;
+
+const forgotPasswordLink = document.getElementById("forgotPasswordLink");
+const forgotModal = document.getElementById("forgotModal");
+const forgotSubText = document.getElementById("forgotSubText");
+const forgotIdentifier = document.getElementById("forgotIdentifier");
+const forgotOtpInput = document.getElementById("forgotOtpInput");
+const forgotNewPassword = document.getElementById("forgotNewPassword");
+const forgotConfirmPassword = document.getElementById("forgotConfirmPassword");
+const forgotRequestBtn = document.getElementById("forgotRequestBtn");
+const forgotVerifyBtn = document.getElementById("forgotVerifyBtn");
+const forgotResetBtn = document.getElementById("forgotResetBtn");
+const forgotMsg = document.getElementById("forgotMsg");
+
+const forgotSteps = [
+  document.getElementById("forgotStep1"),
+  document.getElementById("forgotStep2"),
+  document.getElementById("forgotStep3")
+];
+
+let forgotState = {
+  identifier: "",
+  otpVerified: false
+};
+
+
+
+const APP_STARTUP_MIN_MS = 2200;
+const APP_STARTUP_MAX_MS = 4200;
+let startupShownAt = Date.now();
+let startupHidden = false;
+
+function getSavedStartupName(){
+  return String(
+    localStorage.getItem("user") ||
+    localStorage.getItem("lastLoginUser") ||
+    "Shravan"
+  ).trim();
+}
+
+function getSavedStartupPhoto(){
+  return String(
+    localStorage.getItem("userDp") ||
+    localStorage.getItem("lastUserDp") ||
+    "/default.png"
+  ).trim() || "/default.png";
+}
+
+function setupStartupSplash(){
+  startupShownAt = Date.now();
+  const nameEl = document.getElementById("startupUserName");
+  const lineEl = document.getElementById("startupUserLine");
+  const photoEl = document.getElementById("startupUserPhoto");
+
+  const savedName = getSavedStartupName();
+  const savedPhoto = getSavedStartupPhoto();
+
+  if(nameEl){
+    nameEl.innerText = savedName ? savedName : "Welcome back";
+  }
+
+  if(lineEl){
+    lineEl.innerText = savedName
+      ? `Hello ${savedName}, loading your secure login experience...`
+      : "Preparing a premium login experience...";
+  }
+
+  if(photoEl){
+    photoEl.src = savedPhoto;
+    photoEl.onerror = function(){
+      this.onerror = null;
+      this.src = "/default.png";
+    };
+  }
+}
+
+function hideStartupSplash(force = false){
+  if(startupHidden) return;
+
+  const splash = document.getElementById("appStartupSplash");
+  if(!splash) return;
+
+  startupHidden = true;
+  const elapsed = Date.now() - startupShownAt;
+  const delay = force ? 0 : Math.max(0, APP_STARTUP_MIN_MS - elapsed);
+
+  setTimeout(() => {
+    splash.classList.add("hide");
+    document.body.classList.remove("app-startup-no-scroll");
+    setTimeout(() => {
+      if(splash && splash.parentNode){
+        splash.parentNode.removeChild(splash);
+      }
+    }, 650);
+  }, delay);
+}
 
 function initSocketOnce(){
   if(!liveSocket){
@@ -1170,6 +1662,233 @@ function setError(el, text, ok = false){
   }
 }
 
+
+function setForgotMsg(text, ok = false){
+  forgotMsg.innerText = text || "";
+  forgotMsg.classList.toggle("ok", !!ok);
+}
+
+function showForgotStep(stepNo){
+  forgotSteps.forEach((step, index) => {
+    if(step) step.classList.toggle("active", index === (stepNo - 1));
+  });
+
+  if(stepNo === 1){
+    forgotSubText.innerText = "Enter username or contact number to continue.";
+    setTimeout(() => forgotIdentifier.focus(), 50);
+  }else if(stepNo === 2){
+    forgotSubText.innerText = "Enter the OTP sent to your registered contact.";
+    setTimeout(() => forgotOtpInput.focus(), 50);
+  }else{
+    forgotSubText.innerText = "Set your new strong password.";
+    setTimeout(() => forgotNewPassword.focus(), 50);
+  }
+}
+
+function openForgotPasswordModal(){
+  forgotModal.classList.add("show");
+  setForgotMsg("");
+  forgotState = { identifier: "", otpVerified: false };
+  forgotIdentifier.value = loginUsername.value.trim() || "";
+  forgotOtpInput.value = "";
+  forgotNewPassword.value = "";
+  forgotConfirmPassword.value = "";
+  showForgotStep(1);
+}
+
+function closeForgotPasswordModal(){
+  forgotModal.classList.remove("show");
+}
+
+forgotModal.addEventListener("click", function(e){
+  if(e.target === forgotModal){
+    closeForgotPasswordModal();
+  }
+});
+
+forgotPasswordLink.addEventListener("click", openForgotPasswordModal);
+
+forgotRequestBtn.addEventListener("click", async function(){
+  const identifier = forgotIdentifier.value.trim();
+  setForgotMsg("");
+
+  if(!identifier){
+    setForgotMsg("Enter username or contact number");
+    return;
+  }
+
+  forgotRequestBtn.disabled = true;
+  forgotRequestBtn.innerText = "Sending...";
+
+  try{
+    const res = await fetch("/api/forgot-password/request", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ identifier })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      setForgotMsg((data && data.msg) || "Failed to send OTP");
+      forgotRequestBtn.disabled = false;
+      forgotRequestBtn.innerText = "Send OTP";
+      return;
+    }
+
+    forgotState.identifier = identifier;
+    setForgotMsg(data.msg || "OTP sent successfully", true);
+
+    if(data.otp){
+      showForgotOtpFloating(data.otp);
+    }
+
+    showForgotStep(2);
+  }catch(err){
+    console.log("FORGOT REQUEST ERROR:", err);
+    setForgotMsg("Server error");
+  }finally{
+    forgotRequestBtn.disabled = false;
+    forgotRequestBtn.innerText = "Send OTP";
+  }
+});
+
+forgotVerifyBtn.addEventListener("click", async function(){
+  const otp = forgotOtpInput.value.trim();
+  setForgotMsg("");
+
+  if(!forgotState.identifier){
+    setForgotMsg("Enter username/contact first");
+    showForgotStep(1);
+    return;
+  }
+
+  if(!otp){
+    setForgotMsg("Enter OTP");
+    return;
+  }
+
+  forgotVerifyBtn.disabled = true;
+  forgotVerifyBtn.innerText = "Verifying...";
+
+  try{
+    const res = await fetch("/api/forgot-password/verify", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier: forgotState.identifier,
+        otp
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      setForgotMsg((data && data.msg) || "OTP verification failed");
+      forgotVerifyBtn.disabled = false;
+      forgotVerifyBtn.innerText = "Verify OTP";
+      return;
+    }
+
+    forgotState.otpVerified = true;
+    setForgotMsg(data.msg || "OTP verified", true);
+    showForgotStep(3);
+  }catch(err){
+    console.log("FORGOT VERIFY ERROR:", err);
+    setForgotMsg("Server error");
+  }finally{
+    forgotVerifyBtn.disabled = false;
+    forgotVerifyBtn.innerText = "Verify OTP";
+  }
+});
+
+forgotResetBtn.addEventListener("click", async function(){
+  const otp = forgotOtpInput.value.trim();
+  const newPassword = forgotNewPassword.value;
+  const confirmPassword = forgotConfirmPassword.value;
+  setForgotMsg("");
+
+  if(!forgotState.identifier){
+    setForgotMsg("Start forgot password flow again");
+    showForgotStep(1);
+    return;
+  }
+
+  if(!otp){
+    setForgotMsg("OTP missing");
+    showForgotStep(2);
+    return;
+  }
+
+  if(!newPassword || !confirmPassword){
+    setForgotMsg("Enter new password and confirm password");
+    return;
+  }
+
+  forgotResetBtn.disabled = true;
+  forgotResetBtn.innerText = "Resetting...";
+
+  try{
+    const res = await fetch("/api/forgot-password/reset", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        identifier: forgotState.identifier,
+        otp,
+        newPassword,
+        confirmPassword
+      })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!data || !data.ok){
+      setForgotMsg((data && data.msg) || "Password reset failed");
+      forgotResetBtn.disabled = false;
+      forgotResetBtn.innerText = "Reset Password";
+      return;
+    }
+
+    setForgotMsg(data.msg || "Password changed successfully", true);
+    loginUsername.value = forgotState.identifier;
+    loginPassword.value = "";
+    closeForgotPasswordModal();
+    switchTab("login");
+    showLoginNotification(data.msg || "Password reset successful. Login now.");
+  }catch(err){
+    console.log("FORGOT RESET ERROR:", err);
+    setForgotMsg("Server error");
+  }finally{
+    forgotResetBtn.disabled = false;
+    forgotResetBtn.innerText = "Reset Password";
+  }
+});
+
+forgotIdentifier.addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    e.preventDefault();
+    forgotRequestBtn.click();
+  }
+});
+
+forgotOtpInput.addEventListener("input", function(){
+  this.value = this.value.replace(/\D/g, "").slice(0, 6);
+});
+
+forgotOtpInput.addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    e.preventDefault();
+    forgotVerifyBtn.click();
+  }
+});
+
+forgotConfirmPassword.addEventListener("keydown", function(e){
+  if(e.key === "Enter"){
+    e.preventDefault();
+    forgotResetBtn.click();
+  }
+});
+
 async function loadCaptcha(){
   try{
     const res = await fetch("/api/captcha");
@@ -1222,8 +1941,11 @@ loginForm.addEventListener("submit", async function(e){
     }
 
     localStorage.setItem("user", data.user.name);
+    localStorage.setItem("lastLoginUser", data.user.name);
     localStorage.setItem("role", data.user.role || "user");
     localStorage.setItem("authToken", data.token || "");
+    localStorage.setItem("userDp", data.user.dp || "/default.png");
+    localStorage.setItem("lastUserDp", data.user.dp || "/default.png");
 
     initSocketOnce();
     if(liveSocket){
@@ -1261,6 +1983,17 @@ function showOtpFloating(otp){
     otpBox.style.display = "none";
     otpSection.classList.add("show");
   }, 4000);
+}
+
+function showForgotOtpFloating(otp){
+  otpValue.innerText = otp;
+  otpBox.style.display = "block";
+  otpBox.classList.add("show");
+
+  setTimeout(() => {
+    otpBox.classList.remove("show");
+    otpBox.style.display = "none";
+  }, 3000);
 }
 
 requestForm.addEventListener("submit", async function(e){
@@ -1393,6 +2126,12 @@ captchaInput.addEventListener("keydown", function(e){
   }
 })();
 
+document.addEventListener("keydown", function(e){
+  if(e.key === "Escape" && forgotModal.classList.contains("show")){
+    closeForgotPasswordModal();
+  }
+});
+
 if ("serviceWorker" in navigator) {
   window.addEventListener("load", async () => {
     try {
@@ -1405,11 +2144,35 @@ if ("serviceWorker" in navigator) {
 }
 
 (async function initPage(){
+  setupStartupSplash();
+
+  setTimeout(() => {
+    hideStartupSplash();
+  }, APP_STARTUP_MAX_MS);
+
   initSocketOnce();
   await loadCaptcha();
 
   const token = localStorage.getItem("authToken");
   if(token){
+    try{
+      const meRes = await fetch("/api/me", {
+        headers: { Authorization: "Bearer " + token }
+      });
+      const meData = await meRes.json().catch(() => null);
+      if(meData && meData.ok && meData.user){
+        if(meData.user.name) localStorage.setItem("lastLoginUser", meData.user.name);
+        if(meData.user.dp) {
+          localStorage.setItem("userDp", meData.user.dp);
+          localStorage.setItem("lastUserDp", meData.user.dp);
+          const photoEl = document.getElementById("startupUserPhoto");
+          if(photoEl) photoEl.src = meData.user.dp;
+        }
+        const nameEl = document.getElementById("startupUserName");
+        if(nameEl && meData.user.name) nameEl.innerText = meData.user.name;
+      }
+    }catch(err){}
+
     try{
       const res = await fetch("/api/notifications", {
         headers: {
@@ -1431,6 +2194,8 @@ if ("serviceWorker" in navigator) {
       loginUsername.focus();
     }
   }, 300);
+
+  hideStartupSplash();
 })();
 </script>
 

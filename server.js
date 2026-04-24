@@ -141,6 +141,8 @@ const userSchema = new mongoose.Schema({
 
   otp: { type: String, default: "" },
   otpExpiresAt: { type: Date, default: null },
+  resetOtp: { type: String, default: "" },
+  resetOtpExpiresAt: { type: Date, default: null },
 
   passkeys: {
     type: [{
@@ -399,6 +401,19 @@ function isStrongPassword(password) {
 
   return /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)(?=.*[^A-Za-z\d]).{8,}$/.test(value);
 }
+async function findUserByNameOrContact(identifier) {
+  const value = String(identifier || "").trim();
+
+  if (!value) return null;
+
+  return await User.findOne({
+    $or: [
+      { name: normalizeUsername(value) },
+      { contact: value }
+    ]
+  });
+}
+
 async function isRealAdmin(username) {
   if (!username) return false;
 
@@ -2668,7 +2683,153 @@ app.get("/api-check", (req, res) => {
   res.json({ ok: true, msg: "API working" });
 });
 
+app.post("/api/forgot-password/request", async (req, res) => {
+  try {
+    const identifier = String(req.body.identifier || "").trim();
 
+    if (!identifier) {
+      return res.json({ ok: false, msg: "Enter username or contact" });
+    }
+
+    const user = await findUserByNameOrContact(identifier);
+
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
+
+    if (user.blocked) {
+      return res.json({ ok: false, msg: "This account is blocked" });
+    }
+
+    const otp = generateOtp();
+    user.resetOtp = otp;
+    user.resetOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
+    await user.save();
+
+    console.log(`FORGOT PASSWORD OTP for ${user.name}: ${otp}`);
+
+    return res.json({
+      ok: true,
+      msg: "OTP sent successfully",
+      otp, // production lo remove cheyyi
+      username: user.name,
+      contact: user.contact || ""
+    });
+  } catch (err) {
+    console.log("FORGOT PASSWORD REQUEST ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+
+app.post("/api/forgot-password/verify", async (req, res) => {
+  try {
+    const identifier = String(req.body.identifier || "").trim();
+    const otp = String(req.body.otp || "").trim();
+
+    if (!identifier || !otp) {
+      return res.json({ ok: false, msg: "Enter username/contact and OTP" });
+    }
+
+    const user = await findUserByNameOrContact(identifier);
+
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
+
+    if (!user.resetOtp || !user.resetOtpExpiresAt) {
+      return res.json({ ok: false, msg: "Generate OTP first" });
+    }
+
+    if (Date.now() > new Date(user.resetOtpExpiresAt).getTime()) {
+      user.resetOtp = "";
+      user.resetOtpExpiresAt = null;
+      await user.save();
+      return res.json({ ok: false, msg: "OTP expired. Request again." });
+    }
+
+    if (otp !== user.resetOtp) {
+      return res.json({ ok: false, msg: "Invalid OTP" });
+    }
+
+    return res.json({
+      ok: true,
+      msg: "OTP verified successfully"
+    });
+  } catch (err) {
+    console.log("FORGOT PASSWORD VERIFY ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
+
+app.post("/api/forgot-password/reset", async (req, res) => {
+  try {
+    const identifier = String(req.body.identifier || "").trim();
+    const otp = String(req.body.otp || "").trim();
+    const newPassword = String(req.body.newPassword || "");
+    const confirmPassword = String(req.body.confirmPassword || "");
+
+    if (!identifier || !otp || !newPassword || !confirmPassword) {
+      return res.json({ ok: false, msg: "Fill all fields" });
+    }
+
+    const user = await findUserByNameOrContact(identifier);
+
+    if (!user) {
+      return res.json({ ok: false, msg: "User not found" });
+    }
+
+    if (!user.resetOtp || !user.resetOtpExpiresAt) {
+      return res.json({ ok: false, msg: "Generate OTP first" });
+    }
+
+    if (Date.now() > new Date(user.resetOtpExpiresAt).getTime()) {
+      user.resetOtp = "";
+      user.resetOtpExpiresAt = null;
+      await user.save();
+      return res.json({ ok: false, msg: "OTP expired. Request again." });
+    }
+
+    if (otp !== user.resetOtp) {
+      return res.json({ ok: false, msg: "Invalid OTP" });
+    }
+
+    if (!isStrongPassword(newPassword)) {
+      return res.json({
+        ok: false,
+        msg: "Password must be at least 8 characters and include uppercase, lowercase, number and special character."
+      });
+    }
+
+    if (newPassword !== confirmPassword) {
+      return res.json({ ok: false, msg: "Passwords do not match" });
+    }
+
+    user.password = await bcrypt.hash(newPassword, 10);
+    user.pin = "";
+    user.resetOtp = "";
+    user.resetOtpExpiresAt = null;
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    user.authToken = null;
+
+    user.notifications = Array.isArray(user.notifications) ? user.notifications : [];
+    user.notifications.push({
+      text: "Your password was reset successfully",
+      read: false,
+      createdAt: new Date()
+    });
+
+    await user.save();
+
+    return res.json({
+      ok: true,
+      msg: "Password reset successful"
+    });
+  } catch (err) {
+    console.log("FORGOT PASSWORD RESET ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Server error" });
+  }
+});
 app.post("/api/login", async (req, res) => {
   try {
     const rawName = normalizeUsername(req.body.name);

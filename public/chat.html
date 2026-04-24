@@ -2800,9 +2800,446 @@ body.dark .history-loader{
     padding-bottom:calc(8px + env(safe-area-inset-bottom));
   }
 }
+
+/* Splash loader */
+.app-splash{
+  position:fixed;
+  inset:0;
+  z-index:100000;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:
+    radial-gradient(circle at top left, rgba(37,211,102,.18), transparent 24%),
+    radial-gradient(circle at bottom right, rgba(18,140,126,.18), transparent 24%),
+    linear-gradient(135deg,#071018 0%, #0b1220 55%, #111827 100%);
+  transition:opacity .55s ease, visibility .55s ease, transform .55s ease;
+}
+.app-splash.hide{
+  opacity:0;
+  visibility:hidden;
+  transform:scale(1.02);
+  pointer-events:none;
+}
+.app-splash-card{
+  width:min(420px,100%);
+  padding:34px 26px 28px;
+  border-radius:30px;
+  text-align:center;
+  background:rgba(10,16,28,.55);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 24px 60px rgba(0,0,0,.28);
+  backdrop-filter:blur(18px);
+}
+.splash-orb-wrap{
+  position:relative;
+  width:118px;
+  height:118px;
+  margin:0 auto 18px;
+}
+.splash-orb{
+  position:absolute;
+  inset:18px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#25d366,#128c7e);
+  filter:blur(14px);
+  opacity:.95;
+}
+.splash-ring{
+  position:absolute;
+  inset:0;
+  border-radius:50%;
+  border:1px solid rgba(255,255,255,.14);
+  animation:splashPulse 2.2s infinite ease-out;
+}
+.splash-ring.ring2{
+  inset:10px;
+  animation-delay:.45s;
+}
+.splash-avatar{
+  position:absolute;
+  inset:24px;
+  border-radius:50%;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  font-weight:900;
+  color:#fff;
+  background:linear-gradient(135deg,rgba(37,211,102,.95),rgba(18,140,126,.95));
+  box-shadow:0 14px 30px rgba(18,140,126,.28);
+}
+.splash-title{
+  font-size:28px;
+  font-weight:900;
+  letter-spacing:-.6px;
+  color:#fff;
+}
+.splash-subtitle{
+  margin-top:8px;
+  font-size:14px;
+  color:#cbd5e1;
+}
+.splash-loader{
+  margin-top:18px;
+  display:flex;
+  justify-content:center;
+  gap:8px;
+}
+.splash-loader span{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#25d366,#128c7e);
+  animation:splashBounce 1s infinite ease-in-out;
+}
+.splash-loader span:nth-child(2){ animation-delay:.15s; }
+.splash-loader span:nth-child(3){ animation-delay:.3s; }
+
+@keyframes splashBounce{
+  0%,80%,100%{ transform:translateY(0); opacity:.45; }
+  40%{ transform:translateY(-8px); opacity:1; }
+}
+@keyframes splashPulse{
+  0%{ transform:scale(.86); opacity:.18; }
+  60%{ opacity:.28; }
+  100%{ transform:scale(1.16); opacity:0; }
+}
+
+
+/* =========================
+   WHATSAPP-LIKE MOBILE APP NAV
+========================= */
+@media (max-width: 768px){
+  body{
+    background:#0b141a !important;
+  }
+
+  .app{
+    padding:0 !important;
+    gap:0 !important;
+    width:100%;
+    height:100dvh;
+    min-height:100dvh;
+    overflow:hidden;
+    background:#0b141a;
+  }
+
+  .app.mobile-wa-ready{
+    position:relative;
+  }
+
+  .app.mobile-wa-ready .sidebar,
+  .app.mobile-wa-ready .chat{
+    position:absolute !important;
+    inset:0 !important;
+    width:100% !important;
+    height:100dvh !important;
+    min-height:100dvh !important;
+    border:none !important;
+    border-radius:0 !important;
+    margin:0 !important;
+    transition:
+      transform .32s cubic-bezier(.2,.8,.2,1),
+      opacity .24s ease,
+      visibility .24s ease !important;
+    will-change:transform, opacity;
+    box-shadow:none !important;
+  }
+
+  .app.mobile-wa-ready .sidebar{
+    z-index:20;
+    transform:translateX(0);
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+    background:#111b21 !important;
+  }
+
+  .app.mobile-wa-ready .chat{
+    z-index:25;
+    transform:translateX(100%);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+    background:#0b141a !important;
+  }
+
+  body.mobile-chat-open .app.mobile-wa-ready .sidebar{
+    transform:translateX(-16%);
+    opacity:0;
+    visibility:hidden;
+    pointer-events:none;
+  }
+
+  body.mobile-chat-open .app.mobile-wa-ready .chat{
+    transform:translateX(0);
+    opacity:1;
+    visibility:visible;
+    pointer-events:auto;
+  }
+
+  .sidebar-header{
+    min-height:64px !important;
+    padding:calc(12px + env(safe-area-inset-top)) 12px 10px 12px !important;
+    background:#202c33 !important;
+    border-bottom:1px solid rgba(255,255,255,.05) !important;
+  }
+
+  .logo{
+    font-size:22px !important;
+    letter-spacing:.1px !important;
+  }
+
+  .search-box{
+    padding:10px 12px !important;
+    background:#111b21 !important;
+    border-bottom:1px solid rgba(255,255,255,.04);
+  }
+
+  .search-box input{
+    background:#202c33 !important;
+    border:1px solid rgba(255,255,255,.05) !important;
+    border-radius:12px !important;
+    min-height:44px !important;
+  }
+
+  #users{
+    padding:6px 8px 10px !important;
+    background:#111b21 !important;
+  }
+
+  .user{
+    margin-bottom:2px !important;
+    padding:12px 10px !important;
+    border:none !important;
+    border-radius:16px !important;
+    background:transparent !important;
+    box-shadow:none !important;
+  }
+
+  .user:hover{
+    transform:none !important;
+    background:rgba(255,255,255,.04) !important;
+  }
+
+  .user.active{
+    background:rgba(255,255,255,.06) !important;
+    box-shadow:none !important;
+  }
+
+  .user img,
+  .user-avatar-wrap,
+  .user-avatar-wrap img{
+    width:50px !important;
+    height:50px !important;
+    min-width:50px !important;
+    min-height:50px !important;
+    max-width:50px !important;
+    max-height:50px !important;
+    border-radius:50% !important;
+    flex:0 0 50px !important;
+  }
+
+  .user-name{
+    font-size:15px !important;
+  }
+
+  .user-right-time{
+    font-size:11px !important;
+    color:#8696a0 !important;
+  }
+
+  .user-last-message{
+    font-size:12px !important;
+    color:#8696a0 !important;
+  }
+
+  .chat-header{
+    min-height:62px !important;
+    padding:calc(10px + env(safe-area-inset-top)) 8px 8px 8px !important;
+    background:#202c33 !important;
+    border-bottom:1px solid rgba(255,255,255,.04) !important;
+    display:grid !important;
+    grid-template-columns:34px 40px minmax(0,1fr) auto !important;
+    gap:8px !important;
+  }
+
+  .back-btn{
+    display:none !important;
+    width:34px !important;
+    height:34px !important;
+    min-width:34px !important;
+    min-height:34px !important;
+    border-radius:10px !important;
+    margin:0 !important;
+    padding:0 !important;
+    background:transparent !important;
+  }
+
+  body.mobile-chat-open .back-btn{
+    display:inline-flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+  }
+
+  .chat-header img{
+    width:40px !important;
+    height:40px !important;
+    border-radius:50% !important;
+    margin:0 !important;
+  }
+
+  .chat-header .name{
+    font-size:15px !important;
+  }
+
+  .chat-header .typing{
+    font-size:11px !important;
+    color:#c7d0d6 !important;
+  }
+
+  .header-icons{
+    gap:4px !important;
+  }
+
+  .header-icons span{
+    width:32px !important;
+    height:32px !important;
+    min-width:32px !important;
+    min-height:32px !important;
+    border-radius:10px !important;
+    background:transparent !important;
+  }
+
+  .messages{
+    padding:10px 8px !important;
+    background-color:#0b141a !important;
+    background-image:
+      radial-gradient(circle at 25% 25%, rgba(255,255,255,.02), transparent 18%),
+      radial-gradient(circle at 80% 15%, rgba(255,255,255,.015), transparent 18%),
+      linear-gradient(180deg, rgba(255,255,255,.01), rgba(255,255,255,.01)) !important;
+    background-size:cover !important;
+  }
+
+  .message{
+    max-width:82% !important;
+    font-size:14px !important;
+    padding:9px 11px !important;
+    margin:5px 0 !important;
+    box-shadow:0 1px 1px rgba(0,0,0,.18) !important;
+  }
+
+  .me{
+    background:#005c4b !important;
+    border-radius:14px 14px 4px 14px !important;
+  }
+
+  .other{
+    background:#202c33 !important;
+    border-radius:14px 14px 14px 4px !important;
+  }
+
+  .me::before,
+  .other::before{
+    display:none !important;
+  }
+
+  .input-area{
+    min-height:60px !important;
+    padding:8px 8px calc(8px + env(safe-area-inset-bottom)) !important;
+    grid-template-columns:40px minmax(0,1fr) 40px auto !important;
+    gap:6px !important;
+    background:#202c33 !important;
+    border-top:none !important;
+  }
+
+  .input-area input,
+  .input-area input#msg{
+    height:42px !important;
+    min-height:42px !important;
+    border-radius:22px !important;
+    background:#2a3942 !important;
+    border:none !important;
+    padding:10px 14px !important;
+    font-size:16px !important;
+  }
+
+  .attach-btn,
+  .mic-btn{
+    width:40px !important;
+    height:40px !important;
+    min-width:40px !important;
+    min-height:40px !important;
+    border-radius:50% !important;
+    background:transparent !important;
+    font-size:18px !important;
+  }
+
+  .input-area button.send-btn{
+    height:40px !important;
+    min-width:40px !important;
+    width:40px !important;
+    padding:0 !important;
+    border-radius:50% !important;
+    display:flex !important;
+    align-items:center !important;
+    justify-content:center !important;
+    font-size:0 !important;
+    background:#00a884 !important;
+    box-shadow:none !important;
+  }
+
+  .input-area button.send-btn::before{
+    content:"➤";
+    font-size:16px;
+    color:#fff;
+    transform:translateX(1px);
+  }
+
+  #replyBox{
+    left:8px !important;
+    right:8px !important;
+    bottom:calc(100% + 6px) !important;
+    border-radius:14px !important;
+    background:#1f2c34 !important;
+    border-left:4px solid #00a884 !important;
+  }
+
+  .no-chat-screen{
+    background:#111b21 !important;
+    border:none !important;
+    border-radius:0 !important;
+  }
+
+  body.mobile-chat-open #groupFab,
+  body.mobile-chat-open #speakerFab,
+  body.mobile-chat-open #soundUnlock{
+    display:none !important;
+  }
+}
+
 </style>
 </head>
+
 <body>
+<div id="appSplash" class="app-splash">
+  <div class="app-splash-card">
+    <div class="splash-orb-wrap">
+      <div class="splash-orb"></div>
+      <div class="splash-ring"></div>
+      <div class="splash-ring ring2"></div>
+      <div id="splashAvatar" class="splash-avatar">R</div>
+    </div>
+    <div class="splash-title">RickyY Chat</div>
+    <div id="splashSubtitle" class="splash-subtitle">Loading your chats...</div>
+    <div class="splash-loader">
+      <span></span><span></span><span></span>
+    </div>
+  </div>
+</div>
+
 <div class="app">
 <div class="sidebar">
 <div class="sidebar-header">
@@ -2841,6 +3278,7 @@ body.dark .history-loader{
 <span onclick="openGallery()" title="Gallery">🖼️</span>
 <span id="voiceCallBtn" title="Voice Call">📞</span>
 <span id="videoCallBtn" title="Video Call">🎥</span>
+
 <span id="chatMenuBtn" onclick="toggleChatMenu()" title="Menu">⋮</span>
 </div>
 </div>
@@ -3040,7 +3478,266 @@ z-index:9999;
 </div>
 </div>
 <script>
-  const APP_LOCK_KEY = "appLockConfig";
+  
+const APP_LOCK_KEY = "appLockConfig";
+let chatBiometricFailCount = 0;
+
+function chatLockGetConfig(){
+  try{
+    return JSON.parse(localStorage.getItem(APP_LOCK_KEY) || "{}");
+  }catch{
+    return {};
+  }
+}
+
+function chatLockSaveConfig(data){
+  localStorage.setItem(APP_LOCK_KEY, JSON.stringify(data || {}));
+}
+
+async function chatSha256Hex(text){
+  const enc = new TextEncoder().encode(String(text || ""));
+  const hash = await crypto.subtle.digest("SHA-256", enc);
+  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
+}
+
+function chatBase64urlToUint8Array(base64url){
+  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
+  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
+  const str = atob(base64 + pad);
+  return Uint8Array.from([...str].map(ch => ch.charCodeAt(0)));
+}
+
+function chatUint8ArrayToBase64url(bytes){
+  const str = btoa(String.fromCharCode(...new Uint8Array(bytes)));
+  return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/,"");
+}
+
+function chatLockGetAutoLockMs(){
+  const cfg = chatLockGetConfig();
+  return Math.max(10, Number(cfg.autoLockSeconds || 300)) * 1000;
+}
+
+function chatLockMarkBackgroundStart(){
+  const cfg = chatLockGetConfig();
+  if(!cfg.enabled || !cfg.pinHash) return;
+  cfg.backgroundAt = Date.now();
+  chatLockSaveConfig(cfg);
+}
+
+function chatLockClearBackgroundStart(){
+  const cfg = chatLockGetConfig();
+  if(cfg.backgroundAt || cfg.forceLock){
+    cfg.backgroundAt = 0;
+    cfg.forceLock = false;
+    chatLockSaveConfig(cfg);
+  }
+}
+
+function chatLockShouldTrigger(){
+  const cfg = chatLockGetConfig();
+  if(!cfg.enabled || !cfg.pinHash) return false;
+  if(cfg.forceLock) return true;
+  if(!cfg.backgroundAt) return false;
+
+  return (Date.now() - Number(cfg.backgroundAt || 0)) >= chatLockGetAutoLockMs();
+}
+
+function chatLockRevealPinFallback(message = ""){
+  const subtitle = document.getElementById("chatLockSubtitle");
+  const bioWrap = document.getElementById("chatLockBioWrap");
+  const pinWrap = document.getElementById("chatLockPinWrap");
+  const pinError = document.getElementById("chatLockPinError");
+  const pinInput = document.getElementById("chatLockPinInput");
+
+  if(subtitle) subtitle.innerText = "Enter PIN to continue";
+  if(bioWrap) bioWrap.style.display = "none";
+  if(pinWrap) pinWrap.style.display = "block";
+  if(pinError) pinError.innerText = message || "";
+
+  if(pinInput){
+    pinInput.value = "";
+    setTimeout(() => pinInput.focus(), 50);
+  }
+}
+
+function chatLockSetupInitialView(){
+  const cfg = chatLockGetConfig();
+  const subtitle = document.getElementById("chatLockSubtitle");
+  const bioWrap = document.getElementById("chatLockBioWrap");
+  const pinWrap = document.getElementById("chatLockPinWrap");
+  const bioError = document.getElementById("chatLockError");
+  const pinError = document.getElementById("chatLockPinError");
+
+  if(bioError) bioError.innerText = "";
+  if(pinError) pinError.innerText = "";
+  chatBiometricFailCount = 0;
+
+  const biometricAvailable = !!cfg.biometricEnabled && (cfg.mode === "biometric" || cfg.mode === "both");
+
+  if(biometricAvailable){
+    if(subtitle) subtitle.innerText = "Use Fingerprint / Face ID";
+    if(bioWrap) bioWrap.style.display = "block";
+    if(pinWrap) pinWrap.style.display = "none";
+  }else{
+    chatLockRevealPinFallback("");
+  }
+}
+
+function chatLockShow(){
+  const overlay = document.getElementById("chatAppLockOverlay");
+  if(!overlay) return;
+  if(overlay.style.display === "flex") return;
+
+  overlay.style.display = "flex";
+  chatLockSetupInitialView();
+
+  const cfg = chatLockGetConfig();
+  const biometricAvailable = !!cfg.biometricEnabled && (cfg.mode === "biometric" || cfg.mode === "both");
+
+  if(biometricAvailable){
+    setTimeout(() => {
+      chatUnlockWithBiometric(true);
+    }, 250);
+  }
+}
+
+function chatLockHide(){
+  const overlay = document.getElementById("chatAppLockOverlay");
+  if(!overlay) return;
+
+  overlay.style.display = "none";
+
+  const cfg = chatLockGetConfig();
+  cfg.lastUnlockAt = Date.now();
+  cfg.backgroundAt = 0;
+  cfg.forceLock = false;
+  chatLockSaveConfig(cfg);
+}
+
+function chatLockEnforceIfNeeded(){
+  if(chatLockShouldTrigger()){
+    chatLockShow();
+  }else{
+    chatLockClearBackgroundStart();
+  }
+}
+
+async function chatUnlockWithPin(){
+  const cfg = chatLockGetConfig();
+  const pinInput = document.getElementById("chatLockPinInput");
+  const error = document.getElementById("chatLockPinError");
+  const pin = (pinInput?.value || "").trim();
+
+  if(!/^\d{4}$/.test(pin)){
+    if(error) error.innerText = "Enter valid 4-digit PIN";
+    return;
+  }
+
+  const hash = await chatSha256Hex(pin);
+
+  if(hash !== cfg.pinHash){
+    if(error) error.innerText = "Wrong PIN";
+    return;
+  }
+
+  chatLockHide();
+}
+
+async function chatUnlockWithBiometric(autoStarted = false){
+  const error = document.getElementById("chatLockError");
+
+  if(!window.PublicKeyCredential){
+    chatLockRevealPinFallback("Biometric not supported. Use PIN.");
+    return;
+  }
+
+  try{
+    const token = localStorage.getItem("authToken");
+    const res = await fetch("/api/webauthn/auth/options", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      }
+    });
+
+    const data = await res.json().catch(() => null);
+    if(!data || !data.ok) throw new Error((data && data.msg) || "Options failed");
+
+    const options = data.options;
+    options.challenge = chatBase64urlToUint8Array(options.challenge);
+    options.allowCredentials = (options.allowCredentials || []).map(item => ({
+      ...item,
+      id: chatBase64urlToUint8Array(item.id)
+    }));
+
+    const assertion = await navigator.credentials.get({
+      publicKey: options
+    });
+
+    const payload = {
+      id: assertion.id,
+      rawId: chatUint8ArrayToBase64url(assertion.rawId),
+      type: assertion.type,
+      response: {
+        clientDataJSON: chatUint8ArrayToBase64url(assertion.response.clientDataJSON),
+        authenticatorData: chatUint8ArrayToBase64url(assertion.response.authenticatorData),
+        signature: chatUint8ArrayToBase64url(assertion.response.signature),
+        userHandle: assertion.response.userHandle
+          ? chatUint8ArrayToBase64url(assertion.response.userHandle)
+          : null
+      }
+    };
+
+    const verifyRes = await fetch("/api/webauthn/auth/verify", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: "Bearer " + token
+      },
+      body: JSON.stringify(payload)
+    });
+
+    const verifyData = await verifyRes.json().catch(() => null);
+    if(!verifyData || !verifyData.ok) throw new Error((verifyData && verifyData.msg) || "Biometric unlock failed");
+
+    chatBiometricFailCount = 0;
+    chatLockHide();
+  }catch(err){
+    console.log(err);
+    chatBiometricFailCount += 1;
+
+    if(chatBiometricFailCount >= 3){
+      chatLockRevealPinFallback("3 biometric attempts failed. Use PIN.");
+      return;
+    }
+
+    if(error){
+      error.innerText = `Biometric failed (${chatBiometricFailCount}/3)`;
+    }
+
+    if(autoStarted){
+      setTimeout(() => {
+        const overlay = document.getElementById("chatAppLockOverlay");
+        if(overlay && overlay.style.display === "flex"){
+          chatUnlockWithBiometric(true);
+        }
+      }, 500);
+    }
+  }
+}
+
+function chatForceLockNow(){
+  const cfg = chatLockGetConfig();
+  if(!cfg.enabled){
+    alert("First enable lock in profile page");
+    return;
+  }
+
+  cfg.forceLock = true;
+  chatLockSaveConfig(cfg);
+  chatLockShow();
+}
 let appLockIdleTimer = null;
 
 function getAppLockConfig(){
@@ -3201,8 +3898,13 @@ function enforceAppLockIfNeeded(){
   let appSettings = {
     theme: localStorage.getItem("theme") || "light",
     mutedChats: JSON.parse(localStorage.getItem("mutedChats") || "[]"),
+    lockedChats: JSON.parse(localStorage.getItem("lockedChats") || "[]"),
     chatWallpapers: JSON.parse(localStorage.getItem("chatWallpapers") || "{}")
   };
+
+  let pendingLockedChat = null;
+  let unlockedChatSessions = {};
+  let userChatBiometricFailCount = 0;
 
   const socket = io();
 
@@ -3597,7 +4299,50 @@ function getUserListBottomText(u){
       console.log("INIT PUSH ERROR:", err);
     }
   }
-  function updateFloatingButtonsVisibility(){
+  
+  function isMobileAppNavigation(){
+    return window.innerWidth <= 768;
+  }
+
+  function syncMobileNavigation(){
+    const app = document.querySelector(".app");
+    const sidebar = document.querySelector(".sidebar");
+    const backBtn = document.querySelector(".back-btn");
+
+    if(!app || !sidebar || !backBtn) return;
+
+    if(isMobileAppNavigation()){
+      app.classList.add("mobile-wa-ready");
+
+      if(currentChat || currentGroup){
+        document.body.classList.add("mobile-chat-open");
+      }else{
+        document.body.classList.remove("mobile-chat-open");
+      }
+
+      sidebar.style.display = "flex";
+      backBtn.style.display = "none";
+    }else{
+      app.classList.remove("mobile-wa-ready");
+      document.body.classList.remove("mobile-chat-open");
+      sidebar.style.display = "flex";
+      backBtn.style.display = "none";
+    }
+  }
+
+  function enterMobileChatScreen(){
+    if(!isMobileAppNavigation()) return;
+    document.body.classList.add("mobile-chat-open");
+    syncMobileNavigation();
+  }
+
+  function exitMobileChatScreen(){
+    if(!isMobileAppNavigation()) return;
+    document.body.classList.remove("mobile-chat-open");
+    syncMobileNavigation();
+  }
+
+function updateFloatingButtonsVisibility(){
     const groupBtn = document.getElementById("groupFab");
     const soundBtn = document.getElementById("soundUnlock");
     const shouldShow = !currentChat && !currentGroup;
@@ -3780,6 +4525,7 @@ function getUserListBottomText(u){
     document.getElementById("noChat").style.display = "none";
     document.getElementById("messages").style.display = "flex";
     document.getElementById("inputArea").style.display = "flex";
+    syncMobileNavigation();
   }
 
   function showNoChatUI(){
@@ -3787,6 +4533,7 @@ function getUserListBottomText(u){
     document.getElementById("messages").style.display = "none";
     document.getElementById("inputArea").style.display = "none";
     document.getElementById("typing").innerText = "";
+    syncMobileNavigation();
   }
 
   function getMediaUrl(filePath) {
@@ -4451,10 +5198,7 @@ function getUserListBottomText(u){
       }
     }, 150);
 
-    if(window.innerWidth <= 768){
-      document.querySelector(".sidebar").style.display = "none";
-      document.querySelector(".back-btn").style.display = "inline-block";
-    }
+    enterMobileChatScreen();
 
     updateCurrentChatMuteText();
     applyAppSettings();
@@ -5109,37 +5853,76 @@ function getUserListBottomText(u){
   }
 
   
+  const APP_SPLASH_MIN_MS = 1800;
+  let appSplashStartedAt = Date.now();
+
+  function prepareAppSplash(){
+    appSplashStartedAt = Date.now();
+
+    const avatarEl = document.getElementById("splashAvatar");
+    const subtitleEl = document.getElementById("splashSubtitle");
+    const rawName = String(localStorage.getItem("user") || "RickyY").trim();
+
+    if(avatarEl){
+      avatarEl.innerText = rawName ? rawName.charAt(0).toUpperCase() : "R";
+    }
+
+    if(subtitleEl){
+      subtitleEl.innerText = rawName
+        ? `Welcome back, ${rawName}`
+        : "Loading your chats...";
+    }
+  }
+
+  function hideAppSplash(force = false){
+    const splash = document.getElementById("appSplash");
+    if(!splash) return;
+
+    const elapsed = Date.now() - appSplashStartedAt;
+    const wait = force ? 0 : Math.max(0, APP_SPLASH_MIN_MS - elapsed);
+
+    setTimeout(() => {
+      splash.classList.add("hide");
+      setTimeout(() => {
+        if(splash && splash.parentNode){
+          splash.parentNode.removeChild(splash);
+        }
+      }, 650);
+    }, wait);
+  }
+
   (async function initApp(){
-    const ok = await verifyLogin();
-    if(!ok) return;
+    syncMobileNavigation();
+    prepareAppSplash();
 
-    await initNotifications();
-    await initPushNotifications(true);
-    await loadGroups();
-    await loadPrivateLastMessages();
+    try{
+      const ok = await verifyLogin();
+      if(!ok){
+        hideAppSplash(true);
+        return;
+      }
 
-    updateFloatingButtonsVisibility();
-    applyAppSettings();
-    showNoChatUI();
-    loadStatuses();
-    enforceAppLockIfNeeded();
-    resetAppLockIdleTimer();
+      await initNotifications();
+      await initPushNotifications(true);
+      await loadGroups();
+      await loadPrivateLastMessages();
 
-    socket.emit("join", me);
-    socket.emit("get-unread", me);
+      updateFloatingButtonsVisibility();
+      applyAppSettings();
+      showNoChatUI();
+      loadStatuses();
+
+      socket.emit("join", me);
+      socket.emit("get-unread", me);
+    }catch(err){
+      console.log("INIT APP ERROR:", err);
+      showToast("Something went wrong while loading chats", "error");
+    }finally{
+      hideAppSplash();
+    }
   })();
 
   document.addEventListener("visibilitychange", () => {
-    document.addEventListener("visibilitychange", () => {
-  if(document.hidden){
-    return;
-  }
-  enforceAppLockIfNeeded();
-});
-
-["click","keydown","touchstart","mousemove"].forEach(evt => {
-  document.addEventListener(evt, resetAppLockIdleTimer, { passive:true });
-});
     pageActive = !document.hidden;
 
     if(pageActive && isGroupChat && currentGroup){
@@ -5233,7 +6016,7 @@ function getUserListBottomText(u){
       const dp = u.dp || ("https://ui-avatars.com/api/?name=" + encodeURIComponent(u.name));
       const count = unread[u.name] || 0;
       const isMutedChat = isChatMuted(u.name);
-      const isTypingNow = !!typingUsers[u.name];
+      const isLockedChat = isUserChatLocked(u.name);
       const preview = getUserListBottomText(u);
 
       const row = document.createElement("div");
@@ -5241,9 +6024,10 @@ function getUserListBottomText(u){
       row.setAttribute("data-username", u.name);
       row.innerHTML = `
         <div style="display:flex;align-items:center;width:100%;gap:14px;">
-          <div class="user-avatar-wrap">
+          <div class="user-avatar-wrap" style="position:relative;">
             <img src="${dp}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}'">
             ${u.online ? `<span class="user-online-dot"></span>` : ""}
+            ${isLockedChat ? `<span title="Chat locked" style="position:absolute;right:-4px;bottom:-4px;background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 6px;font-size:10px;line-height:1;color:#fff;">🔒</span>` : ""}
           </div>
 
           <div class="user-info">
@@ -5255,7 +6039,7 @@ function getUserListBottomText(u){
             <div class="user-bottom">
               <div class="user-last-message" data-preview-for="${escapeHtml(u.name)}">
                 ${escapeHtml(preview)}${u.muted ? " • muted" : ""}
-                </div>
+              </div>
               <div class="user-actions">
                 ${isMutedChat ? `<span class="mute-chat-icon" title="Notifications muted">🔕</span>` : ""}
                 ${count ? `<div class="badge">${count}</div>` : ""}
@@ -5265,35 +6049,38 @@ function getUserListBottomText(u){
         </div>
       `;
 
-      let pressTimer = null;
-      let longPressTriggered = false;
+      let rowPressTimer = null;
+      let rowLongPressTriggered = false;
+      let dpPressTimer = null;
+      let dpLongPressTriggered = false;
 
-      function startLongPress(){
-        longPressTriggered = false;
-        clearTimeout(pressTimer);
-        pressTimer = setTimeout(() => {
-          longPressTriggered = true;
+      function startRowLongPress(){
+        rowLongPressTriggered = false;
+        clearTimeout(rowPressTimer);
+        rowPressTimer = setTimeout(() => {
+          rowLongPressTriggered = true;
           if(navigator.vibrate) navigator.vibrate(100);
           toggleMuteUserChat(u.name);
-        }, 3000);
+        }, 4000);
       }
 
-      function cancelLongPress(){
-        clearTimeout(pressTimer);
+      function cancelRowLongPress(){
+        clearTimeout(rowPressTimer);
       }
 
-      row.addEventListener("mousedown", startLongPress);
-      row.addEventListener("mouseup", cancelLongPress);
-      row.addEventListener("mouseleave", cancelLongPress);
-      row.addEventListener("touchstart", startLongPress, { passive:true });
-      row.addEventListener("touchend", cancelLongPress);
-      row.addEventListener("touchcancel", cancelLongPress);
+      row.addEventListener("mousedown", startRowLongPress);
+      row.addEventListener("mouseup", cancelRowLongPress);
+      row.addEventListener("mouseleave", cancelRowLongPress);
+      row.addEventListener("touchstart", startRowLongPress, { passive:true });
+      row.addEventListener("touchend", cancelRowLongPress);
+      row.addEventListener("touchcancel", cancelRowLongPress);
 
       row.addEventListener("click", (e) => {
-        if(longPressTriggered){
+        if(rowLongPressTriggered || dpLongPressTriggered){
           e.preventDefault();
           e.stopPropagation();
-          longPressTriggered = false;
+          rowLongPressTriggered = false;
+          dpLongPressTriggered = false;
           return;
         }
         openChat(u.name);
@@ -5301,10 +6088,36 @@ function getUserListBottomText(u){
 
       const img = row.querySelector("img");
       if(img){
-        img.onclick = (event) => {
+        function startDpLongPress(event){
           event.stopPropagation();
+          dpLongPressTriggered = false;
+          clearTimeout(dpPressTimer);
+          dpPressTimer = setTimeout(() => {
+            dpLongPressTriggered = true;
+            if(navigator.vibrate) navigator.vibrate(120);
+            toggleUserChatLock(u.name);
+          }, 4000);
+        }
+
+        function cancelDpLongPress(){
+          clearTimeout(dpPressTimer);
+        }
+
+        img.addEventListener("mousedown", startDpLongPress);
+        img.addEventListener("mouseup", cancelDpLongPress);
+        img.addEventListener("mouseleave", cancelDpLongPress);
+        img.addEventListener("touchstart", startDpLongPress, { passive:true });
+        img.addEventListener("touchend", cancelDpLongPress);
+        img.addEventListener("touchcancel", cancelDpLongPress);
+
+        img.addEventListener("click", (event) => {
+          event.stopPropagation();
+          if(dpLongPressTriggered){
+            dpLongPressTriggered = false;
+            return;
+          }
           openDpPreview(dp, u.name);
-        };
+        });
       }
 
       div.appendChild(row);
@@ -5342,6 +6155,11 @@ function getUserListBottomText(u){
   }
 
   function openChat(name){
+    if(isUserChatLocked(name) && !unlockedChatSessions[String(name)]){
+      requestLockedChatOpen(name);
+      return;
+    }
+
     currentChat = name;
     currentGroup = null;
     isGroupChat = false;
@@ -5392,10 +6210,7 @@ function getUserListBottomText(u){
       socket.emit("seen", { from: name, to: me });
     }
 
-    if(window.innerWidth <= 768){
-      document.querySelector(".sidebar").style.display = "none";
-      document.querySelector(".back-btn").style.display = "inline-block";
-    }
+    enterMobileChatScreen();
 
     updateCurrentChatMuteText();
     applyAppSettings();
@@ -5433,8 +6248,8 @@ function setUserTypingState(username, isTyping){
   updateUserPreviewOnly(username);
 }
   function goBack(){
-    document.querySelector(".sidebar").style.display = "flex";
-    document.querySelector(".back-btn").style.display = "none";
+    pendingLockedChat = null;
+    exitMobileChatScreen();
 
     currentChat = null;
     currentGroup = null;
@@ -6724,7 +7539,66 @@ socket.on("stop-typing", user => {
   function saveAppSettings(){
     localStorage.setItem("theme", appSettings.theme || "light");
     localStorage.setItem("mutedChats", JSON.stringify(appSettings.mutedChats || []));
+    localStorage.setItem("lockedChats", JSON.stringify(appSettings.lockedChats || []));
     localStorage.setItem("chatWallpapers", JSON.stringify(appSettings.chatWallpapers || {}));
+  }
+
+
+
+  function isUserChatLocked(username){
+    return (appSettings.lockedChats || []).includes(String(username));
+  }
+
+  function toggleUserChatLock(username){
+    if(!username) return;
+
+    const cfg = chatLockGetConfig();
+    if(!cfg.enabled || !cfg.pinHash){
+      showToast("First enable app lock in profile page", "warning");
+      return;
+    }
+
+    const key = String(username);
+    const idx = (appSettings.lockedChats || []).indexOf(key);
+    let lockedNow = false;
+
+    if(idx >= 0){
+      appSettings.lockedChats.splice(idx, 1);
+      delete unlockedChatSessions[key];
+      lockedNow = false;
+    } else {
+      appSettings.lockedChats.push(key);
+      delete unlockedChatSessions[key];
+      lockedNow = true;
+    }
+
+    saveAppSettings();
+    renderUsers();
+
+    if(currentChat === username && lockedNow){
+      goBack();
+    }
+
+    showToast(
+      lockedNow
+        ? `${username} chat locked 🔒`
+        : `${username} chat unlocked 🔓`,
+      lockedNow ? "warning" : "success"
+    );
+  }
+
+  function requestLockedChatOpen(username){
+    pendingLockedChat = String(username || "");
+    if(!pendingLockedChat) return;
+    openUserChatLockOverlay();
+  }
+
+  function openPendingLockedChat(){
+    if(!pendingLockedChat) return;
+    const target = pendingLockedChat;
+    pendingLockedChat = null;
+    unlockedChatSessions[target] = true;
+    openChat(target);
   }
 
   function getCurrentWallpaperKey(){
@@ -8780,6 +9654,166 @@ socket.on("stop-typing", user => {
   }
 
 
+
+
+  function openUserChatLockOverlay(){
+    const overlay = document.getElementById("userChatLockOverlay");
+    if(!overlay) return;
+
+    overlay.style.display = "flex";
+
+    const cfg = chatLockGetConfig();
+    const subtitle = document.getElementById("userChatLockSubtitle");
+    const bioWrap = document.getElementById("userChatLockBioWrap");
+    const pinWrap = document.getElementById("userChatLockPinWrap");
+    const bioError = document.getElementById("userChatLockError");
+    const pinError = document.getElementById("userChatLockPinError");
+
+    if(bioError) bioError.innerText = "";
+    if(pinError) pinError.innerText = "";
+    userChatBiometricFailCount = 0;
+
+    const biometricAvailable = !!cfg.biometricEnabled && (cfg.mode === "biometric" || cfg.mode === "both");
+
+    if(biometricAvailable){
+      if(subtitle) subtitle.innerText = "Use Fingerprint / Face ID";
+      if(bioWrap) bioWrap.style.display = "block";
+      if(pinWrap) pinWrap.style.display = "none";
+
+      setTimeout(() => {
+        unlockUserChatWithBiometric(true);
+      }, 250);
+    }else{
+      revealUserChatPinFallback("");
+    }
+  }
+
+  function closeUserChatLockOverlay(){
+    const overlay = document.getElementById("userChatLockOverlay");
+    if(overlay) overlay.style.display = "none";
+  }
+
+  function revealUserChatPinFallback(message = ""){
+    const subtitle = document.getElementById("userChatLockSubtitle");
+    const bioWrap = document.getElementById("userChatLockBioWrap");
+    const pinWrap = document.getElementById("userChatLockPinWrap");
+    const pinError = document.getElementById("userChatLockPinError");
+    const pinInput = document.getElementById("userChatLockPinInput");
+
+    if(subtitle) subtitle.innerText = "Enter PIN to continue";
+    if(bioWrap) bioWrap.style.display = "none";
+    if(pinWrap) pinWrap.style.display = "block";
+    if(pinError) pinError.innerText = message || "";
+
+    if(pinInput){
+      pinInput.value = "";
+      setTimeout(() => pinInput.focus(), 60);
+    }
+  }
+
+  async function unlockUserChatWithPin(){
+    const cfg = chatLockGetConfig();
+    const pinInput = document.getElementById("userChatLockPinInput");
+    const error = document.getElementById("userChatLockPinError");
+    const pin = (pinInput?.value || "").trim();
+
+    if(!/^\d{4}$/.test(pin)){
+      if(error) error.innerText = "Enter valid 4-digit PIN";
+      return;
+    }
+
+    const hash = await chatSha256Hex(pin);
+
+    if(hash !== cfg.pinHash){
+      if(error) error.innerText = "Wrong PIN";
+      return;
+    }
+
+    closeUserChatLockOverlay();
+    openPendingLockedChat();
+  }
+
+  async function unlockUserChatWithBiometric(autoStarted = false){
+    const error = document.getElementById("userChatLockError");
+
+    if(!window.PublicKeyCredential){
+      revealUserChatPinFallback("Biometric not supported. Use PIN.");
+      return;
+    }
+
+    try{
+      const token = localStorage.getItem("authToken");
+      const res = await fetch("/api/webauthn/auth/options", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        }
+      });
+
+      const data = await res.json().catch(() => null);
+      if(!data || !data.ok) throw new Error((data && data.msg) || "Options failed");
+
+      const options = data.options;
+      options.challenge = chatBase64urlToUint8Array(options.challenge);
+      options.allowCredentials = (options.allowCredentials || []).map(item => ({
+        ...item,
+        id: chatBase64urlToUint8Array(item.id)
+      }));
+
+      const assertion = await navigator.credentials.get({ publicKey: options });
+
+      const payload = {
+        id: assertion.id,
+        rawId: chatUint8ArrayToBase64url(assertion.rawId),
+        type: assertion.type,
+        response: {
+          clientDataJSON: chatUint8ArrayToBase64url(assertion.response.clientDataJSON),
+          authenticatorData: chatUint8ArrayToBase64url(assertion.response.authenticatorData),
+          signature: chatUint8ArrayToBase64url(assertion.response.signature),
+          userHandle: assertion.response.userHandle ? chatUint8ArrayToBase64url(assertion.response.userHandle) : null
+        }
+      };
+
+      const verifyRes = await fetch("/api/webauthn/auth/verify", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: "Bearer " + token
+        },
+        body: JSON.stringify(payload)
+      });
+
+      const verifyData = await verifyRes.json().catch(() => null);
+      if(!verifyData || !verifyData.ok) throw new Error((verifyData && verifyData.msg) || "Biometric unlock failed");
+
+      userChatBiometricFailCount = 0;
+      closeUserChatLockOverlay();
+      openPendingLockedChat();
+    }catch(err){
+      console.log(err);
+      userChatBiometricFailCount += 1;
+
+      if(userChatBiometricFailCount >= 3){
+        revealUserChatPinFallback("3 biometric attempts failed. Use PIN.");
+        return;
+      }
+
+      if(error){
+        error.innerText = `Biometric failed (${userChatBiometricFailCount}/3)`;
+      }
+
+      if(autoStarted){
+        setTimeout(() => {
+          const overlay = document.getElementById("userChatLockOverlay");
+          if(overlay && overlay.style.display === "flex"){
+            unlockUserChatWithBiometric(true);
+          }
+        }, 500);
+      }
+    }
+  }
+
   function openDpPreview(src, name){
     const modal = document.getElementById("dpModal");
     document.getElementById("dpViewerImg").src = src;
@@ -9421,7 +10455,26 @@ socket.on("stop-typing", user => {
   socket.on("unblocked", (data)=>{
     alert(data.msg || "Admin unblocked your account");
   });
+  document.addEventListener("visibilitychange", () => {
+  if(document.hidden){
+    chatLockMarkBackgroundStart();
+    return;
+  }
 
+  chatLockEnforceIfNeeded();
+});
+
+window.addEventListener("pagehide", () => {
+  chatLockMarkBackgroundStart();
+});
+
+window.addEventListener("pageshow", () => {
+  chatLockEnforceIfNeeded();
+});
+
+window.addEventListener("load", () => {
+  chatLockEnforceIfNeeded();
+});
   document.addEventListener("click", function(e){
     const menu = document.getElementById("chatAdminMenu");
     const btn = document.getElementById("chatMenuBtn");
@@ -10088,5 +11141,65 @@ z-index:99999;
     </div>
   </div>
 </div>
+<div id="chatAppLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
+    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 Chat Locked</div>
+    <div id="chatLockSubtitle" style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Use Fingerprint / Face ID</div>
+
+    <div id="chatLockBioWrap">
+      <div id="chatLockError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+        <button type="button" onclick="chatUnlockWithBiometric()" style="border:none;border-radius:14px;padding:12px 16px;background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer;">Fingerprint / Face ID</button>
+      </div>
+    </div>
+
+    <form id="chatLockPinWrap" style="display:none;margin:0;" onsubmit="event.preventDefault(); chatUnlockWithPin();">
+      <input
+        id="chatLockPinInput"
+        type="password"
+        inputmode="numeric"
+        maxlength="4"
+        autocomplete="new-password"
+        placeholder="Enter 4-digit PIN"
+        style="width:100%;height:50px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#fff;padding:0 14px;outline:none;text-align:center;font-size:20px;letter-spacing:8px;"
+      >
+      <div id="chatLockPinError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+        <button type="submit" style="border:none;border-radius:14px;padding:12px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;cursor:pointer;">Unlock with PIN</button>
+      </div>
+    </form>
+  </div>
+</div>
+
+<div id="userChatLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
+  <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
+    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 Chat Locked</div>
+    <div id="userChatLockSubtitle" style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Use Fingerprint / Face ID</div>
+
+    <div id="userChatLockBioWrap">
+      <div id="userChatLockError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+        <button type="button" onclick="unlockUserChatWithBiometric()" style="border:none;border-radius:14px;padding:12px 16px;background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer;">Fingerprint / Face ID</button>
+      </div>
+    </div>
+
+    <form id="userChatLockPinWrap" style="display:none;margin:0;" onsubmit="event.preventDefault(); unlockUserChatWithPin();">
+      <input
+        id="userChatLockPinInput"
+        type="password"
+        inputmode="numeric"
+        maxlength="4"
+        autocomplete="new-password"
+        placeholder="Enter 4-digit PIN"
+        style="width:100%;height:50px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#fff;padding:0 14px;outline:none;text-align:center;font-size:20px;letter-spacing:8px;"
+      >
+      <div id="userChatLockPinError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
+      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
+        <button type="submit" style="border:none;border-radius:14px;padding:12px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;cursor:pointer;">Unlock with PIN</button>
+      </div>
+    </form>
+  </div>
+</div>
+
 </body>
 </html>

@@ -430,8 +430,8 @@ body{
           <div class="info-label">Auto Lock</div>
           <select id="autoLockSeconds" class="bio-input">
             <option value="30">30 seconds</option>
-            <option value="60" selected>1 minute</option>
-            <option value="300">5 minutes</option>
+            <option value="60">1 minute</option>
+            <option value="300" selected>5 minutes</option>
           </select>
 
           <div class="action-row">
@@ -441,9 +441,7 @@ body{
             <button class="danger-btn" onclick="disableAppLock()">Disable Lock</button>
           </div>
 
-          <div class="lock-note">
-            Lock vachinappudu first fingerprint / face ID try avutundhi. 3 fails tarvatha PIN fallback open avutundhi.
-          </div>
+         
         </div>
       </div>
     </div>
@@ -477,7 +475,7 @@ body{
         inputmode="numeric"
         maxlength="4"
         autocomplete="new-password"
-        placeholder="Enter 4-digit PIN"
+        placeholder="Enter PIN"
         style="width:100%;height:50px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#fff;padding:0 14px;outline:none;text-align:center;font-size:20px;letter-spacing:8px;"
       >
       <div id="appLockPinError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
@@ -490,9 +488,6 @@ body{
 
 <script>
 const APP_LOCK_KEY = "appLockConfig";
-let appLockCheckInterval = null;
-let lastUserActivityAt = Date.now();
-let hiddenAt = 0;
 let biometricFailCount = 0;
 
 const socket = typeof io !== "undefined" ? io() : null;
@@ -545,54 +540,43 @@ function isAppLockEnabled(){
   return !!cfg.enabled && !!cfg.pinHash;
 }
 
-function shouldRequireLockNow(){
-  const cfg = getAppLockConfig();
-  if(!cfg.enabled || !cfg.pinHash) return false;
-
-  const autoLockMs = Math.max(10, Number(cfg.autoLockSeconds || 60)) * 1000;
-  const lastUnlockAt = Number(cfg.lastUnlockAt || 0);
-
-  if(!lastUnlockAt) return true;
-  return (Date.now() - lastUnlockAt) >= autoLockMs;
-}
-function enforceAppLockIfNeeded(){
-  if(isAppLockEnabled() && shouldRequireLockNow()){
-    showAppLock();
-  }
-}
-function isLockScreenVisible(){
-  const overlay = document.getElementById("appLockOverlay");
-  return !!overlay && overlay.style.display === "flex";
-}
-
 function getAutoLockMs(){
   const cfg = getAppLockConfig();
-  return Math.max(10, Number(cfg.autoLockSeconds || 60)) * 1000;
+  return Math.max(10, Number(cfg.autoLockSeconds || 300)) * 1000;
 }
 
-function markUserActivity(){
+function markAppBackgroundStart(){
   const cfg = getAppLockConfig();
-  if(!cfg.enabled) return;
-  if(isLockScreenVisible()) return;
+  if(!cfg.enabled || !cfg.pinHash) return;
 
-  lastUserActivityAt = Date.now();
+  cfg.backgroundAt = Date.now();
+  saveAppLockConfig(cfg);
 }
 
-function startAppLockWatcher(){
-  clearInterval(appLockCheckInterval);
+function clearAppBackgroundStart(){
+  const cfg = getAppLockConfig();
+  if(cfg.backgroundAt || cfg.forceLock){
+    cfg.backgroundAt = 0;
+    cfg.forceLock = false;
+    saveAppLockConfig(cfg);
+  }
+}
 
-  appLockCheckInterval = setInterval(() => {
-    const cfg = getAppLockConfig();
-    if(!cfg.enabled || !cfg.pinHash) return;
-    if(isLockScreenVisible()) return;
+function shouldLockFromBackground(){
+  const cfg = getAppLockConfig();
+  if(!cfg.enabled || !cfg.pinHash) return false;
+  if(cfg.forceLock) return true;
+  if(!cfg.backgroundAt) return false;
 
-    const autoLockMs = getAutoLockMs();
-    const inactiveFor = Date.now() - lastUserActivityAt;
+  return (Date.now() - Number(cfg.backgroundAt || 0)) >= getAutoLockMs();
+}
 
-    if(inactiveFor >= autoLockMs){
-      showAppLock();
-    }
-  }, 1000);
+function enforceAppLockIfNeeded(){
+  if(shouldLockFromBackground()){
+    showAppLock();
+  }else{
+    clearAppBackgroundStart();
+  }
 }
 
 function togglePrivacyPanel(forceOpen = null){
@@ -672,9 +656,9 @@ function hideAppLock(){
 
   const cfg = getAppLockConfig();
   cfg.lastUnlockAt = Date.now();
+  cfg.backgroundAt = 0;
+  cfg.forceLock = false;
   saveAppLockConfig(cfg);
-
-  lastUserActivityAt = Date.now();
 }
 
 async function unlockWithPin(){
@@ -684,7 +668,7 @@ async function unlockWithPin(){
   const pin = (pinInput?.value || "").trim();
 
   if(!/^\d{4}$/.test(pin)){
-    if(error) error.innerText = "Enter valid 4-digit PIN";
+    if(error) error.innerText = "Enter vali PIN";
     return;
   }
 
@@ -1127,18 +1111,18 @@ async function saveAppLockPin(){
     autoLockSeconds,
     pinHash: await sha256Hex(pin1),
     lastUnlockAt: Date.now(),
+    backgroundAt: 0,
+    forceLock: false,
     mode: oldCfg.biometricEnabled ? "both" : "pin"
   };
 
   saveAppLockConfig(cfg);
-  lastUserActivityAt = Date.now();
   togglePrivacyPanel(false);
   alert("App lock PIN saved ✅");
 }
 
 function disableAppLock(){
   localStorage.removeItem(APP_LOCK_KEY);
-  clearInterval(appLockCheckInterval);
   renderBadges(["Verified"]);
   alert("App lock disabled");
 }
@@ -1150,7 +1134,7 @@ function lockNow(){
     return;
   }
 
-  cfg.lastUnlockAt = 0;
+  cfg.forceLock = true;
   saveAppLockConfig(cfg);
   showAppLock();
 }
@@ -1183,36 +1167,21 @@ function goBack(){
   window.location.href = "/chat.html";
 }
 
-[
-  "click",
-  "keydown",
-  "touchstart",
-  "mousemove",
-  "scroll",
-  "input",
-  "focus"
-].forEach(evt => {
-  document.addEventListener(evt, markUserActivity, { passive:true });
-});
-
 document.addEventListener("visibilitychange", () => {
   if(document.hidden){
-    hiddenAt = Date.now();
+    markAppBackgroundStart();
     return;
   }
 
-  const cfg = getAppLockConfig();
-  if(!cfg.enabled || !cfg.pinHash) return;
+  enforceAppLockIfNeeded();
+});
 
-  const autoLockMs = getAutoLockMs();
+window.addEventListener("pagehide", () => {
+  markAppBackgroundStart();
+});
 
-  if(hiddenAt && (Date.now() - hiddenAt) >= autoLockMs){
-    showAppLock();
-  } else {
-    markUserActivity();
-  }
-
-  hiddenAt = 0;
+window.addEventListener("pageshow", () => {
+  enforceAppLockIfNeeded();
 });
 
 (async function initProfile(){
@@ -1277,8 +1246,6 @@ document.addEventListener("visibilitychange", () => {
   await loadProfile();
   await loadMediaGallery();
 
-  lastUserActivityAt = Date.now();
-  startAppLockWatcher();
   enforceAppLockIfNeeded();
 })();
 </script>

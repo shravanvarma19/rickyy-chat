@@ -1,4 +1,4 @@
-const CACHE_NAME = "rickyy-chat-cache-v10";
+const CACHE_NAME = "rickyy-chat-cache-v11";
 
 const APP_SHELL = [
   "/",
@@ -41,6 +41,7 @@ self.addEventListener("activate", event => {
           if (key !== CACHE_NAME) {
             return caches.delete(key);
           }
+          return null;
         })
       )
     )
@@ -80,7 +81,7 @@ async function networkFirst(req, fallbackUrl = "/index.html") {
     const fresh = await fetch(req);
     if (fresh && fresh.status === 200) {
       const cache = await caches.open(CACHE_NAME);
-      cache.put(req, fresh.clone());
+      await cache.put(req, fresh.clone());
     }
     return fresh;
   } catch (err) {
@@ -95,15 +96,52 @@ async function staleWhileRevalidate(req) {
   const cached = await cache.match(req);
 
   const networkFetch = fetch(req)
-    .then(res => {
+    .then(async res => {
       if (res && res.status === 200 && res.type === "basic") {
-        cache.put(req, res.clone());
+        await cache.put(req, res.clone());
       }
       return res;
     })
     .catch(() => null);
 
-  return cached || networkFetch || fetch(req);
+  if (cached) return cached;
+  return networkFetch || fetch(req);
+}
+
+async function openOrFocusUrl(targetUrl = "/") {
+  const clientList = await clients.matchAll({
+    type: "window",
+    includeUncontrolled: true
+  });
+
+  for (const client of clientList) {
+    try {
+      const clientUrl = new URL(client.url);
+      if (clientUrl.origin === self.location.origin) {
+        await client.navigate(targetUrl);
+        return client.focus();
+      }
+    } catch (err) {}
+  }
+
+  if (clients.openWindow) {
+    return clients.openWindow(targetUrl);
+  }
+  return null;
+}
+
+function buildReplyUrl(data = {}) {
+  if (data.replyUrl) return data.replyUrl;
+
+  if (data.groupId) {
+    return `/chat.html?group=${encodeURIComponent(String(data.groupId))}&quickReply=1`;
+  }
+
+  if (data.from) {
+    return `/chat.html?user=${encodeURIComponent(String(data.from))}&quickReply=1`;
+  }
+
+  return data.url || "/chat.html";
 }
 
 /* =========================
@@ -146,14 +184,30 @@ self.addEventListener("push", event => {
   const icon = data.icon || "/icons/icon-192.png";
   const badge = data.badge || "/icons/icon-192.png";
 
+  const actions = [
+    { action: "reply", title: "Reply" },
+    { action: "open", title: "Open" },
+    { action: "seen", title: "Mark seen" }
+  ];
+
   event.waitUntil(
     self.registration.showNotification(title, {
       body,
       icon,
       badge,
-      data: { url },
+      actions,
+      data: {
+        url,
+        from: data.from || "",
+        groupId: data.groupId || "",
+        messageId: data.messageId || "",
+        replyUrl: data.replyUrl || "",
+        seenUrl: data.seenUrl || "",
+        notificationType: data.notificationType || "message"
+      },
       tag: data.tag || "rickyy-chat-notification",
-      renotify: true
+      renotify: true,
+      requireInteraction: !!data.requireInteraction
     })
   );
 });
@@ -164,26 +218,39 @@ self.addEventListener("push", event => {
 self.addEventListener("notificationclick", event => {
   event.notification.close();
 
-  const targetUrl = event.notification?.data?.url || "/";
+  const data = event.notification?.data || {};
+  const action = event.action || "";
 
-  event.waitUntil(
-    clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
-      for (const client of clientList) {
+  event.waitUntil((async () => {
+    if (action === "reply") {
+      return openOrFocusUrl(buildReplyUrl(data));
+    }
+
+    if (action === "seen") {
+      if (data.seenUrl) {
         try {
-          const clientUrl = new URL(client.url);
-
-          if (clientUrl.origin === self.location.origin) {
-            client.navigate(targetUrl);
-            return client.focus();
-          }
-        } catch (err) {}
+          await fetch(data.seenUrl, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+              messageId: data.messageId || "",
+              from: data.from || "",
+              groupId: data.groupId || ""
+            })
+          });
+          return;
+        } catch (err) {
+          return openOrFocusUrl(data.url || "/chat.html");
+        }
       }
 
-      if (clients.openWindow) {
-        return clients.openWindow(targetUrl);
-      }
-    })
-  );
+      return openOrFocusUrl(data.url || "/chat.html");
+    }
+
+    return openOrFocusUrl(data.url || "/chat.html");
+  })());
 });
 
 /* =========================
