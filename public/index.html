@@ -462,7 +462,8 @@ body::after{
 
 .login-btn,
 .continue-btn,
-.verify-btn{
+.verify-btn,
+.resend-btn{
   width:100%;
   min-height:46px;
   padding:12px 14px;
@@ -473,7 +474,8 @@ body::after{
 
 .login-btn::before,
 .continue-btn::before,
-.verify-btn::before{
+.verify-btn::before,
+.resend-btn::before{
   content:"";
   position:absolute;
   inset:0;
@@ -484,7 +486,8 @@ body::after{
 
 .login-btn:hover,
 .continue-btn:hover,
-.verify-btn:hover{
+.verify-btn:hover,
+.resend-btn:hover{
   transform:translateY(-1px) scale(1.004);
   box-shadow:
     0 22px 34px rgba(16,185,129,.28),
@@ -494,18 +497,35 @@ body::after{
 
 .login-btn:hover::before,
 .continue-btn:hover::before,
-.verify-btn:hover::before{
+.verify-btn:hover::before,
+.resend-btn:hover::before{
   transform:translateX(120%);
 }
 
 .login-btn:disabled,
 .continue-btn:disabled,
-.verify-btn:disabled{
+.verify-btn:disabled,
+.resend-btn:disabled{
   opacity:.72;
   cursor:not-allowed;
   box-shadow:none;
   transform:none;
 }
+
+.resend-btn{
+  position:relative;
+  overflow:hidden;
+  margin-top:10px;
+  background:rgba(255,255,255,.08);
+  color:#d9fff0;
+  border:1px solid rgba(167,243,208,.18);
+  box-shadow:inset 0 1px 0 rgba(255,255,255,.14);
+}
+
+.resend-btn:disabled{
+  opacity:.58;
+}
+
 
 .otp-section{
   display:none;
@@ -516,6 +536,31 @@ body::after{
 .otp-section.show{
   display:block;
 }
+
+.login-otp-section{
+  display:none;
+  margin-top:12px;
+  animation:fadeInView .22s ease;
+}
+
+.login-otp-section.show{
+  display:block;
+}
+
+.login-otp-section .verify-btn{
+  margin-top:0;
+}
+
+.login-otp-help{
+  min-height:18px;
+  margin-top:8px;
+  font-size:11px;
+  line-height:1.45;
+  color:#a7f3d0;
+  text-align:center;
+  font-weight:800;
+}
+
 
 .err{
   position:relative;
@@ -852,6 +897,11 @@ body::after{
   .otp-section{
     margin-top:8px;
   }
+
+  .login-otp-section{
+    margin-top:8px;
+  }
+
 
   .err{
     margin-top:8px;
@@ -1328,7 +1378,7 @@ body::after{
         </div>
 
         <div class="sub" id="subText">
-          Login with username, password and captcha to continue.
+          Login with username, password and OTP to continue.
         </div>
 
         <div class="tabs">
@@ -1338,24 +1388,23 @@ body::after{
 
         <div id="loginView" class="view active">
           <form id="loginForm">
-            <div class="field">
+            <div class="field login-credential-field">
               <input id="loginUsername" name="loginUsername" placeholder="Username" autocomplete="username" autocapitalize="off" spellcheck="false">
             </div>
 
-            <div class="field">
+            <div class="field login-credential-field">
               <input id="loginPassword" name="loginPassword" type="password" placeholder="Password" autocomplete="current-password">
             </div>
 
-            <div class="captcha-row">
-              <div id="captchaBox" class="captcha-box">------</div>
-              <button id="refreshCaptcha" class="refresh-btn" type="button">↻</button>
-            </div>
+            <button id="loginBtn" type="submit" class="login-btn">Get OTP</button>
 
-            <div class="field">
-              <input id="captchaInput" name="captchaInput" placeholder="Enter Captcha" autocapitalize="characters">
+            <div id="loginOtpSection" class="login-otp-section">
+              <div class="field">
+                <input id="loginOtpInput" name="loginOtpInput" placeholder="Enter Login OTP" inputmode="numeric" maxlength="6" autocomplete="one-time-code">
+              </div>
+              <button id="verifyLoginOtpBtn" type="button" class="verify-btn">Verify OTP </button>
+              <button id="resendLoginOtpBtn" type="button" class="resend-btn" disabled>Resend OTP</button>
             </div>
-
-            <button id="loginBtn" type="submit" class="login-btn">Login</button>
             <div class="forgot-link-row">
               <button id="forgotPasswordLink" type="button" class="forgot-link">Forgot Password?</button>
             </div>
@@ -1469,10 +1518,13 @@ const subText = document.getElementById("subText");
 
 const loginUsername = document.getElementById("loginUsername");
 const loginPassword = document.getElementById("loginPassword");
-const captchaBox = document.getElementById("captchaBox");
-const captchaInput = document.getElementById("captchaInput");
-const refreshCaptcha = document.getElementById("refreshCaptcha");
+const loginOtpSection = document.getElementById("loginOtpSection");
+const loginOtpInput = document.getElementById("loginOtpInput");
+const verifyLoginOtpBtn = document.getElementById("verifyLoginOtpBtn");
+const resendLoginOtpBtn = document.getElementById("resendLoginOtpBtn");
+const loginOtpTimerText = null;
 const loginBtn = document.getElementById("loginBtn");
+const loginCredentialFields = document.querySelectorAll(".login-credential-field");
 const loginForm = document.getElementById("loginForm");
 const loginError = document.getElementById("loginError");
 const loginNotifBox = document.getElementById("loginNotifBox");
@@ -1492,9 +1544,10 @@ const otpSection = document.getElementById("otpSection");
 const otpInput = document.getElementById("otpInput");
 const verifyOtpBtn = document.getElementById("verifyOtpBtn");
 
-let captchaValue = "";
 let tempSignupData = null;
 let liveSocket = null;
+let loginOtpExpiresAt = 0;
+let loginOtpTimer = null;
 
 const forgotPasswordLink = document.getElementById("forgotPasswordLink");
 const forgotModal = document.getElementById("forgotModal");
@@ -1617,7 +1670,7 @@ function switchTab(type){
     requestTabBtn.classList.remove("active");
     loginView.classList.add("active");
     requestView.classList.remove("active");
-    subText.innerText = "Welcome back. Enter your credentials and pass the captcha to continue.";
+    subText.innerText = "Welcome back. Enter your credentials, get OTP and verify to continue.";
   }else{
     requestTabBtn.classList.add("active");
     loginTabBtn.classList.remove("active");
@@ -1876,82 +1929,231 @@ forgotConfirmPassword.addEventListener("keydown", function(e){
   }
 });
 
-async function loadCaptcha(){
-  try{
-    const res = await fetch("/api/captcha");
-    const data = await res.json();
-    if(data.ok){
-      captchaValue = data.captcha;
-      captchaBox.innerText = captchaValue;
-    }else{
-      captchaBox.innerText = "ERROR";
-    }
-  }catch(err){
-    captchaBox.innerText = "ERROR";
+function clearLoginOtpTimer(){
+  if(loginOtpTimer){
+    clearInterval(loginOtpTimer);
+    loginOtpTimer = null;
   }
 }
 
-refreshCaptcha.addEventListener("click", loadCaptcha);
+function setLoginOtpResendButton(secondsLeft){
+  if(!resendLoginOtpBtn) return;
 
-loginForm.addEventListener("submit", async function(e){
-  e.preventDefault();
+  if(secondsLeft > 0){
+    resendLoginOtpBtn.disabled = true;
+    resendLoginOtpBtn.innerText = `Resend OTP (${secondsLeft}s)`;
+  }else{
+    resendLoginOtpBtn.disabled = false;
+    resendLoginOtpBtn.innerText = "Resend OTP";
+  }
+}
 
+function startLoginOtpCountdown(seconds = 30){
+  clearLoginOtpTimer();
+  loginOtpExpiresAt = Date.now() + (seconds * 1000);
+
+  const tick = () => {
+    const secondsLeft = Math.max(0, Math.ceil((loginOtpExpiresAt - Date.now()) / 1000));
+
+    setLoginOtpResendButton(secondsLeft);
+
+    if(secondsLeft <= 0){
+      clearLoginOtpTimer();
+      loginOtpExpiresAt = 0;
+    }
+  };
+
+  tick();
+  loginOtpTimer = setInterval(tick, 1000);
+}
+
+function setLoginOtpStep(isOtpStep){
+  loginCredentialFields.forEach((field) => {
+    field.style.display = isOtpStep ? "none" : "";
+  });
+
+  if(loginBtn){
+    loginBtn.style.display = isOtpStep ? "none" : "";
+    loginBtn.disabled = false;
+    loginBtn.innerText = "Get OTP";
+  }
+
+  if(loginOtpSection){
+    loginOtpSection.classList.toggle("show", !!isOtpStep);
+  }
+}
+
+function resetLoginOtpUI(){
+  clearLoginOtpTimer();
+  loginOtpExpiresAt = 0;
+  setLoginOtpStep(false);
+  if(loginOtpInput) loginOtpInput.value = "";
+  if(verifyLoginOtpBtn){
+    verifyLoginOtpBtn.disabled = false;
+    verifyLoginOtpBtn.innerText = "Verify OTP & Login";
+  }
+  setLoginOtpResendButton(0);
+  if(resendLoginOtpBtn){
+    resendLoginOtpBtn.disabled = true;
+    resendLoginOtpBtn.innerText = "Resend OTP";
+  }
+}
+
+async function requestLoginOtp(isResend = false){
   const name = loginUsername.value.trim();
   const password = loginPassword.value.trim();
-  const captchaTyped = captchaInput.value.trim();
 
   clearLoginNotification();
   setError(loginError, "");
+
+  if(!name || !password){
+    setError(loginError, "Username and password required");
+    return;
+  }
+
+  if(!isResend){
+    resetLoginOtpUI();
+  }
+
   loginBtn.disabled = true;
-  loginBtn.innerText = "Please wait...";
+  loginBtn.innerText = "Sending OTP...";
+  if(resendLoginOtpBtn){
+    resendLoginOtpBtn.disabled = true;
+    resendLoginOtpBtn.innerText = "Sending...";
+  }
 
   try{
-    const res = await fetch("/api/login", {
+    const res = await fetch("/api/login/request-otp", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({
-        name,
-        password,
-        captchaInput: captchaTyped,
-        captchaValue
-      })
+      body: JSON.stringify({ name, password })
     });
 
-    const data = await res.json();
+    const data = await res.json().catch(() => null);
 
-    if(!data.ok){
-      setError(loginError, data.msg || "Login failed");
+    if(!res.ok || !data || data.ok === false){
+      setLoginOtpStep(false);
+      setError(loginError, (data && (data.msg || data.message)) || "OTP send failed");
       loginBtn.disabled = false;
-      loginBtn.innerText = "Login";
-      await loadCaptcha();
+      loginBtn.innerText = "Get OTP";
+      setLoginOtpResendButton(0);
       return;
     }
 
-    localStorage.setItem("user", data.user.name);
-    localStorage.setItem("lastLoginUser", data.user.name);
-    localStorage.setItem("role", data.user.role || "user");
+    setLoginOtpStep(true);
+    if(loginOtpInput) loginOtpInput.value = "";
+    startLoginOtpCountdown(Number(data.expiresIn || 30));
+
+    const otpToShow = data.otp || data.devOtp || "";
+    if(otpToShow){
+      showOtpFloating(otpToShow, loginOtpSection);
+      setError(loginError,"", true);
+    }else{
+      setError(loginError, data.msg || data.message || "OTP sent successfully. Enter it within 30 seconds.", true);
+    }
+
+    setTimeout(() => {
+      if(loginOtpInput) loginOtpInput.focus();
+    }, 250);
+
+  }catch(err){
+    setError(loginError, "Server error while sending OTP");
+    console.log("LOGIN OTP REQUEST ERROR:", err);
+    setLoginOtpResendButton(0);
+  }finally{
+    if(loginBtn && loginBtn.style.display !== "none"){
+      loginBtn.disabled = false;
+      loginBtn.innerText = "Get OTP";
+    }
+  }
+}
+
+loginForm.addEventListener("submit", async function(e){
+  e.preventDefault();
+  await requestLoginOtp(false);
+});
+
+if(resendLoginOtpBtn){
+  resendLoginOtpBtn.addEventListener("click", async function(){
+    await requestLoginOtp(true);
+  });
+}
+
+verifyLoginOtpBtn.addEventListener("click", async function(){
+  const name = loginUsername.value.trim();
+  const password = loginPassword.value.trim();
+  const otp = loginOtpInput.value.trim();
+
+  clearLoginNotification();
+  setError(loginError, "");
+
+  if(!name || !password){
+    setError(loginError, "Username and password required");
+    return;
+  }
+
+  if(!otp){
+    setError(loginError, "Enter OTP");
+    return;
+  }
+
+  if(!loginOtpExpiresAt || Date.now() > loginOtpExpiresAt){
+    setError(loginError, "OTP expired. Tap Resend OTP.");
+    if(resendLoginOtpBtn){
+      resendLoginOtpBtn.disabled = false;
+      resendLoginOtpBtn.innerText = "Resend OTP";
+    }
+    return;
+  }
+
+  verifyLoginOtpBtn.disabled = true;
+  verifyLoginOtpBtn.innerText = "Verifying...";
+
+  try{
+    const res = await fetch("/api/login/verify-otp", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ name, password, otp })
+    });
+
+    const data = await res.json().catch(() => null);
+
+    if(!res.ok || !data || data.ok === false){
+      setError(loginError, (data && (data.msg || data.message)) || "Invalid OTP");
+      verifyLoginOtpBtn.disabled = false;
+      verifyLoginOtpBtn.innerText = "Verify OTP & Login";
+      return;
+    }
+
+    const user = data.user || {};
+    const userName = user.name || name;
+
+    localStorage.setItem("user", userName);
+    localStorage.setItem("lastLoginUser", userName);
+    localStorage.setItem("role", user.role || "user");
     localStorage.setItem("authToken", data.token || "");
-    localStorage.setItem("userDp", data.user.dp || "/default.png");
-    localStorage.setItem("lastUserDp", data.user.dp || "/default.png");
+    localStorage.setItem("userDp", user.dp || "/default.png");
+    localStorage.setItem("lastUserDp", user.dp || "/default.png");
 
     initSocketOnce();
     if(liveSocket){
-      liveSocket.emit("join", data.user.name);
+      liveSocket.emit("join", userName);
     }
 
-    loginBtn.innerText = "Success...";
+    verifyLoginOtpBtn.innerText = "Success...";
+    setError(loginError, "Login successful", true);
+
     setTimeout(() => {
       window.location.href = "/chat.html";
-    }, 300);
+    }, 350);
 
   }catch(err){
-    setError(loginError, "Server error");
-    console.log("LOGIN FRONTEND ERROR:", err);
-    loginBtn.disabled = false;
-    loginBtn.innerText = "Login";
+    setError(loginError, "Server error while login");
+    console.log("LOGIN OTP VERIFY ERROR:", err);
+    verifyLoginOtpBtn.disabled = false;
+    verifyLoginOtpBtn.innerText = "Verify OTP & Login";
   }
 });
-
 reqContact.addEventListener("input", function(){
   this.value = this.value.replace(/\D/g, "").slice(0, 10);
 });
@@ -1960,7 +2162,7 @@ otpInput.addEventListener("input", function(){
   this.value = this.value.replace(/\D/g, "").slice(0, 4);
 });
 
-function showOtpFloating(otp){
+function showOtpFloating(otp, revealEl = otpSection){
   otpValue.innerText = otp;
   otpBox.style.display = "block";
   otpBox.classList.add("show");
@@ -1968,7 +2170,7 @@ function showOtpFloating(otp){
   setTimeout(() => {
     otpBox.classList.remove("show");
     otpBox.style.display = "none";
-    otpSection.classList.add("show");
+    if(revealEl) revealEl.classList.add("show");
   }, 4000);
 }
 
@@ -2093,14 +2295,18 @@ loginUsername.addEventListener("keydown", function(e){
 loginPassword.addEventListener("keydown", function(e){
   if(e.key === "Enter"){
     e.preventDefault();
-    captchaInput.focus();
+    loginForm.requestSubmit();
   }
 });
 
-captchaInput.addEventListener("keydown", function(e){
+loginOtpInput.addEventListener("input", function(){
+  this.value = this.value.replace(/\D/g, "").slice(0, 6);
+});
+
+loginOtpInput.addEventListener("keydown", function(e){
   if(e.key === "Enter"){
     e.preventDefault();
-    loginForm.requestSubmit();
+    verifyLoginOtpBtn.click();
   }
 });
 
@@ -2138,8 +2344,6 @@ if ("serviceWorker" in navigator) {
   }, APP_STARTUP_MAX_MS);
 
   initSocketOnce();
-  await loadCaptcha();
-
   const token = localStorage.getItem("authToken");
   if(token){
     try{

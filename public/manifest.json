@@ -1,27 +1,90 @@
 {
-  "id": "/",
+  "id": "/?source=pwa",
   "name": "RickyY Chat",
   "short_name": "RickyY",
-  "description": "Private chat app with messaging, status, calls and groups",
+  "description": "Private real-time chat app with messaging, status, calls and groups.",
   "start_url": "/?source=pwa",
   "scope": "/",
   "display": "standalone",
-  "background_color": "#ece5dd",
-  "theme_color": "#075e54",
+  "display_override": [
+    "fullscreen",
+    "standalone"
+  ],
   "orientation": "portrait",
-  "categories": ["social", "communication"],
+  "background_color": "#081018",
+  "theme_color": "#081018",
+  "categories": [
+    "social",
+    "communication"
+  ],
+  "lang": "en",
+  "dir": "ltr",
+  "prefer_related_applications": false,
   "icons": [
     {
       "src": "/icons/icon-192.png",
       "sizes": "192x192",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
     },
     {
       "src": "/icons/icon-512.png",
       "sizes": "512x512",
       "type": "image/png",
-      "purpose": "any maskable"
+      "purpose": "any"
+    },
+    {
+      "src": "/icons/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "maskable"
+    },
+    {
+      "src": "/icons/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "maskable"
+    }
+  ],
+  "shortcuts": [
+    {
+      "name": "Open Chats",
+      "short_name": "Chats",
+      "description": "Open RickyY Chat conversations",
+      "url": "/chat.html?tab=chats",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open Groups",
+      "short_name": "Groups",
+      "description": "Open RickyY Chat groups",
+      "url": "/chat.html?tab=groups",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
+    },
+    {
+      "name": "Open Profile",
+      "short_name": "Profile",
+      "description": "Open your RickyY Chat profile",
+      "url": "/profile.html",
+      "icons": [
+        {
+          "src": "/icons/icon-192.png",
+          "sizes": "192x192",
+          "type": "image/png"
+        }
+      ]
     }
   ]
 }

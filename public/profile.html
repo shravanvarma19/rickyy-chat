@@ -2,8 +2,16 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
 <title>Profile • RickyY Chat</title>
+<link rel="manifest" href="/manifest.json">
+<meta name="theme-color" content="#081018">
+<meta name="mobile-web-app-capable" content="yes">
+<meta name="application-name" content="RickyY Chat">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-title" content="RickyY Chat">
+<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script src="/socket.io/socket.io.js"></script>
 <style>
 *{box-sizing:border-box}
@@ -332,9 +340,364 @@ body{
   .dp-wrap{width:100px;height:100px}
   .profile-name{font-size:24px}
 }
+
+html,body{
+  overscroll-behavior:none;
+  -webkit-tap-highlight-color:transparent;
+}
+button{
+  -webkit-tap-highlight-color:transparent;
+}
+input,textarea,select{
+  font-family:inherit;
+}
+.connection-banner{
+  position:fixed;
+  top:calc(10px + env(safe-area-inset-top));
+  left:50%;
+  transform:translateX(-50%) translateY(-16px);
+  z-index:70000;
+  min-width:210px;
+  max-width:calc(100vw - 28px);
+  opacity:0;
+  pointer-events:none;
+  padding:10px 14px;
+  border-radius:999px;
+  color:#fff;
+  text-align:center;
+  font-size:12px;
+  font-weight:900;
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 18px 35px rgba(0,0,0,.26);
+  backdrop-filter:blur(14px);
+  transition:.22s ease;
+}
+.connection-banner.show{
+  opacity:1;
+  transform:translateX(-50%) translateY(0);
+}
+.connection-banner.offline{background:rgba(220,38,38,.94)}
+.connection-banner.connecting{background:rgba(217,119,6,.94)}
+.connection-banner.online{background:rgba(16,185,129,.94)}
+.pull-refresh-indicator{
+  position:fixed;
+  top:calc(12px + env(safe-area-inset-top));
+  left:50%;
+  transform:translateX(-50%) translateY(-80px);
+  z-index:65000;
+  width:54px;
+  height:54px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(15,23,42,.94);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 18px 32px rgba(0,0,0,.24);
+  color:#a7f3d0;
+  font-size:22px;
+  transition:.22s ease;
+  pointer-events:none;
+}
+.pull-refresh-indicator.show{
+  transform:translateX(-50%) translateY(0);
+}
+.pull-refresh-indicator.spin{
+  animation:pullSpin .85s linear infinite;
+}
+@keyframes pullSpin{
+  from{transform:translateX(-50%) translateY(0) rotate(0deg)}
+  to{transform:translateX(-50%) translateY(0) rotate(360deg)}
+}
+.profile-skeleton{
+  position:fixed;
+  inset:0;
+  z-index:60000;
+  display:none;
+  padding:calc(84px + env(safe-area-inset-top)) 16px 110px;
+  background:
+    radial-gradient(circle at top left, rgba(16,185,129,.16), transparent 24%),
+    linear-gradient(135deg,#071018 0%,#0b1220 52%,#111827 100%);
+}
+body.profile-loading .profile-skeleton{
+  display:block;
+}
+.skeleton-shell{
+  max-width:980px;
+  margin:0 auto;
+}
+.sk-cover,.sk-line,.sk-card,.sk-avatar{
+  position:relative;
+  overflow:hidden;
+  background:rgba(255,255,255,.07);
+  border:1px solid rgba(255,255,255,.07);
+}
+.sk-cover{height:210px;border-radius:28px}
+.sk-avatar{width:110px;height:110px;border-radius:30px;margin:-48px 0 18px 20px}
+.sk-line{height:18px;border-radius:999px;margin:10px 0}
+.sk-line.w60{width:60%}
+.sk-line.w35{width:35%}
+.sk-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
+.sk-card{height:220px;border-radius:24px}
+.sk-cover::after,.sk-line::after,.sk-card::after,.sk-avatar::after{
+  content:"";
+  position:absolute;
+  inset:0;
+  transform:translateX(-100%);
+  background:linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
+  animation:skShimmer 1.2s infinite;
+}
+@keyframes skShimmer{
+  100%{transform:translateX(100%)}
+}
+.mobile-bottom-nav{
+  display:none;
+}
+.privacy-blur-overlay{
+  position:fixed;
+  inset:0;
+  z-index:80000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  background:rgba(5,10,20,.78);
+  backdrop-filter:blur(18px);
+  color:#fff;
+  text-align:center;
+  padding:22px;
+}
+body.sensitive-blur .privacy-blur-overlay{
+  display:flex;
+}
+body.sensitive-blur .profile-shell,
+body.sensitive-blur .topbar{
+  filter:blur(12px);
+}
+.privacy-blur-card{
+  width:min(320px,92vw);
+  padding:22px;
+  border-radius:24px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 20px 44px rgba(0,0,0,.25);
+}
+.privacy-blur-card strong{
+  display:block;
+  font-size:22px;
+  margin-bottom:8px;
+}
+@media (max-width:768px){
+  body{
+    min-height:100dvh;
+    padding-bottom:calc(78px + env(safe-area-inset-bottom));
+    user-select:none;
+    -webkit-user-select:none;
+    -webkit-touch-callout:none;
+  }
+  input,textarea,select{
+    user-select:text;
+    -webkit-user-select:text;
+  }
+  .topbar{
+    height:64px;
+    padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;
+    border-radius:0;
+  }
+  .profile-shell{
+    padding:14px 12px calc(104px + env(safe-area-inset-bottom));
+  }
+  .cover-card{
+    border-radius:22px;
+  }
+  .cover-edit{
+    top:12px;
+    right:12px;
+    padding:8px 11px;
+    border-radius:12px;
+    font-size:12px;
+  }
+  .card{
+    border-radius:20px;
+    padding:15px;
+  }
+  .action-row{
+    gap:8px;
+  }
+  .primary-btn,.secondary-btn,.danger-btn{
+    flex:1 1 120px;
+    min-height:44px;
+    padding:12px 12px;
+    border-radius:14px;
+  }
+  .mobile-bottom-nav{
+    position:fixed;
+    left:10px;
+    right:10px;
+    bottom:calc(8px + env(safe-area-inset-bottom));
+    z-index:50000;
+    display:grid;
+    grid-template-columns:repeat(5,1fr);
+    gap:6px;
+    padding:8px;
+    border-radius:24px;
+    background:rgba(8,15,26,.92);
+    border:1px solid rgba(255,255,255,.08);
+    box-shadow:0 20px 46px rgba(0,0,0,.34);
+    backdrop-filter:blur(20px);
+  }
+  .mobile-bottom-nav button{
+    border:none;
+    border-radius:17px;
+    min-height:54px;
+    background:transparent;
+    color:#9fb0c0;
+    font-size:11px;
+    font-weight:900;
+    cursor:pointer;
+    display:flex;
+    flex-direction:column;
+    align-items:center;
+    justify-content:center;
+    gap:4px;
+  }
+  .mobile-bottom-nav button span{
+    font-size:19px;
+    line-height:1;
+  }
+  .mobile-bottom-nav button.active{
+    color:#fff;
+    background:linear-gradient(135deg, rgba(16,185,129,.30), rgba(6,182,212,.18));
+    border:1px solid rgba(16,185,129,.22);
+    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
+  }
+  .sk-grid{grid-template-columns:1fr}
+  .sk-cover{height:180px;border-radius:22px}
+  .sk-card{height:190px}
+}
+@media (display-mode:standalone),(display-mode:fullscreen){
+  .topbar{
+    padding-top:calc(env(safe-area-inset-top) + 8px);
+  }
+}
+
+
+/* Privacy screenshot/print guard */
+#privacyGuardOverlay{
+  position:fixed;
+  inset:0;
+  z-index:2147483647;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+  background:rgba(3,7,18,.88);
+  backdrop-filter:blur(22px);
+  -webkit-backdrop-filter:blur(22px);
+  color:#fff;
+  text-align:center;
+}
+#privacyGuardOverlay .privacy-card{
+  width:min(360px,92vw);
+  padding:24px 20px;
+  border-radius:26px;
+  background:rgba(255,255,255,.08);
+  border:1px solid rgba(255,255,255,.12);
+  box-shadow:0 26px 60px rgba(0,0,0,.42);
+}
+#privacyGuardOverlay .privacy-icon{
+  width:64px;
+  height:64px;
+  border-radius:22px;
+  margin:0 auto 14px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:30px;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  box-shadow:0 18px 34px rgba(16,185,129,.22);
+}
+#privacyGuardOverlay .privacy-title{
+  font-size:22px;
+  font-weight:900;
+  margin-bottom:8px;
+}
+#privacyGuardOverlay .privacy-sub{
+  font-size:13px;
+  line-height:1.55;
+  color:#cbd5e1;
+}
+body.privacy-guard-active .app,
+body.privacy-guard-active .profile-shell,
+body.privacy-guard-active .topbar,
+body.privacy-guard-active #mobileBottomNav,
+body.privacy-guard-active #groupDrawer,
+body.privacy-guard-active .gallery-modal,
+body.privacy-guard-active .media-viewer,
+body.privacy-guard-active .status-viewer{
+  filter:blur(18px) brightness(.55) !important;
+  pointer-events:none !important;
+  user-select:none !important;
+  -webkit-user-select:none !important;
+}
+body.privacy-guard-active #privacyGuardOverlay{
+  display:flex !important;
+}
+body.privacy-no-select *:not(input):not(textarea){
+  user-select:none !important;
+  -webkit-user-select:none !important;
+  -webkit-touch-callout:none !important;
+}
+@media print{
+  body *{
+    visibility:hidden !important;
+  }
+  #privacyGuardOverlay,
+  #privacyGuardOverlay *{
+    visibility:visible !important;
+  }
+  #privacyGuardOverlay{
+    display:flex !important;
+    position:fixed !important;
+    inset:0 !important;
+    background:#030712 !important;
+    color:#fff !important;
+    filter:none !important;
+  }
+}
+
 </style>
 </head>
-<body>
+<body class="profile-loading">
+
+<div id="privacyGuardOverlay" aria-hidden="true">
+  <div class="privacy-card">
+    <div class="privacy-icon">🔒</div>
+    <div class="privacy-title">Privacy Protected</div>
+    <div class="privacy-sub">Screenshots, printing and app previews are hidden for your private chats.</div>
+  </div>
+</div>
+
+<div id="connectionBanner" class="connection-banner"></div>
+<div id="pullRefreshIndicator" class="pull-refresh-indicator">↻</div>
+<div class="profile-skeleton" id="profileSkeleton" aria-hidden="true">
+  <div class="skeleton-shell">
+    <div class="sk-cover"></div>
+    <div class="sk-avatar"></div>
+    <div class="sk-line w35"></div>
+    <div class="sk-line w60"></div>
+    <div class="sk-grid" style="margin-top:18px;">
+      <div class="sk-card"></div>
+      <div class="sk-card"></div>
+    </div>
+  </div>
+</div>
+<div class="privacy-blur-overlay" id="privacyBlurOverlay">
+  <div class="privacy-blur-card">
+    <strong>🔒 RickyY Chat</strong>
+    <div>Private screen hidden</div>
+  </div>
+</div>
+
 <div class="topbar">
   <button class="back-btn" onclick="goBack()">←</button>
   <div class="topbar-title" id="topbarTitle">Profile</div>
@@ -456,6 +819,15 @@ body{
 <input type="file" id="dpInput" class="hidden-input" accept="image/*">
 <input type="file" id="coverInput" class="hidden-input" accept="image/*">
 
+
+<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="App navigation">
+  <button type="button" data-tab="chats" onclick="goAppTab('chats')"><span>💬</span>Chats</button>
+  <button type="button" data-tab="groups" onclick="goAppTab('groups')"><span>👥</span>Groups</button>
+  <button type="button" data-tab="status" onclick="goAppTab('status')"><span>◎</span>Status</button>
+  <button type="button" data-tab="calls" onclick="goAppTab('calls')"><span>📞</span>Calls</button>
+  <button type="button" data-tab="profile" class="active" onclick="goAppTab('profile')"><span>👤</span>Profile</button>
+</nav>
+
 <div id="appLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
   <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
     <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 App Locked</div>
@@ -491,6 +863,150 @@ const APP_LOCK_KEY = "appLockConfig";
 let biometricFailCount = 0;
 
 const socket = typeof io !== "undefined" ? io() : null;
+
+let profileSocket = socket;
+window.profileSocket = profileSocket;
+let profileRefreshing = false;
+let pullStartY = 0;
+let pullDistance = 0;
+let blurTimer = null;
+
+function vibrateLight(ms = 12){
+  try{
+    if(navigator.vibrate) navigator.vibrate(ms);
+  }catch(err){}
+}
+
+function setConnectionBanner(type, text, autoHide = false){
+  const banner = document.getElementById("connectionBanner");
+  if(!banner) return;
+
+  banner.className = "connection-banner show " + type;
+  banner.innerText = text;
+
+  if(autoHide){
+    clearTimeout(setConnectionBanner._t);
+    setConnectionBanner._t = setTimeout(() => {
+      banner.classList.remove("show");
+    }, 1600);
+  }
+}
+
+function updateNetworkBanner(){
+  if(navigator.onLine){
+    setConnectionBanner("online", "Connected", true);
+  }else{
+    setConnectionBanner("offline", "No internet connection");
+  }
+}
+
+function bindProfileSocketPresence(){
+  if(!profileSocket || !me) return;
+
+  profileSocket.on("connect", () => {
+    profileSocket.emit("join", me);
+    setConnectionBanner("online", "Connected", true);
+  });
+
+  profileSocket.on("disconnect", () => {
+    if(navigator.onLine){
+      setConnectionBanner("connecting", "Connecting...");
+    }else{
+      setConnectionBanner("offline", "No internet connection");
+    }
+  });
+
+  profileSocket.io?.on?.("reconnect_attempt", () => {
+    setConnectionBanner("connecting", "Connecting...");
+  });
+}
+
+function goAppTab(tab){
+  vibrateLight(10);
+  if(tab === "profile") return;
+  window.location.href = "/chat.html?tab=" + encodeURIComponent(tab);
+}
+
+function hideProfileSkeleton(){
+  document.body.classList.remove("profile-loading");
+}
+
+async function refreshProfilePage(){
+  if(profileRefreshing) return;
+  profileRefreshing = true;
+
+  const ind = document.getElementById("pullRefreshIndicator");
+  if(ind){
+    ind.classList.add("show", "spin");
+  }
+
+  try{
+    await loadProfile();
+    await loadMediaGallery();
+    setConnectionBanner("online", "Profile refreshed", true);
+  }catch(err){
+    setConnectionBanner("offline", "Refresh failed", true);
+  }finally{
+    setTimeout(() => {
+      if(ind) ind.classList.remove("show", "spin");
+      profileRefreshing = false;
+    }, 450);
+  }
+}
+
+function setupPullToRefresh(){
+  const indicator = document.getElementById("pullRefreshIndicator");
+  if(!indicator) return;
+
+  window.addEventListener("touchstart", (e) => {
+    if(window.scrollY <= 0){
+      pullStartY = e.touches[0].clientY;
+      pullDistance = 0;
+    }
+  }, { passive:true });
+
+  window.addEventListener("touchmove", (e) => {
+    if(!pullStartY || window.scrollY > 0 || profileRefreshing) return;
+
+    pullDistance = e.touches[0].clientY - pullStartY;
+
+    if(pullDistance > 58){
+      indicator.classList.add("show");
+    }else{
+      indicator.classList.remove("show");
+    }
+  }, { passive:true });
+
+  window.addEventListener("touchend", () => {
+    if(pullDistance > 72 && !profileRefreshing){
+      refreshProfilePage();
+    }else{
+      indicator.classList.remove("show");
+    }
+    pullStartY = 0;
+    pullDistance = 0;
+  }, { passive:true });
+}
+
+function showSensitiveBlur(){
+  if(isAppLockEnabled()){
+    document.body.classList.add("sensitive-blur");
+  }
+}
+
+function hideSensitiveBlur(){
+  document.body.classList.remove("sensitive-blur");
+}
+
+window.addEventListener("online", updateNetworkBanner);
+window.addEventListener("offline", updateNetworkBanner);
+
+document.addEventListener("click", (e) => {
+  if(e.target.closest("button,.suggestion-chip,.dp-fab,.cover-edit")){
+    vibrateLight(8);
+  }
+}, { passive:true });
+
 
 let me = localStorage.getItem("user");
 if(!me){
@@ -1170,14 +1686,27 @@ function goBack(){
 document.addEventListener("visibilitychange", () => {
   if(document.hidden){
     markAppBackgroundStart();
+    showSensitiveBlur();
     return;
   }
 
+  hideSensitiveBlur();
   enforceAppLockIfNeeded();
 });
 
 window.addEventListener("pagehide", () => {
   markAppBackgroundStart();
+  showSensitiveBlur();
+});
+
+window.addEventListener("blur", () => {
+  clearTimeout(blurTimer);
+  blurTimer = setTimeout(showSensitiveBlur, 180);
+});
+
+window.addEventListener("focus", () => {
+  clearTimeout(blurTimer);
+  hideSensitiveBlur();
 });
 
 window.addEventListener("pageshow", () => {
@@ -1243,11 +1772,146 @@ window.addEventListener("pageshow", () => {
     document.getElementById("autoLockSeconds").value = String(cfg.autoLockSeconds);
   }
 
+  bindProfileSocketPresence();
+  setupPullToRefresh();
+  updateNetworkBanner();
+
   await loadProfile();
   await loadMediaGallery();
 
+  hideProfileSkeleton();
   enforceAppLockIfNeeded();
 })();
+
 </script>
+<script>
+(function keepProfileOnline(){
+  const me = localStorage.getItem("user");
+  const token = localStorage.getItem("authToken");
+
+  if(!me) return;
+
+  const profileSocket = (typeof window.profileSocket !== "undefined" && window.profileSocket) || (typeof socket !== "undefined" && socket) || io({
+    transports:["websocket", "polling"],
+    reconnection:true
+  });
+
+  profileSocket.on("connect", () => {
+    profileSocket.emit("join", me);
+  });
+
+  async function pingPresence(){
+    try{
+      await fetch("/api/presence/ping", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "Authorization":"Bearer " + (token || "")
+        },
+        body:JSON.stringify({ name:me })
+      });
+    }catch(err){}
+  }
+
+  pingPresence();
+  setInterval(pingPresence, 10000);
+})();
+setTimeout(() => {
+  hideProfileSkeleton();
+}, 6000);
+</script>
+
+<script>
+(function privacyScreenshotGuard(){
+  const overlay = document.getElementById("privacyGuardOverlay");
+  let timer = null;
+
+  document.body.classList.add("privacy-no-select");
+
+  function showPrivacyGuard(ms = 1600){
+    if(!overlay) return;
+    clearTimeout(timer);
+    document.body.classList.add("privacy-guard-active");
+    overlay.setAttribute("aria-hidden", "false");
+
+    if(ms > 0){
+      timer = setTimeout(() => {
+        hidePrivacyGuard();
+      }, ms);
+    }
+  }
+
+  function hidePrivacyGuard(){
+    clearTimeout(timer);
+    document.body.classList.remove("privacy-guard-active");
+    if(overlay) overlay.setAttribute("aria-hidden", "true");
+  }
+
+  window.showPrivacyGuard = showPrivacyGuard;
+  window.hidePrivacyGuard = hidePrivacyGuard;
+
+  document.addEventListener("contextmenu", (e) => {
+    e.preventDefault();
+    showPrivacyGuard(1200);
+  });
+
+  document.addEventListener("keydown", async (e) => {
+    const key = String(e.key || "").toLowerCase();
+
+    if(key === "printscreen"){
+      showPrivacyGuard(2200);
+      try{
+        await navigator.clipboard.writeText("Privacy Protected - RickyY Chat");
+      }catch(err){}
+      return;
+    }
+
+    if((e.ctrlKey || e.metaKey) && (key === "p" || key === "s")){
+      e.preventDefault();
+      showPrivacyGuard(2200);
+      return;
+    }
+
+    if((e.ctrlKey || e.metaKey) && e.shiftKey && ["s","i","j","c"].includes(key)){
+      e.preventDefault();
+      showPrivacyGuard(1800);
+      return;
+    }
+  }, true);
+
+  window.addEventListener("beforeprint", () => {
+    showPrivacyGuard(0);
+  });
+
+  window.addEventListener("afterprint", () => {
+    hidePrivacyGuard();
+  });
+
+  document.addEventListener("visibilitychange", () => {
+    if(document.hidden){
+      showPrivacyGuard(0);
+    }else{
+      hidePrivacyGuard();
+    }
+  });
+
+  window.addEventListener("blur", () => {
+    showPrivacyGuard(0);
+  });
+
+  window.addEventListener("focus", () => {
+    hidePrivacyGuard();
+  });
+
+  window.addEventListener("pagehide", () => {
+    showPrivacyGuard(0);
+  });
+
+  window.addEventListener("pageshow", () => {
+    hidePrivacyGuard();
+  });
+})();
+</script>
+
 </body>
 </html>

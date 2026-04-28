@@ -11,6 +11,7 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 const webpush = require("web-push");
+const adminSdk = require("firebase-admin");
 const {
   verifyRegistrationResponse,
   verifyAuthenticationResponse,
@@ -35,7 +36,15 @@ app.use(express.static("public"));
 app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
 app.use(express.static(path.join(__dirname, "public")));
 
+const loginOtpStore = new Map();
 
+function generateOtp(){
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function otpKey(name){
+  return String(name || "").trim().toLowerCase();
+}
 const uploadDir = path.join(__dirname, "public", "uploads");
 if (!fs.existsSync(uploadDir)) {
   fs.mkdirSync(uploadDir, { recursive: true });
@@ -65,6 +74,50 @@ if (
   console.log("WEB PUSH WARNING: VAPID keys missing");
 }
 
+
+/* =========================
+   FIREBASE ADMIN / NATIVE FCM
+========================= */
+let firebaseAdminReady = false;
+
+try {
+  const rawServiceAccount =
+    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
+    process.env.FIREBASE_SERVICE_ACCOUNT ||
+    "";
+
+  const rawBase64 =
+    process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ||
+    "";
+
+  let serviceAccount = null;
+
+  if (rawServiceAccount) {
+    serviceAccount = JSON.parse(rawServiceAccount);
+  } else if (rawBase64) {
+    serviceAccount = JSON.parse(Buffer.from(rawBase64, "base64").toString("utf8"));
+  }
+
+  if (serviceAccount) {
+    if (serviceAccount.private_key) {
+      serviceAccount.private_key = String(serviceAccount.private_key).replace(/\\n/g, "\n");
+    }
+
+    if (!adminSdk.apps.length) {
+      adminSdk.initializeApp({
+        credential: adminSdk.credential.cert(serviceAccount)
+      });
+    }
+
+    firebaseAdminReady = true;
+    console.log("Firebase Admin Connected");
+  } else {
+    console.log("FCM WARNING: FIREBASE_SERVICE_ACCOUNT_JSON missing");
+  }
+} catch (err) {
+  console.log("FCM INIT ERROR:", err.message);
+}
+
 function formatTime(date = new Date()) {
   let hours = date.getHours();
   const minutes = String(date.getMinutes()).padStart(2, "0");
@@ -76,6 +129,140 @@ function formatTime(date = new Date()) {
 
 function generateAuthToken() {
   return crypto.randomBytes(32).toString("hex");
+}
+
+function generateSessionId() {
+  return crypto.randomBytes(16).toString("hex");
+}
+
+function tokenPreview(token = "") {
+  const value = String(token || "");
+  if (!value) return "";
+  return value.slice(0, 10) + "..." + value.slice(-6);
+}
+
+function detectBrowser(userAgent = "") {
+  const ua = String(userAgent || "");
+  if (/Edg\//i.test(ua)) return "Microsoft Edge";
+  if (/OPR\//i.test(ua) || /Opera/i.test(ua)) return "Opera";
+  if (/CriOS/i.test(ua)) return "Chrome iOS";
+  if (/Chrome\//i.test(ua)) return "Chrome";
+  if (/Firefox\//i.test(ua)) return "Firefox";
+  if (/Safari\//i.test(ua) && !/Chrome\//i.test(ua)) return "Safari";
+  return "Browser";
+}
+
+function detectOS(userAgent = "") {
+  const ua = String(userAgent || "");
+  if (/Android/i.test(ua)) return "Android";
+  if (/iPhone|iPad|iPod/i.test(ua)) return "iOS";
+  if (/Windows/i.test(ua)) return "Windows";
+  if (/Mac OS X/i.test(ua)) return "macOS";
+  if (/Linux/i.test(ua)) return "Linux";
+  return "Unknown OS";
+}
+
+function buildDeviceName(userAgent = "") {
+  const browser = detectBrowser(userAgent);
+  const os = detectOS(userAgent);
+  return `${browser} on ${os}`;
+}
+
+function getRequestIp(req) {
+  return (
+    req.headers["x-forwarded-for"]?.split(",")[0]?.trim() ||
+    req.headers["x-real-ip"] ||
+    req.socket?.remoteAddress ||
+    "unknown"
+  );
+}
+
+function createSessionRecord(req, token) {
+  const ua = String(req.headers["user-agent"] || "").slice(0, 500);
+  const now = new Date();
+
+  return {
+    sessionId: generateSessionId(),
+    tokenPreview: tokenPreview(token),
+    deviceName: buildDeviceName(ua),
+    browserName: detectBrowser(ua),
+    osName: detectOS(ua),
+    ip: getRequestIp(req),
+    userAgent: ua,
+    loginAt: now,
+    lastActiveAt: now,
+    loggedOutAt: null,
+    forceLoggedOut: false,
+    active: true
+  };
+}
+
+function attachNewSession(user, req, token) {
+  const session = createSessionRecord(req, token);
+  const sessions = Array.isArray(user.activeSessions) ? user.activeSessions : [];
+
+  const cleaned = sessions
+    .map(s => {
+      if (s && s.active !== false) {
+        s.active = false;
+        s.loggedOutAt = s.loggedOutAt || new Date();
+      }
+      return s;
+    })
+    .slice(-12);
+
+  cleaned.push(session);
+  user.activeSessions = cleaned;
+  return session;
+}
+
+async function touchSessionByToken(token) {
+  const preview = tokenPreview(token);
+  if (!preview) return;
+
+  await User.updateOne(
+    { authToken: token, "activeSessions.tokenPreview": preview },
+    {
+      $set: {
+        "activeSessions.$.lastActiveAt": new Date(),
+        "activeSessions.$.active": true
+      }
+    }
+  ).catch(() => {});
+}
+
+function serializeSessionsForUser(user) {
+  const sessions = Array.isArray(user.activeSessions) ? user.activeSessions : [];
+  const currentPreview = tokenPreview(user.authToken || "");
+  return sessions
+    .slice()
+    .sort((a, b) => new Date(b.lastActiveAt || b.loginAt || 0) - new Date(a.lastActiveAt || a.loginAt || 0))
+    .map(s => {
+      const isCurrent = !!currentPreview && s.tokenPreview === currentPreview;
+      const active = !!isCurrent && s.active !== false && !s.forceLoggedOut;
+      return {
+        sessionId: s.sessionId || "",
+        deviceName: s.deviceName || buildDeviceName(s.userAgent || ""),
+        browserName: s.browserName || "",
+        osName: s.osName || "",
+        ip: s.ip || "",
+        loginAt: s.loginAt || null,
+        lastActiveAt: s.lastActiveAt || null,
+        loggedOutAt: s.loggedOutAt || null,
+        forceLoggedOut: !!s.forceLoggedOut,
+        active,
+        current: isCurrent
+      };
+    });
+}
+
+function forceLogoutSockets(username, msg = "You have been logged out by admin.") {
+  if (!username) return;
+  io.to(username).emit("force-logout", {
+    msg,
+    reason: "admin_force_logout",
+    at: new Date()
+  });
 }
 function getExpectedOrigin(req) {
   const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
@@ -135,7 +322,25 @@ const userSchema = new mongoose.Schema({
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
   authToken: { type: String, default: null },
+  activeSessions: {
+    type: [{
+      sessionId: { type: String, default: "" },
+      tokenPreview: { type: String, default: "" },
+      deviceName: { type: String, default: "" },
+      browserName: { type: String, default: "" },
+      osName: { type: String, default: "" },
+      ip: { type: String, default: "" },
+      userAgent: { type: String, default: "" },
+      loginAt: { type: Date, default: Date.now },
+      lastActiveAt: { type: Date, default: Date.now },
+      loggedOutAt: { type: Date, default: null },
+      forceLoggedOut: { type: Boolean, default: false },
+      active: { type: Boolean, default: true }
+    }],
+    default: []
+  },
   pushSubscriptions: { type: [Object], default: [] },
+  fcmTokens: { type: [Object], default: [] },
   rejectCooldownUntil: { type: Date, default: null },
   lastRejectedAt: { type: Date, default: null },
 
@@ -505,6 +710,54 @@ async function emitUsersToAll() {
   io.emit("users", allUsers);
 }
 
+const presenceOfflineTimers = new Map();
+const presenceHttpPings = new Map();
+const PRESENCE_OFFLINE_GRACE_MS = 12000;
+const PRESENCE_HTTP_STALE_MS = 35000;
+
+function hasActiveSocketForUser(username) {
+  return !!(username && userSocketIds[username] && userSocketIds[username].size > 0);
+}
+
+function cancelPresenceOfflineTimer(username) {
+  if (!username) return;
+  const oldTimer = presenceOfflineTimers.get(username);
+  if (oldTimer) clearTimeout(oldTimer);
+  presenceOfflineTimers.delete(username);
+}
+
+function hasFreshProfilePresence(username) {
+  const lastPing = Number(presenceHttpPings.get(username) || 0);
+  return !!lastPing && (Date.now() - lastPing) < PRESENCE_HTTP_STALE_MS;
+}
+
+function schedulePresenceOffline(username) {
+  if (!username) return;
+
+  cancelPresenceOfflineTimer(username);
+
+  const timer = setTimeout(async () => {
+    try {
+      if (hasActiveSocketForUser(username) || hasFreshProfilePresence(username)) {
+        return;
+      }
+
+      await User.findOneAndUpdate(
+        { name: username },
+        { online: false, lastSeen: new Date() }
+      );
+
+      await emitUsersToAll();
+    } catch (err) {
+      console.log("PRESENCE OFFLINE TIMER ERROR:", err);
+    } finally {
+      presenceOfflineTimers.delete(username);
+    }
+  }, PRESENCE_OFFLINE_GRACE_MS);
+
+  presenceOfflineTimers.set(username, timer);
+}
+
 async function emitGroupUnreadForUser(username) {
   const counts = await calculateGroupUnread(username);
   io.to(username).emit("group-unread-counts", counts);
@@ -614,14 +867,19 @@ function safeNotificationBody(msg) {
 
 async function sendPushToUser(username, payload) {
   try {
-    const user = await User.findOne({ name: username }).select("pushSubscriptions");
+    const user = await User.findOne({ name: username }).select("pushSubscriptions authToken name");
     if (!user || !Array.isArray(user.pushSubscriptions) || !user.pushSubscriptions.length) return;
 
     const validSubs = [];
+    const finalPayload = {
+      ...payload,
+      receiver: username,
+      replyToken: user.authToken || ""
+    };
 
     for (const sub of user.pushSubscriptions) {
       try {
-        await webpush.sendNotification(sub, JSON.stringify(payload));
+        await webpush.sendNotification(sub, JSON.stringify(finalPayload));
         validSubs.push(sub);
       } catch (err) {
         const status = err?.statusCode;
@@ -644,6 +902,77 @@ async function sendPushToUser(username, payload) {
     console.log("sendPushToUser ERROR:", err);
   }
 }
+
+async function sendFcmToUser(username, payload = {}) {
+  try {
+    if (!firebaseAdminReady) return;
+
+    const user = await User.findOne({ name: username }).select("fcmTokens name");
+    if (!user || !Array.isArray(user.fcmTokens) || !user.fcmTokens.length) return;
+
+    const validTokens = [];
+
+    for (const item of user.fcmTokens) {
+      const token = typeof item === "string" ? item : item?.token;
+      if (!token) continue;
+
+      try {
+        await adminSdk.messaging().send({
+          token,
+          data: {
+            title: String(payload.title || "RickyY Chat"),
+            body: String(payload.body || "New message"),
+            from: String(payload.from || ""),
+            to: String(payload.to || ""),
+            group: String(payload.group || payload.groupId || ""),
+            url: String(payload.url || "/chat.html"),
+            tag: String(payload.tag || "rickyy-message"),
+            type: String(payload.type || ""),
+            notificationType: String(payload.notificationType || "message"),
+            canReply: String(payload.canReply !== false),
+            requireInteraction: String(!!payload.requireInteraction)
+          },
+          android: {
+            priority: "high",
+            ttl: 60 * 60 * 1000
+          }
+        });
+
+        validTokens.push(
+          typeof item === "string"
+            ? { token, platform: "android-native", lastSeenAt: new Date() }
+            : { ...item, lastSeenAt: new Date() }
+        );
+      } catch (err) {
+        const code = String(err?.errorInfo?.code || err?.code || "");
+
+        if (
+          code.includes("registration-token-not-registered") ||
+          code.includes("invalid-registration-token")
+        ) {
+          console.log("Removed invalid FCM token for", username);
+          continue;
+        }
+
+        console.log("FCM SEND ERROR:", username, code, err.message);
+        validTokens.push(item);
+      }
+    }
+
+    await User.updateOne(
+      { name: username },
+      { $set: { fcmTokens: validTokens } }
+    );
+  } catch (err) {
+    console.log("sendFcmToUser ERROR:", err);
+  }
+}
+
+async function sendAppNotification(username, payload = {}) {
+  await sendPushToUser(username, payload);
+  await sendFcmToUser(username, payload);
+}
+
 async function requireAdmin(req, res, next) {
   try {
     const adminName =
@@ -1332,10 +1661,19 @@ app.post("/api/logout", async (req, res) => {
     }
 
     if (token) {
-      await User.findOneAndUpdate(
-        { authToken: token },
-        { $unset: { authToken: 1 } }
-      );
+      const userByToken = await User.findOne({ authToken: token });
+      if (userByToken) {
+        const preview = tokenPreview(token);
+        userByToken.activeSessions = (Array.isArray(userByToken.activeSessions) ? userByToken.activeSessions : []).map(s => {
+          if (s.tokenPreview === preview) {
+            s.active = false;
+            s.loggedOutAt = new Date();
+          }
+          return s;
+        });
+        userByToken.authToken = null;
+        await userByToken.save();
+      }
     }
 
     await emitUsersToAll();
@@ -1350,6 +1688,50 @@ app.get("/api/push-public-key", (req, res) => {
     return res.status(500).json({ ok: false, msg: "Missing public key" });
   }
   res.json({ ok: true, publicKey: process.env.VAPID_PUBLIC_KEY });
+});
+
+
+app.post("/api/fcm/register", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const username = normalizeUsername(req.body.username);
+    const fcmToken = String(req.body.fcmToken || "").trim();
+    const device = String(req.body.device || "Android").trim().slice(0, 120);
+    const platform = String(req.body.platform || "android-native").trim().slice(0, 80);
+
+    if (!token || !username || !fcmToken) {
+      return res.status(400).json({ ok: false, msg: "Missing FCM register data" });
+    }
+
+    const user = await User.findOne({ authToken: token, name: username });
+
+    if (!user || user.blocked || user.approvalStatus !== "approved") {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    const current = Array.isArray(user.fcmTokens) ? user.fcmTokens : [];
+
+    const filtered = current.filter(item => {
+      const oldToken = typeof item === "string" ? item : item?.token;
+      return oldToken && oldToken !== fcmToken;
+    });
+
+    filtered.push({
+      token: fcmToken,
+      device,
+      platform,
+      createdAt: new Date(),
+      lastSeenAt: new Date()
+    });
+
+    user.fcmTokens = filtered.slice(-8);
+    await user.save();
+
+    return res.json({ ok: true, msg: "FCM registered" });
+  } catch (err) {
+    console.log("FCM REGISTER ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "FCM register failed" });
+  }
 });
 
 app.post("/api/push/subscribe", async (req, res) => {
@@ -1400,6 +1782,323 @@ app.post("/api/push/unsubscribe", async (req, res) => {
     res.status(500).json({ ok: false, msg: "Unsubscribe failed" });
   }
 });
+
+app.post("/api/notification-reply", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "")
+      .replace("Bearer ", "")
+      .trim();
+
+    const text = sanitizeText(req.body.text || "", 2000);
+    const to = normalizeUsername(req.body.to);
+    const groupId = String(req.body.group || "").trim();
+
+    if (!token) {
+      return res.status(401).json({ ok: false, msg: "No token" });
+    }
+
+    if (!text) {
+      return res.status(400).json({ ok: false, msg: "Message empty" });
+    }
+
+    const sender = await User.findOne({ authToken: token });
+
+    if (!sender || sender.blocked || sender.approvalStatus !== "approved") {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    if (sender.muted) {
+      return res.status(403).json({ ok: false, msg: "Shravan muted you. You cannot send messages." });
+    }
+
+    if (groupId) {
+      const group = await Group.findById(groupId);
+
+      if (!group) {
+        return res.status(404).json({ ok: false, msg: "Group not found" });
+      }
+
+      if (!(group.members || []).includes(sender.name)) {
+        return res.status(403).json({ ok: false, msg: "Not a group member" });
+      }
+
+      const mentionNames = extractMentionNames(text).filter(name => (group.members || []).includes(name));
+
+      const msg = await Message.create({
+        from: sender.name,
+        to: null,
+        group: String(groupId),
+        text,
+        file: null,
+        fileType: null,
+        replyTo: null,
+        mentions: mentionNames,
+        status: "sent",
+        reaction: null,
+        seenBy: [],
+        deliveredTo: [],
+        createdAt: new Date()
+      });
+
+      io.to(roomNameForGroup(groupId)).emit("group-message", msg);
+      await emitGroupUnreadForMembers(groupId).catch(() => {});
+
+      const offlineMembers = (group.members || []).filter(member => {
+        return member !== sender.name && !(userSocketIds[member] && userSocketIds[member].size);
+      });
+
+      for (const member of offlineMembers) {
+        await sendAppNotification(member, {
+          title: `👥 ${group.name || "Group"}`,
+          body: `${sender.name}: ${safeNotificationBody(msg)}`,
+          url: `/chat.html?group=${encodeURIComponent(String(groupId))}`,
+          tag: `group-${groupId}`,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          type: "group",
+          notificationType: "message",
+          canReply: true,
+          from: sender.name,
+          group: String(groupId)
+        });
+      }
+
+      return res.json({ ok: true, msg });
+    }
+
+    if (!to) {
+      return res.status(400).json({ ok: false, msg: "Receiver missing" });
+    }
+
+    const receiver = await User.findOne({ name: to });
+
+    if (!receiver || receiver.blocked || receiver.approvalStatus !== "approved") {
+      return res.status(404).json({ ok: false, msg: "Receiver not found" });
+    }
+
+    const receiverOnline = !!(userSocketIds[to] && userSocketIds[to].size);
+
+    const msg = await Message.create({
+      from: sender.name,
+      to,
+      text,
+      file: null,
+      fileType: null,
+      replyTo: null,
+      mentions: [],
+      status: receiverOnline ? "delivered" : "sent",
+      reaction: null,
+      seenBy: [],
+      deliveredTo: receiverOnline ? [to] : [],
+      createdAt: new Date()
+    });
+
+    io.to(sender.name).emit("private-message", msg);
+    io.to(to).emit("private-message", msg);
+
+    if (receiverOnline) {
+      const counts = await calculateUnread(to);
+      io.to(to).emit("unread-counts", counts);
+    } else {
+      await sendAppNotification(to, {
+        title: sender.name,
+        body: safeNotificationBody(msg),
+        url: `/chat.html?user=${encodeURIComponent(sender.name)}`,
+        tag: `private-${sender.name}`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        type: "private",
+        notificationType: "message",
+        canReply: true,
+        from: sender.name,
+        to
+      });
+    }
+
+    return res.json({ ok: true, msg });
+  } catch (err) {
+    console.log("NOTIFICATION REPLY ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Reply failed" });
+  }
+});
+
+app.post("/api/presence/ping", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const bodyName = normalizeUsername(req.body?.name);
+
+    let user = null;
+
+    if (token) {
+      user = await User.findOne({ authToken: token }).select("name blocked approvalStatus");
+    }
+
+    if (!user && bodyName) {
+      user = await User.findOne({ name: bodyName }).select("name blocked approvalStatus");
+    }
+
+    if (!user || user.blocked || user.approvalStatus !== "approved") {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    cancelPresenceOfflineTimer(user.name);
+    presenceHttpPings.set(user.name, Date.now());
+
+    await User.updateOne(
+      { _id: user._id },
+      { online: true, lastSeen: new Date() }
+    );
+
+    await emitUsersToAll();
+    return res.json({ ok: true });
+  } catch (err) {
+    console.log("PRESENCE PING ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Presence failed" });
+  }
+});
+
+setInterval(async () => {
+  try {
+    const now = Date.now();
+
+    for (const [username, lastPing] of presenceHttpPings.entries()) {
+      if (hasActiveSocketForUser(username)) continue;
+
+      if ((now - Number(lastPing || 0)) > PRESENCE_HTTP_STALE_MS) {
+        presenceHttpPings.delete(username);
+        await User.updateOne(
+          { name: username },
+          { online: false, lastSeen: new Date() }
+        );
+      }
+    }
+
+    await emitUsersToAll();
+  } catch (err) {
+    console.log("PRESENCE CLEANUP ERROR:", err);
+  }
+}, 20000);
+
+
+app.get("/admin/user-sessions", requireAdmin, async (req, res) => {
+  try {
+    const users = await User.find({
+      approvalStatus: "approved"
+    }).select("name dp role online lastSeen blocked muted activeSessions authToken");
+
+    const result = users.map(user => {
+      const socketCount = userSocketIds[user.name] ? userSocketIds[user.name].size : 0;
+      const sessions = serializeSessionsForUser(user);
+
+      return {
+        name: user.name,
+        dp: user.dp || "/default.png",
+        role: user.role || "user",
+        online: !!user.online || socketCount > 0,
+        socketCount,
+        blocked: !!user.blocked,
+        muted: !!user.muted,
+        lastSeen: user.lastSeen || null,
+        sessions
+      };
+    }).sort((a, b) => {
+      if (a.name === ADMIN_NAME) return -1;
+      if (b.name === ADMIN_NAME) return 1;
+      if (a.online !== b.online) return a.online ? -1 : 1;
+      return String(a.name).localeCompare(String(b.name));
+    });
+
+    return res.json({ ok: true, users: result });
+  } catch (err) {
+    console.log("ADMIN USER SESSIONS ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Failed to load sessions" });
+  }
+});
+
+app.post("/admin/force-logout-user", requireAdmin, async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body.username);
+
+    if (!isValidUsername(username)) {
+      return res.status(400).json({ ok: false, msg: "Invalid username" });
+    }
+
+    if (username === ADMIN_NAME) {
+      return res.status(400).json({ ok: false, msg: "Admin account cannot be force logged out" });
+    }
+
+    const user = await User.findOne({ name: username });
+    if (!user) return res.status(404).json({ ok: false, msg: "User not found" });
+
+    user.authToken = null;
+    user.online = false;
+    user.lastSeen = new Date();
+    user.activeSessions = (Array.isArray(user.activeSessions) ? user.activeSessions : []).map(s => {
+      s.active = false;
+      s.forceLoggedOut = true;
+      s.loggedOutAt = new Date();
+      return s;
+    });
+
+    await user.save();
+
+    forceLogoutSockets(username, "Admin logged you out from RickyY Chat.");
+    await emitUsersToAll().catch(() => {});
+
+    return res.json({ ok: true, msg: `${username} logged out from all devices` });
+  } catch (err) {
+    console.log("ADMIN FORCE LOGOUT USER ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Force logout failed" });
+  }
+});
+
+app.post("/admin/force-logout-session", requireAdmin, async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body.username);
+    const sessionId = String(req.body.sessionId || "").trim();
+
+    if (!isValidUsername(username) || !sessionId) {
+      return res.status(400).json({ ok: false, msg: "Username and session required" });
+    }
+
+    if (username === ADMIN_NAME) {
+      return res.status(400).json({ ok: false, msg: "Admin session cannot be force logged out" });
+    }
+
+    const user = await User.findOne({ name: username });
+    if (!user) return res.status(404).json({ ok: false, msg: "User not found" });
+
+    let wasCurrent = false;
+    const currentPreview = tokenPreview(user.authToken || "");
+
+    user.activeSessions = (Array.isArray(user.activeSessions) ? user.activeSessions : []).map(s => {
+      if (String(s.sessionId || "") === sessionId) {
+        if (currentPreview && s.tokenPreview === currentPreview) wasCurrent = true;
+        s.active = false;
+        s.forceLoggedOut = true;
+        s.loggedOutAt = new Date();
+      }
+      return s;
+    });
+
+    if (wasCurrent) {
+      user.authToken = null;
+      user.online = false;
+      user.lastSeen = new Date();
+      forceLogoutSockets(username, "Admin logged out this device.");
+    }
+
+    await user.save();
+    await emitUsersToAll().catch(() => {});
+
+    return res.json({ ok: true, msg: "Session logged out" });
+  } catch (err) {
+    console.log("ADMIN FORCE LOGOUT SESSION ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Force logout session failed" });
+  }
+});
+
+
 app.get("/api/me", async (req, res) => {
   try {
     const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
@@ -1421,6 +2120,8 @@ app.get("/api/me", async (req, res) => {
     if (user.approvalStatus === "rejected") {
       return res.status(403).json({ ok: false, msg: "Rejected user" });
     }
+
+    await touchSessionByToken(token);
 
     return res.json({
       ok: true,
@@ -2830,6 +3531,229 @@ app.post("/api/forgot-password/reset", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Server error" });
   }
 });
+function makeLoginOtp(){
+  return String(Math.floor(100000 + Math.random() * 900000));
+}
+
+function loginOtpKey(name){
+  return String(name || "").trim().toLowerCase();
+}
+
+function escapeLoginRegex(text){
+  return String(text || "").replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+}
+
+async function findLoginUserByName(name){
+  const clean = normalizeUsername(name);
+  if(!clean) return null;
+
+  return await User.findOne({
+    name: { $regex: new RegExp("^" + escapeLoginRegex(clean) + "$", "i") }
+  });
+}
+
+async function isLoginPasswordMatched(user, password){
+  if(!user || !password) return false;
+
+  const candidate = String(password || "");
+
+  if(user.password && String(user.password).startsWith("$2")){
+    return await bcrypt.compare(candidate, user.password);
+  }
+
+  if(user.pin && String(user.pin).startsWith("$2")){
+    return await bcrypt.compare(candidate, user.pin);
+  }
+
+  return false;
+}
+
+function sendOtpLoginError(res, status, msg, extra = {}){
+  return res.status(status).json({
+    ok:false,
+    msg,
+    message:msg,
+    ...extra
+  });
+}
+
+app.post("/api/login/request-otp", async (req, res) => {
+  try{
+    const name = normalizeUsername(req.body.name);
+    const password = String(req.body.password || "");
+
+    if(!isValidUsername(name) || !password){
+      return sendOtpLoginError(res, 400, "Enter username and password");
+    }
+
+    const user = await findLoginUserByName(name);
+
+    if(!user){
+      return sendOtpLoginError(res, 404, "User not found. Send request first.");
+    }
+
+    if(isLockedUser(user)){
+      return sendOtpLoginError(
+        res,
+        423,
+        `Too many wrong attempts. Try again in ${minutesRemaining(user.lockUntil)} minute(s).`
+      );
+    }
+
+    if(user.blocked){
+      return sendOtpLoginError(res, 403, "Shravan blocked your account");
+    }
+
+    if(user.approvalStatus === "pending"){
+      return sendOtpLoginError(res, 403, "Your request is waiting for Shravan's approval.", { pending:true });
+    }
+
+    if(user.approvalStatus === "rejected"){
+      return sendOtpLoginError(res, 403, "Your request was rejected by Shravan.");
+    }
+
+    const passwordMatched = await isLoginPasswordMatched(user, password);
+
+    if(!passwordMatched){
+      user.loginAttempts = (user.loginAttempts || 0) + 1;
+
+      if(user.loginAttempts >= 3){
+        user.lockUntil = new Date(Date.now() + 24 * 60 * 1000);
+        user.loginAttempts = 0;
+        await user.save();
+
+        return sendOtpLoginError(
+          res,
+          423,
+          "Enduku endukuuu koduthavu anni sarluu worng gaa😏. Try again after 24 minutes."
+        );
+      }
+
+      const attemptsLeft = 3 - user.loginAttempts;
+      await user.save();
+      return sendOtpLoginError(res, 401, `Wrong password. ${attemptsLeft} attempt(s) left.`);
+    }
+
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+    await user.save();
+
+    const otp = makeLoginOtp();
+
+    loginOtpStore.set(loginOtpKey(user.name), {
+      otp,
+      userId:user._id.toString(),
+      requestedAt:Date.now(),
+      expiresAt:Date.now() + 30 * 1000
+    });
+
+    console.log(`LOGIN OTP for ${user.name}: ${otp}`);
+
+    return res.json({
+      ok:true,
+      msg:"OTP sent successfully",
+      message:"OTP sent successfully",
+      otp,
+      devOtp:otp,
+      expiresIn:30
+    });
+  }catch(err){
+    console.log("LOGIN REQUEST OTP ERROR:", err);
+    return sendOtpLoginError(res, 500, "Server error");
+  }
+});
+
+app.post("/api/login/verify-otp", async (req, res) => {
+  try{
+    const name = normalizeUsername(req.body.name);
+    const password = String(req.body.password || "");
+    const otp = String(req.body.otp || "").trim();
+
+    if(!isValidUsername(name) || !password || !otp){
+      return sendOtpLoginError(res, 400, "Username, password and OTP required");
+    }
+
+    const savedOtp = loginOtpStore.get(loginOtpKey(name));
+
+    if(!savedOtp){
+      return sendOtpLoginError(res, 400, "OTP not requested. Click Get OTP first.");
+    }
+
+    if(Date.now() > savedOtp.expiresAt){
+      loginOtpStore.delete(loginOtpKey(name));
+      return sendOtpLoginError(res, 400, "OTP expired. Request again.");
+    }
+
+    if(String(savedOtp.otp) !== otp){
+      return sendOtpLoginError(res, 400, "Invalid OTP");
+    }
+
+    const user = await User.findById(savedOtp.userId);
+
+    if(!user){
+      loginOtpStore.delete(loginOtpKey(name));
+      return sendOtpLoginError(res, 404, "User not found");
+    }
+
+    if(user.blocked){
+      loginOtpStore.delete(loginOtpKey(name));
+      return sendOtpLoginError(res, 403, "Shravan blocked your account");
+    }
+
+    if(user.approvalStatus === "pending"){
+      loginOtpStore.delete(loginOtpKey(name));
+      return sendOtpLoginError(res, 403, "Your request is waiting for Shravan's approval.", { pending:true });
+    }
+
+    if(user.approvalStatus === "rejected"){
+      loginOtpStore.delete(loginOtpKey(name));
+      return sendOtpLoginError(res, 403, "Your request was rejected by Shravan.");
+    }
+
+    const passwordMatched = await isLoginPasswordMatched(user, password);
+
+    if(!passwordMatched){
+      return sendOtpLoginError(res, 401, "Wrong password");
+    }
+
+    if(user.name === ADMIN_NAME || user.role === "admin"){
+      user.role = "admin";
+      user.approvalStatus = "approved";
+    }
+
+    const token = generateAuthToken();
+    const session = attachNewSession(user, req, token);
+    user.authToken = token;
+    user.online = true;
+    user.lastSeen = new Date();
+    user.loginAttempts = 0;
+    user.lockUntil = null;
+
+    await user.save();
+    loginOtpStore.delete(loginOtpKey(name));
+
+    await emitUsersToAll().catch(() => {});
+
+    return res.json({
+      ok:true,
+      msg:"Login successful",
+      message:"Login successful",
+      token,
+      sessionId: session.sessionId,
+      user:{
+        id:user._id,
+        name:user.name,
+        role:user.role || "user",
+        dp:user.dp || "/default.png",
+        approvalStatus:user.approvalStatus || "approved"
+      }
+    });
+  }catch(err){
+    console.log("LOGIN VERIFY OTP ERROR:", err);
+    return sendOtpLoginError(res, 500, "Server error");
+  }
+});
+
 app.post("/api/login", async (req, res) => {
   try {
     const rawName = normalizeUsername(req.body.name);
@@ -2925,6 +3849,7 @@ passwordMatched = await bcrypt.compare(password, user.password);
     }
 
     const token = generateAuthToken();
+    const session = attachNewSession(user, req, token);
     user.authToken = token;
     user.online = true;
     user.lastSeen = new Date();
@@ -2938,7 +3863,8 @@ passwordMatched = await bcrypt.compare(password, user.password);
         role: user.role || "user",
         approvalStatus: user.approvalStatus
       },
-      token
+      token,
+      sessionId: session.sessionId
     });
   } catch (err) {
     console.log("LOGIN ERROR:", err);
@@ -2994,6 +3920,8 @@ io.on("connection", socket => {
 
       if (!userSocketIds[username]) userSocketIds[username] = new Set();
       userSocketIds[username].add(socket.id);
+      cancelPresenceOfflineTimer(username);
+      presenceHttpPings.set(username, Date.now());
 
       let user = await User.findOne({ name: username });
 
@@ -3245,13 +4173,18 @@ socket.on("delete-message", async data => {
 
       await newMsg.save();
       if (!receiverOnline && data.to !== data.from) {
-  await sendPushToUser(data.to, {
+  await sendAppNotification(data.to, {
     title: data.from,
     body: safeNotificationBody(newMsg),
     url: `/chat.html?user=${encodeURIComponent(data.from)}`,
     tag: `private-${data.from}`,
     icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png"
+    badge: "/icons/icon-192.png",
+    type: "private",
+    notificationType: "message",
+    canReply: true,
+    from: data.from,
+    to: data.to
   });
 }
 
@@ -3311,7 +4244,7 @@ socket.on("delete-message", async data => {
 for (const member of offlineRecipients) {
   const isMentioned = validMentions.includes(member);
 
-  await sendPushToUser(member, {
+  await sendAppNotification(member, {
     title: isMentioned ? `🔔 Mention in ${group.name}` : `👥 ${group.name}`,
     body: isMentioned
       ? `${data.from} mentioned you: ${safeNotificationBody(newMsg)}`
@@ -3319,20 +4252,15 @@ for (const member of offlineRecipients) {
     url: `/chat.html?group=${encodeURIComponent(String(data.group))}`,
     tag: isMentioned ? `mention-${data.group}-${member}` : `group-${data.group}`,
     icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png"
+    badge: "/icons/icon-192.png",
+    type: "group",
+    notificationType: "message",
+    canReply: true,
+    from: data.from,
+    group: String(data.group)
   });
 }
-
-for (const member of offlineRecipients) {
-  await sendPushToUser(member, {
-    title: `👥 ${group.name}`,
-    body: `${data.from}: ${safeNotificationBody(newMsg)}`,
-    url: `/chat.html?group=${encodeURIComponent(String(data.group))}`,
-    tag: `group-${data.group}`,
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png"
-  });
-}
+// Duplicate offline group push removed. The mention-aware loop above already sends the notification.
       io.to(roomNameForGroup(data.group)).emit("group-message", newMsg);
 
       
@@ -3431,7 +4359,7 @@ for (const member of offlineRecipients) {
           type: callType
         });
 
-        await sendPushToUser(member, {
+        await sendAppNotification(member, {
           title: callType === "video" ? "📹 Incoming group video call" : "📞 Incoming group voice call",
           body: `${from} is calling in ${group.name || "your group"}`,
           url: `/chat.html?group=${encodeURIComponent(String(group._id))}`,
@@ -3556,7 +4484,7 @@ for (const member of offlineRecipients) {
     }
 
     // app close/recent clear/background unna push ravali
-    await sendPushToUser(to, {
+    await sendAppNotification(to, {
       title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
       body: `${from} is calling you`,
       url: `/chat.html?user=${encodeURIComponent(from)}`,
@@ -3721,15 +4649,13 @@ for (const member of offlineRecipients) {
           }
         }
 
-        if (!userSocketIds[username] || userSocketIds[username].size === 0) {
-          await User.findOneAndUpdate(
-            { name: username },
-            { online: false, lastSeen: new Date() }
-          );
-        }
-
         delete sockets[socket.id];
-        await emitUsersToAll();
+
+        if (!userSocketIds[username] || userSocketIds[username].size === 0) {
+          schedulePresenceOffline(username);
+        } else {
+          await emitUsersToAll();
+        }
       }
     } catch (err) {
       console.log(err);

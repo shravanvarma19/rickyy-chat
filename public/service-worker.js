@@ -1,4 +1,4 @@
-const CACHE_NAME = "rickyy-chat-cache-v11";
+const CACHE_NAME = "rickyy-chat-cache-v12";
 
 const APP_SHELL = [
   "/",
@@ -178,16 +178,26 @@ self.addEventListener("push", event => {
     };
   }
 
+  const groupId = String(data.group || data.groupId || "").trim();
+  const from = String(data.from || "").trim();
+
   const title = data.title || "RickyY Chat";
   const body = data.body || "You have a new message";
-  const url = data.url || "/chat.html";
+  const url = data.url || buildReplyUrl({ from, groupId });
   const icon = data.icon || "/icons/icon-192.png";
   const badge = data.badge || "/icons/icon-192.png";
 
   const actions = [
-    { action: "reply", title: "Reply" },
-    { action: "open", title: "Open" },
-    { action: "seen", title: "Mark seen" }
+    {
+      action: "reply",
+      type: "text",
+      title: "Reply",
+      placeholder: "Type a message"
+    },
+    {
+      action: "open",
+      title: "Open"
+    }
   ];
 
   event.waitUntil(
@@ -198,14 +208,15 @@ self.addEventListener("push", event => {
       actions,
       data: {
         url,
-        from: data.from || "",
-        groupId: data.groupId || "",
+        from,
+        group: groupId,
+        groupId,
         messageId: data.messageId || "",
+        replyToken: data.replyToken || "",
         replyUrl: data.replyUrl || "",
-        seenUrl: data.seenUrl || "",
         notificationType: data.notificationType || "message"
       },
-      tag: data.tag || "rickyy-chat-notification",
+      tag: data.tag || ("rickyy-chat-" + (groupId || from || "message")),
       renotify: true,
       requireInteraction: !!data.requireInteraction
     })
@@ -215,44 +226,97 @@ self.addEventListener("push", event => {
 /* =========================
    NOTIFICATION CLICK
 ========================= */
-self.addEventListener("notificationclick", event => {
+self.addEventListener("notificationclick", (event) => {
   event.notification.close();
 
-  const data = event.notification?.data || {};
+  const data = event.notification.data || {};
   const action = event.action || "";
+  const replyText = String(event.reply || "").trim();
 
-  event.waitUntil((async () => {
-    if (action === "reply") {
-      return openOrFocusUrl(buildReplyUrl(data));
-    }
+  async function openChat() {
+    const url = data.replyUrl || data.url || buildReplyUrl(data);
 
-    if (action === "seen") {
-      if (data.seenUrl) {
-        try {
-          await fetch(data.seenUrl, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json"
-            },
-            body: JSON.stringify({
-              messageId: data.messageId || "",
-              from: data.from || "",
-              groupId: data.groupId || ""
-            })
+    const allClients = await clients.matchAll({
+      type: "window",
+      includeUncontrolled: true
+    });
+
+    for (const client of allClients) {
+      try {
+        const clientUrl = new URL(client.url);
+        if (clientUrl.origin === self.location.origin) {
+          client.postMessage({
+            type: "OPEN_CHAT_FROM_NOTIFICATION",
+            url,
+            from: data.from || "",
+            group: data.group || data.groupId || "",
+            groupId: data.group || data.groupId || "",
+            replyMode: true
           });
-          return;
-        } catch (err) {
-          return openOrFocusUrl(data.url || "/chat.html");
-        }
-      }
 
-      return openOrFocusUrl(data.url || "/chat.html");
+          if ("navigate" in client) {
+            await client.navigate(url);
+          }
+
+          return client.focus();
+        }
+      } catch (err) {}
     }
 
-    return openOrFocusUrl(data.url || "/chat.html");
-  })());
-});
+    if (clients.openWindow) {
+      return clients.openWindow(url);
+    }
 
+    return null;
+  }
+
+  async function sendInlineReply() {
+    if (!replyText) {
+      return openChat();
+    }
+
+    const replyToken = String(data.replyToken || "").trim();
+
+    if (!replyToken) {
+      return openChat();
+    }
+
+    const res = await fetch("/api/notification-reply", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        "Authorization": "Bearer " + replyToken
+      },
+      body: JSON.stringify({
+        to: data.from || "",
+        group: data.group || data.groupId || "",
+        text: replyText
+      })
+    });
+
+    if (!res.ok) {
+      return openChat();
+    }
+
+    return self.registration.showNotification("Reply sent", {
+      body: replyText,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      tag: "rickyy-chat-reply-sent",
+      silent: true,
+      data: {
+        url: data.url || "/chat.html"
+      }
+    });
+  }
+
+  if (action === "reply") {
+    event.waitUntil(sendInlineReply());
+    return;
+  }
+
+  event.waitUntil(openChat());
+});
 /* =========================
    NOTIFICATION CLOSE
 ========================= */
