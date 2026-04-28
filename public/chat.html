@@ -4435,10 +4435,139 @@ html.native-apk body.privacy-guard-active{
   overflow:auto !important;
 }
 
+
+/* RickyY real-app final fixes */
+#adminBtn.admin-visible{
+  display:flex !important;
+}
+.inline-calls-panel{
+  display:none;
+  padding:8px 0 96px;
+}
+.inline-calls-panel.show{
+  display:block;
+}
+.inline-calls-title{
+  margin:8px 12px 10px;
+  padding:14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(59,130,246,.16), rgba(16,185,129,.10));
+  border:1px solid rgba(59,130,246,.18);
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+}
+.inline-call-row{
+  margin:8px 10px;
+  padding:13px 12px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 10px 24px rgba(15,23,42,.08);
+}
+body.dark .inline-call-row{
+  background:rgba(15,23,42,.72);
+  border-color:rgba(255,255,255,.08);
+}
+.inline-call-icon{
+  width:46px;
+  height:46px;
+  border-radius:16px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#10b981;
+  color:white;
+  font-size:20px;
+}
+.inline-call-meta{
+  flex:1;
+  min-width:0;
+}
+.inline-call-name{
+  font-size:15px;
+  font-weight:900;
+}
+.inline-call-time{
+  margin-top:3px;
+  font-size:12px;
+  color:#738092;
+}
+.inline-call-actions button{
+  border:none;
+  border-radius:14px;
+  padding:10px 12px;
+  background:rgba(16,185,129,.14);
+  cursor:pointer;
+}
+#rickyyPageLoader{
+  position:fixed;
+  inset:0;
+  z-index:999999;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(16,185,129,.22), transparent 34%),
+    linear-gradient(135deg,#071018,#081018 55%,#0f172a);
+  color:white;
+  transition:opacity .25s ease, visibility .25s ease;
+}
+#rickyyPageLoader.hide{
+  opacity:0;
+  visibility:hidden;
+  pointer-events:none;
+}
+.rickyy-loader-card{
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  gap:12px;
+}
+.rickyy-loader-logo{
+  width:82px;
+  height:82px;
+  border-radius:28px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  box-shadow:0 24px 60px rgba(16,185,129,.26);
+  font-size:36px;
+  animation:rickyyPulse 1.15s ease-in-out infinite;
+}
+.rickyy-loader-name{
+  font-size:26px;
+  font-weight:1000;
+  letter-spacing:.3px;
+}
+.rickyy-loader-sub{
+  font-size:12px;
+  color:#a7f3d0;
+  font-weight:800;
+}
+@keyframes rickyyPulse{
+  0%,100%{transform:scale(1);filter:brightness(1)}
+  50%{transform:scale(1.06);filter:brightness(1.18)}
+}
+
 </style>
 </head>
 
 <body>
+
+<div id="rickyyPageLoader">
+  <div class="rickyy-loader-card">
+    <div class="rickyy-loader-logo">💬</div>
+    <div class="rickyy-loader-name">RickyY Chat</div>
+    <div class="rickyy-loader-sub">Loading secure chats...</div>
+  </div>
+</div>
+
 
 <div id="privacyGuardOverlay" aria-hidden="true">
   <div class="privacy-card">
@@ -4491,6 +4620,7 @@ html.native-apk body.privacy-guard-active{
 </div>
 <div id="users"></div>
 <div id="inlineGroupsPanel" class="inline-groups-panel"></div>
+<div id="inlineCallsPanel" class="inline-calls-panel"></div>
 </div>
 <div class="chat">
 <div class="chat-header">
@@ -14000,6 +14130,134 @@ z-index:99999;
     });
   }
 
+
+  function hideInlineCalls(){
+    const panel = document.getElementById("inlineCallsPanel");
+    const usersBox = document.getElementById("users");
+    const searchBox = document.querySelector(".search-box");
+    const statusPanel = document.querySelector(".status-panel");
+
+    if(panel) panel.classList.remove("show");
+    if(usersBox) usersBox.style.display = "";
+    if(searchBox) searchBox.style.display = "";
+    if(statusPanel) statusPanel.style.display = "";
+  }
+
+  function showInlineCalls(){
+    const panel = document.getElementById("inlineCallsPanel");
+    const usersBox = document.getElementById("users");
+    const searchBox = document.querySelector(".search-box");
+    const statusPanel = document.querySelector(".status-panel");
+
+    closeGroupsSlide();
+    if(typeof hideInlineGroups === "function") hideInlineGroups();
+
+    if(usersBox) usersBox.style.display = "none";
+    if(searchBox) searchBox.style.display = "none";
+    if(statusPanel) statusPanel.style.display = "none";
+
+    if(panel){
+      const latestCalls = [];
+      try{
+        const saved = JSON.parse(localStorage.getItem("rickyyCallHistory") || "[]");
+        if(Array.isArray(saved)) latestCalls.push(...saved.slice(-20).reverse());
+      }catch(err){}
+
+      panel.classList.add("show");
+      panel.innerHTML = `
+        <div class="inline-calls-title">
+          <span>📞 Calls</span>
+          <span style="font-size:12px;color:#93a4b5;">Tap user to call</span>
+        </div>
+        ${latestCalls.length ? latestCalls.map(c => `
+          <div class="inline-call-row">
+            <div class="inline-call-icon">${c.type === "video" ? "🎥" : "📞"}</div>
+            <div class="inline-call-meta">
+              <div class="inline-call-name">${(typeof escapeHtml === "function") ? escapeHtml(c.name || c.to || c.from || "Call") : (c.name || c.to || c.from || "Call")}</div>
+              <div class="inline-call-time">${(typeof escapeHtml === "function") ? escapeHtml(c.time || c.status || "Recent call") : (c.time || c.status || "Recent call")}</div>
+            </div>
+          </div>
+        `).join("") : `
+          <div class="inline-call-row">
+            <div class="inline-call-icon">📞</div>
+            <div class="inline-call-meta">
+              <div class="inline-call-name">No recent calls</div>
+              <div class="inline-call-time">Open any chat and tap audio/video call.</div>
+            </div>
+          </div>
+        `}
+      `;
+      setTimeout(() => panel.scrollIntoView({ behavior:"smooth", block:"start" }), 40);
+    }
+  }
+
+  function hideAllInlinePanels(){
+    if(typeof hideInlineGroups === "function") hideInlineGroups();
+    hideInlineCalls();
+  }
+
+  function syncAdminButton(){
+    try{
+      const btn = document.getElementById("adminBtn");
+      if(!btn) return;
+      const name = String(localStorage.getItem("user") || me || "").trim().toLowerCase();
+      const role = String(localStorage.getItem("role") || "").trim().toLowerCase();
+      const adminOk = role === "admin" || name === "shravan";
+      btn.style.display = adminOk ? "flex" : "none";
+      btn.classList.toggle("admin-visible", adminOk);
+    }catch(err){}
+  }
+
+  window.rickyyNativeBack = function(){
+    try{
+      syncAdminButton();
+
+      const openModal = Array.from(document.querySelectorAll(".modal, .gallery-modal, .media-viewer, #adminModal, #groupInfoModal, #profileModal, #callModal, #groupPopup"))
+        .find(el => {
+          const st = window.getComputedStyle(el);
+          return st && st.display !== "none" && st.visibility !== "hidden" && el.offsetParent !== null;
+        });
+
+      if(openModal){
+        if(openModal.id === "adminModal" && typeof closeAdminModal === "function") closeAdminModal();
+        else if(openModal.id === "mediaViewer" && typeof closeViewer === "function") closeViewer();
+        else if(openModal.id === "galleryModal" && typeof closeGallery === "function") closeGallery();
+        else openModal.style.display = "none";
+        return true;
+      }
+
+      const callsPanel = document.getElementById("inlineCallsPanel");
+      if(callsPanel && callsPanel.classList.contains("show")){
+        hideInlineCalls();
+        setNavActive("navChatsBtn");
+        return true;
+      }
+
+      const groupsPanel = document.getElementById("inlineGroupsPanel");
+      if(groupsPanel && groupsPanel.classList.contains("show")){
+        hideInlineGroups();
+        setNavActive("navChatsBtn");
+        return true;
+      }
+
+      if(typeof groupDrawerOpen !== "undefined" && groupDrawerOpen){
+        closeGroupsSlide();
+        setNavActive("navChatsBtn");
+        return true;
+      }
+
+      if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function"){
+        goBack();
+        setNavActive("navChatsBtn");
+        return true;
+      }
+
+      return false;
+    }catch(err){
+      return false;
+    }
+  };
+
   function closeGroupsSlide(){
     try{
       if(typeof closeGroupDrawer === "function"){
@@ -14083,6 +14341,7 @@ z-index:99999;
       if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
       closeGroupsSlide();
       hideInlineGroups();
+      hideInlineCalls();
       const users = document.getElementById("users");
       if(users) users.scrollTo({ top:0, behavior:"smooth" });
     }catch(err){}
@@ -14104,6 +14363,7 @@ z-index:99999;
     try{
       closeGroupsSlide();
       hideInlineGroups();
+      hideInlineCalls();
       if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
       if(typeof loadStatuses === "function") loadStatuses();
       const statusPanel = document.querySelector(".status-panel");
@@ -14121,13 +14381,10 @@ z-index:99999;
   window.phaseNavCalls = function(){
     vibrate();
     setNavActive("navCallsBtn");
-    closeGroupsSlide();
-    hideInlineGroups();
-    prepareFastReturn();
     try{
-      if(typeof openCallHistoryPage === "function") openCallHistoryPage();
-      else window.location.href = "/call-history.html";
-    }catch(err){ window.location.href = "/call-history.html"; }
+      if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
+      showInlineCalls();
+    }catch(err){}
   };
 
   window.phaseNavProfile = function(){
@@ -14135,6 +14392,7 @@ z-index:99999;
     setNavActive("navProfileBtn");
     closeGroupsSlide();
     hideInlineGroups();
+    hideInlineCalls();
     prepareFastReturn();
     try{
       if(typeof openProfile === "function") openProfile();
@@ -14334,9 +14592,17 @@ z-index:99999;
     setupSecureInactiveBlur();
     setupHapticFeedback();
     updateNetworkBanner();
+    syncAdminButton();
+    setInterval(syncAdminButton, 1500);
+    setTimeout(() => {
+      const loader = document.getElementById("rickyyPageLoader");
+      if(loader) loader.classList.add("hide");
+    }, 650);
 
     window.addEventListener("pageshow", () => {
       closeGroupsSlide();
+      hideInlineCalls();
+      syncAdminButton();
       try{
         const usersBox = document.getElementById("users");
         if(usersBox && usersBox.querySelector(".phase-skeleton-wrap") && usersList && usersList.length){
