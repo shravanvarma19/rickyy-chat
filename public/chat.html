@@ -4313,6 +4313,128 @@ body.privacy-no-select *:not(input):not(textarea){
   }
 }
 
+
+/* RickyY final mobile fixes: no bottom mic, no side group drawer, no repeated connected banner */
+#micBtn,
+.input-area .mic-btn{
+  display:none !important;
+}
+#netStatusBanner:not(.bad):not(.connecting){
+  display:none !important;
+}
+.inline-groups-panel{
+  display:none;
+  padding:8px 0 96px;
+}
+.inline-groups-panel.show{
+  display:block;
+}
+.inline-groups-title{
+  margin:8px 12px 10px;
+  padding:14px 14px;
+  border-radius:18px;
+  background:linear-gradient(135deg, rgba(16,185,129,.16), rgba(6,182,212,.10));
+  border:1px solid rgba(16,185,129,.20);
+  color:inherit;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:10px;
+}
+.inline-groups-title button{
+  border:none;
+  border-radius:14px;
+  padding:9px 12px;
+  background:#10b981;
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+}
+.inline-group-row{
+  margin:8px 10px;
+  padding:12px 12px;
+  border-radius:18px;
+  display:flex;
+  align-items:center;
+  gap:12px;
+  cursor:pointer;
+  background:rgba(255,255,255,.72);
+  border:1px solid rgba(0,0,0,.06);
+  box-shadow:0 10px 24px rgba(15,23,42,.08);
+}
+body.dark .inline-group-row{
+  background:rgba(15,23,42,.72);
+  border-color:rgba(255,255,255,.08);
+}
+.inline-group-row img{
+  width:48px;
+  height:48px;
+  border-radius:16px;
+  object-fit:cover;
+}
+.inline-group-meta{
+  min-width:0;
+  flex:1;
+}
+.inline-group-name{
+  font-size:15px;
+  font-weight:900;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.inline-group-preview{
+  margin-top:3px;
+  font-size:12px;
+  color:#738092;
+  white-space:nowrap;
+  overflow:hidden;
+  text-overflow:ellipsis;
+}
+.inline-group-badge{
+  min-width:22px;
+  height:22px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:#10b981;
+  color:white;
+  font-size:11px;
+  font-weight:900;
+  padding:0 7px;
+}
+@media (max-width:768px){
+  #groupDrawer{
+    display:none !important;
+  }
+}
+
+
+/* Native APK glitch fix: Android already blocks screenshots, so web blur overlays are disabled in APK */
+html.native-apk #appInactiveShield,
+html.native-apk #privacyGuardOverlay,
+html.native-apk #netStatusBanner.good,
+html.native-apk #netStatusBanner.show.good{
+  display:none !important;
+}
+html.native-apk body.app-inactive-secure .app,
+html.native-apk body.app-inactive-secure #groupDrawer,
+html.native-apk body.app-inactive-secure #mobileBottomNav,
+html.native-apk body.privacy-guard-active .app,
+html.native-apk body.privacy-guard-active .profile-shell,
+html.native-apk body.privacy-guard-active .topbar,
+html.native-apk body.privacy-guard-active #mobileBottomNav,
+html.native-apk body.privacy-guard-active #groupDrawer{
+  filter:none !important;
+  pointer-events:auto !important;
+}
+html.native-apk body.app-inactive-secure,
+html.native-apk body.privacy-guard-active{
+  overflow:auto !important;
+}
+
 </style>
 </head>
 
@@ -4368,6 +4490,7 @@ body.privacy-no-select *:not(input):not(textarea){
 <input id="userSearch" onkeyup="filterUsers()" placeholder="Search users..." type="text"/>
 </div>
 <div id="users"></div>
+<div id="inlineGroupsPanel" class="inline-groups-panel"></div>
 </div>
 <div class="chat">
 <div class="chat-header">
@@ -4446,7 +4569,6 @@ body.privacy-no-select *:not(input):not(textarea){
 <div id="replyToText" style="font-size:13px;color:gray;margin-top:4px;"></div>
 </div>
 <input id="msg" placeholder="Type a message..."/>
-<button class="mic-btn" id="micBtn" title="Hold to record">🎤</button>
 <button class="schedule-btn" onclick="openScheduleMessageModal()" title="Schedule message">⏰</button>
 <button class="send-btn" onclick="send()">Send</button>
 </div>
@@ -13763,6 +13885,18 @@ z-index:99999;
 </nav>
 
 
+
+<script>
+(function markNativeApk(){
+  try{
+    if(window.RickyYAndroid){
+      document.documentElement.classList.add("native-apk");
+      document.body && document.body.classList.remove("app-inactive-secure", "privacy-guard-active");
+    }
+  }catch(err){}
+})();
+</script>
+
 <script>
 (function phase1MobileAppFeel(){
   const banner = document.getElementById("netStatusBanner");
@@ -13780,6 +13914,89 @@ z-index:99999;
     ["navChatsBtn","navGroupsBtn","navStatusBtn","navCallsBtn","navProfileBtn"].forEach(btnId => {
       const btn = document.getElementById(btnId);
       if(btn) btn.classList.toggle("active", btnId === id);
+    });
+  }
+
+  function hideInlineGroups(){
+    const panel = document.getElementById("inlineGroupsPanel");
+    const usersBox = document.getElementById("users");
+    const searchBox = document.querySelector(".search-box");
+    const statusPanel = document.querySelector(".status-panel");
+
+    if(panel) panel.classList.remove("show");
+    if(usersBox) usersBox.style.display = "";
+    if(searchBox) searchBox.style.display = "";
+    if(statusPanel) statusPanel.style.display = "";
+  }
+
+  function showInlineGroups(){
+    const panel = document.getElementById("inlineGroupsPanel");
+    const usersBox = document.getElementById("users");
+    const searchBox = document.querySelector(".search-box");
+    const statusPanel = document.querySelector(".status-panel");
+
+    if(usersBox) usersBox.style.display = "none";
+    if(searchBox) searchBox.style.display = "none";
+    if(statusPanel) statusPanel.style.display = "none";
+
+    if(panel){
+      panel.classList.add("show");
+      renderInlineGroups();
+      setTimeout(() => panel.scrollIntoView({ behavior:"smooth", block:"start" }), 40);
+    }
+
+    if(typeof loadGroups === "function"){
+      Promise.resolve(loadGroups()).then(() => renderInlineGroups()).catch(() => renderInlineGroups());
+    }
+  }
+
+  function renderInlineGroups(){
+    const panel = document.getElementById("inlineGroupsPanel");
+    if(!panel) return;
+
+    const groupItems = Array.isArray(groups) ? groups : [];
+
+    const title = `
+      <div class="inline-groups-title">
+        <span>👥 Groups</span>
+        <button type="button" onclick="openCreateGroupModal()">+ New</button>
+      </div>
+    `;
+
+    if(!groupItems.length){
+      panel.innerHTML = title + `<div class="group-empty">No groups yet</div>`;
+      return;
+    }
+
+    panel.innerHTML = title + groupItems.map(g => {
+      const gid = String(g._id || "");
+      const unreadCount = (typeof unreadGroups !== "undefined" && unreadGroups[gid]) ? unreadGroups[gid] : 0;
+      const preview = (typeof getGroupPreview === "function") ? getGroupPreview(gid) : `${(g.members || []).length || 0} members`;
+      const dp = g.dp || "/default-group.png";
+      const name = (typeof escapeHtml === "function") ? escapeHtml(g.name || "Group") : String(g.name || "Group");
+      const safePreview = (typeof escapeHtml === "function") ? escapeHtml(preview || "") : String(preview || "");
+
+      return `
+        <div class="inline-group-row" data-group-id="${gid}">
+          <img src="${dp}" onerror="this.src='/default-group.png'">
+          <div class="inline-group-meta">
+            <div class="inline-group-name">${name}</div>
+            <div class="inline-group-preview">${safePreview}</div>
+          </div>
+          ${unreadCount ? `<div class="inline-group-badge">${unreadCount > 99 ? "99+" : unreadCount}</div>` : ""}
+        </div>
+      `;
+    }).join("");
+
+    panel.querySelectorAll(".inline-group-row").forEach(row => {
+      row.onclick = () => {
+        const gid = row.getAttribute("data-group-id");
+        const found = groupItems.find(g => String(g._id) === String(gid));
+        if(found && typeof openGroup === "function"){
+          hideInlineGroups();
+          openGroup(found);
+        }
+      };
     });
   }
 
@@ -13831,6 +14048,10 @@ z-index:99999;
 
   function showNetBanner(text, type = "connecting", sticky = false){
     if(!banner) return;
+    if(String(text || "").toLowerCase().includes("connected") || type === "good"){
+      banner.classList.remove("show", "good", "connecting", "bad");
+      return;
+    }
     clearTimeout(bannerTimer);
     banner.textContent = text;
     banner.className = "show " + type;
@@ -13843,7 +14064,7 @@ z-index:99999;
 
   function updateNetworkBanner(){
     if(navigator.onLine){
-      showNetBanner("Connected", "good", false);
+      if(banner) banner.classList.remove("show", "good", "connecting", "bad");
     }else{
       showNetBanner("No internet • Connecting...", "bad", true);
     }
@@ -13861,6 +14082,7 @@ z-index:99999;
     try{
       if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
       closeGroupsSlide();
+      hideInlineGroups();
       const users = document.getElementById("users");
       if(users) users.scrollTo({ top:0, behavior:"smooth" });
     }catch(err){}
@@ -13871,14 +14093,8 @@ z-index:99999;
     setNavActive("navGroupsBtn");
     try{
       if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
-
-      if(typeof groupDrawerOpen !== "undefined" && groupDrawerOpen){
-        closeGroupsSlide();
-        setNavActive("navChatsBtn");
-        return;
-      }
-
-      openGroupsSlide();
+      closeGroupsSlide();
+      showInlineGroups();
     }catch(err){}
   };
 
@@ -13887,6 +14103,7 @@ z-index:99999;
     setNavActive("navStatusBtn");
     try{
       closeGroupsSlide();
+      hideInlineGroups();
       if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
       if(typeof loadStatuses === "function") loadStatuses();
       const statusPanel = document.querySelector(".status-panel");
@@ -13905,6 +14122,7 @@ z-index:99999;
     vibrate();
     setNavActive("navCallsBtn");
     closeGroupsSlide();
+    hideInlineGroups();
     prepareFastReturn();
     try{
       if(typeof openCallHistoryPage === "function") openCallHistoryPage();
@@ -13916,6 +14134,7 @@ z-index:99999;
     vibrate();
     setNavActive("navProfileBtn");
     closeGroupsSlide();
+    hideInlineGroups();
     prepareFastReturn();
     try{
       if(typeof openProfile === "function") openProfile();
@@ -14059,6 +14278,11 @@ z-index:99999;
   }
 
   function setupSecureInactiveBlur(){
+    if(window.RickyYAndroid){
+      document.body.classList.remove("app-inactive-secure");
+      if(shield) shield.classList.remove("show");
+      return;
+    }
     let removeTimer = null;
     function enableShield(){
       clearTimeout(removeTimer);
@@ -14090,6 +14314,7 @@ z-index:99999;
   function initPhase1(){
     document.documentElement.classList.add("phase1-mobile-app");
     closeGroupsSlide();
+    hideInlineGroups();
 
     if(fastBack){
       try{
@@ -14136,6 +14361,16 @@ z-index:99999;
 
 <script>
 (function privacyScreenshotGuard(){
+  if(window.RickyYAndroid){
+    document.body.classList.remove("privacy-guard-active", "app-inactive-secure");
+    const nativeOverlay = document.getElementById("privacyGuardOverlay");
+    if(nativeOverlay) nativeOverlay.style.display = "none";
+    window.showPrivacyGuard = function(){};
+    window.hidePrivacyGuard = function(){
+      document.body.classList.remove("privacy-guard-active", "app-inactive-secure");
+    };
+    return;
+  }
   const overlay = document.getElementById("privacyGuardOverlay");
   let timer = null;
 
@@ -14223,6 +14458,27 @@ z-index:99999;
   window.addEventListener("pageshow", () => {
     hidePrivacyGuard();
   });
+})();
+</script>
+
+
+<script>
+(function nativeGlitchCleaner(){
+  if(!window.RickyYAndroid) return;
+  function clean(){
+    document.documentElement.classList.add("native-apk");
+    document.body.classList.remove("app-inactive-secure", "privacy-guard-active");
+    const shield = document.getElementById("appInactiveShield");
+    const privacy = document.getElementById("privacyGuardOverlay");
+    const banner = document.getElementById("netStatusBanner");
+    if(shield) shield.classList.remove("show");
+    if(privacy) privacy.style.display = "none";
+    if(banner && !banner.classList.contains("bad")) banner.classList.remove("show", "good", "connecting");
+  }
+  clean();
+  setInterval(clean, 1200);
+  window.addEventListener("focus", clean);
+  window.addEventListener("pageshow", clean);
 })();
 </script>
 
