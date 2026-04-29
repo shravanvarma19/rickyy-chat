@@ -1,4 +1,4 @@
-const CACHE_NAME = "rickyy-chat-cache-v12";
+const CACHE_NAME = "rickyy-chat-cache-v21";
 
 const APP_SHELL = [
   "/",
@@ -322,4 +322,128 @@ self.addEventListener("notificationclick", (event) => {
 ========================= */
 self.addEventListener("notificationclose", () => {
   // optional analytics / cleanup future use
+});
+
+
+/* =========================
+   RickyY Phase 1 Native/PWA Notifications
+========================= */
+self.addEventListener("push", event => {
+  let data = {};
+  try {
+    data = event.data ? event.data.json() : {};
+  } catch (err) {
+    data = { title: "RickyY Chat", body: event.data ? event.data.text() : "New message" };
+  }
+
+  const isCall =
+    data.notificationType === "call" ||
+    data.type === "call" ||
+    String(data.tag || "").includes("call") ||
+    String(data.title || "").toLowerCase().includes("incoming");
+
+  const title = data.title || (isCall ? "Incoming call" : "RickyY Chat");
+  const body = data.body || (isCall ? "Someone is calling you" : "New message");
+
+  const actions = isCall
+    ? [
+        { action: "open", title: "Open" },
+        { action: "dismiss", title: "Dismiss" }
+      ]
+    : (data.canReply
+        ? [
+            { action: "reply", title: "Reply", type: "text", placeholder: "Type a reply" },
+            { action: "open", title: "Open" }
+          ]
+        : [{ action: "open", title: "Open" }]);
+
+  const options = {
+    body,
+    icon: data.icon || "/icons/icon-192.png",
+    badge: data.badge || "/icons/icon-192.png",
+    tag: data.tag || (isCall ? "rickyy-call" : "rickyy-message"),
+    renotify: true,
+    requireInteraction: !!isCall || !!data.requireInteraction,
+    vibrate: isCall ? [300, 120, 300, 120, 600] : [180, 80, 180],
+    data: {
+      ...data,
+      isCall,
+      url: data.url || "/chat.html",
+      replyToken: data.replyToken || ""
+    },
+    actions
+  };
+
+  event.waitUntil(self.registration.showNotification(title, options));
+});
+
+self.addEventListener("notificationclick", event => {
+  const data = event.notification.data || {};
+  const action = event.action || "open";
+
+  if (action === "dismiss") {
+    event.notification.close();
+    return;
+  }
+
+  if (action === "reply") {
+    event.notification.close();
+
+    const replyText =
+      event.reply ||
+      event.notification?.data?.reply ||
+      "";
+
+    if (replyText && data.replyToken) {
+      const payload = {
+        text: replyText,
+        to: data.to || "",
+        group: data.group || ""
+      };
+
+      event.waitUntil(
+        fetch("/api/notification-reply", {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            "Authorization": "Bearer " + data.replyToken
+          },
+          body: JSON.stringify(payload)
+        }).then(() => self.registration.showNotification("Reply sent", {
+          body: replyText,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          tag: "reply-sent"
+        })).catch(() => self.registration.showNotification("Reply failed", {
+          body: "Open RickyY Chat and try again.",
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          tag: "reply-failed"
+        }))
+      );
+      return;
+    }
+  }
+
+  event.notification.close();
+
+  const targetUrl = new URL(data.url || "/chat.html", self.location.origin).href;
+
+  event.waitUntil(
+    clients.matchAll({ type: "window", includeUncontrolled: true }).then(clientList => {
+      for (const client of clientList) {
+        if ("focus" in client) {
+          client.navigate(targetUrl);
+          return client.focus();
+        }
+      }
+      return clients.openWindow(targetUrl);
+    })
+  );
+});
+
+self.addEventListener("message", event => {
+  if (event.data && event.data.type === "SKIP_WAITING") {
+    self.skipWaiting();
+  }
 });

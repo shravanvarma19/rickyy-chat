@@ -453,6 +453,49 @@ const pollSchema = new mongoose.Schema({
 });
 
 const Poll = mongoose.model("Poll", pollSchema);
+
+const activityLogSchema = new mongoose.Schema({
+  type: { type: String, default: "" },
+  actor: { type: String, default: "" },
+  target: { type: String, default: "" },
+  text: { type: String, default: "" },
+  meta: { type: Object, default: {} },
+  createdAt: { type: Date, default: Date.now }
+});
+
+const reportSchema = new mongoose.Schema({
+  reporter: { type: String, default: "" },
+  reportedUser: { type: String, default: "" },
+  messageId: { type: String, default: "" },
+  messageText: { type: String, default: "" },
+  reason: { type: String, default: "" },
+  chatType: { type: String, default: "" },
+  groupId: { type: String, default: "" },
+  peer: { type: String, default: "" },
+  status: { type: String, default: "open" },
+  actionBy: { type: String, default: "" },
+  actionNote: { type: String, default: "" },
+  createdAt: { type: Date, default: Date.now },
+  actionAt: { type: Date, default: null }
+});
+
+const ActivityLog = mongoose.models.ActivityLog || mongoose.model("ActivityLog", activityLogSchema);
+const Report = mongoose.models.Report || mongoose.model("Report", reportSchema);
+
+async function logActivity(type, actor, target, text = "", meta = {}) {
+  try {
+    await ActivityLog.create({
+      type: String(type || ""),
+      actor: String(actor || ""),
+      target: String(target || ""),
+      text: String(text || "").slice(0, 500),
+      meta: meta || {}
+    });
+  } catch (err) {
+    console.log("ACTIVITY LOG ERROR:", err.message);
+  }
+}
+
 app.post("/group/:id/polls", async (req, res) => {
   try {
     const groupId = req.params.id;
@@ -2166,6 +2209,197 @@ app.post("/admin/force-logout-session", requireAdmin, async (req, res) => {
 });
 
 
+
+app.post("/api/report-message", async (req, res) => {
+  try {
+    const reporter = normalizeUsername(req.body.reporter);
+    const messageId = String(req.body.messageId || "").trim();
+    const reason = sanitizeText(req.body.reason || "", 300);
+    const chatType = sanitizeText(req.body.chatType || "", 30);
+    const groupId = String(req.body.groupId || "").trim();
+    const peer = normalizeUsername(req.body.peer);
+
+    if (!isValidUsername(reporter)) {
+      return res.status(400).json({ ok: false, msg: "Invalid reporter" });
+    }
+
+    if (!messageId || !reason) {
+      return res.status(400).json({ ok: false, msg: "Message and reason required" });
+    }
+
+    const reporterUser = await User.findOne({ name: reporter }).select("name approvalStatus blocked");
+    if (!reporterUser || reporterUser.blocked || reporterUser.approvalStatus !== "approved") {
+      return res.status(401).json({ ok: false, msg: "Unauthorized" });
+    }
+
+    const msg = await Message.findById(messageId);
+    if (!msg) {
+      return res.status(404).json({ ok: false, msg: "Message not found" });
+    }
+
+    const report = await Report.create({
+      reporter,
+      reportedUser: msg.from || "",
+      messageId: String(msg._id),
+      messageText: safeNotificationBody(msg),
+      reason,
+      chatType,
+      groupId,
+      peer,
+      status: "open"
+    });
+
+    await logActivity("report_message", reporter, msg.from || "", reason, {
+      messageId: String(msg._id),
+      reportId: String(report._id),
+      chatType,
+      groupId,
+      peer
+    });
+
+    io.to(ADMIN_NAME).emit("admin-report-added", {
+      id: String(report._id),
+      reporter,
+      reportedUser: msg.from || "",
+      reason,
+      messageText: report.messageText,
+      createdAt: report.createdAt
+    });
+
+    return res.json({ ok: true, report });
+  } catch (err) {
+    console.log("REPORT MESSAGE ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Report failed" });
+  }
+});
+
+
+app.post("/admin/broadcast", requireAdmin, async (req, res) => {
+  try {
+    const text = sanitizeText(req.body.text || "", 2000);
+    const title = sanitizeText(req.body.title || "📢 Admin Broadcast", 120);
+
+    if (!text) {
+      return res.status(400).json({ ok: false, msg: "Broadcast message required" });
+    }
+
+    const users = await User.find({
+      approvalStatus: "approved",
+      blocked: { $ne: true },
+      name: { $ne: req.adminUser.name }
+    }).select("name notifications");
+
+    const saved = [];
+
+    for (const u of users) {
+      u.notifications = Array.isArray(u.notifications) ? u.notifications : [];
+      u.notifications.push({
+        text: `${title}: ${text}`,
+        read: false,
+        createdAt: new Date()
+      });
+      await u.save();
+
+      io.to(u.name).emit("admin-broadcast", {
+        title,
+        text,
+        from: req.adminUser.name,
+        createdAt: new Date()
+      });
+
+      await sendAppNotification(u.name, {
+        title,
+        body: text,
+        url: "/chat.html",
+        tag: `admin-broadcast-${Date.now()}-${u.name}`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        type: "admin",
+        notificationType: "message",
+        canReply: false,
+        from: req.adminUser.name,
+        to: u.name,
+        sound: "default"
+      });
+
+      saved.push(u.name);
+    }
+
+    await logActivity("admin_broadcast", req.adminUser.name, "all_users", text, {
+      count: saved.length,
+      title
+    });
+
+    return res.json({ ok: true, sent: saved.length });
+  } catch (err) {
+    console.log("ADMIN BROADCAST ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Broadcast failed" });
+  }
+});
+
+app.get("/admin/activity-logs", requireAdmin, async (req, res) => {
+  try {
+    const limit = Math.min(200, Math.max(20, Number(req.query.limit || 80)));
+    const logs = await ActivityLog.find({})
+      .sort({ createdAt: -1 })
+      .limit(limit);
+
+    return res.json({ ok: true, logs });
+  } catch (err) {
+    console.log("ADMIN ACTIVITY LOGS ERROR:", err);
+    return res.status(500).json({ ok: false, logs: [] });
+  }
+});
+
+app.get("/admin/reports", requireAdmin, async (req, res) => {
+  try {
+    const status = String(req.query.status || "").trim();
+    const q = status && status !== "all" ? { status } : {};
+
+    const reports = await Report.find(q)
+      .sort({ createdAt: -1 })
+      .limit(150);
+
+    return res.json({ ok: true, reports });
+  } catch (err) {
+    console.log("ADMIN REPORTS ERROR:", err);
+    return res.status(500).json({ ok: false, reports: [] });
+  }
+});
+
+app.post("/admin/report/action", requireAdmin, async (req, res) => {
+  try {
+    const reportId = String(req.body.reportId || "").trim();
+    const status = String(req.body.status || "reviewed").trim();
+    const note = sanitizeText(req.body.note || "", 300);
+
+    if (!reportId) {
+      return res.status(400).json({ ok: false, msg: "Report id required" });
+    }
+
+    const report = await Report.findById(reportId);
+    if (!report) {
+      return res.status(404).json({ ok: false, msg: "Report not found" });
+    }
+
+    report.status = ["open", "reviewed", "dismissed", "action_taken"].includes(status) ? status : "reviewed";
+    report.actionBy = req.adminUser.name;
+    report.actionNote = note;
+    report.actionAt = new Date();
+    await report.save();
+
+    await logActivity("admin_report_action", req.adminUser.name, report.reportedUser, note || report.status, {
+      reportId: String(report._id),
+      status: report.status
+    });
+
+    return res.json({ ok: true, report });
+  } catch (err) {
+    console.log("ADMIN REPORT ACTION ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Report update failed" });
+  }
+});
+
 app.get("/api/me", async (req, res) => {
   try {
     const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
@@ -2327,6 +2561,8 @@ app.post("/api/verify-signup-otp", async (req, res) => {
     });
 
     io.to(ADMIN_NAME).emit("approval-list-updated");
+
+    await logActivity("signup_request", user.name, ADMIN_NAME, "Signup request sent", { contact: user.contact }).catch(() => {});
 
     return res.json({
       ok: true,

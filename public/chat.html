@@ -4555,6 +4555,244 @@ body.dark .inline-call-row{
   50%{transform:scale(1.06);filter:brightness(1.18)}
 }
 
+
+/* RickyY Phase 2: waveform voice + long press menu */
+.voice-wave-bubble{
+  min-width:220px;
+  max-width:280px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:8px 6px 4px;
+}
+.voice-play-btn{
+  width:38px;
+  height:38px;
+  border-radius:999px;
+  border:none;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  color:white;
+  font-weight:900;
+  cursor:pointer;
+  box-shadow:0 10px 24px rgba(16,185,129,.24);
+}
+.voice-wave-bars{
+  flex:1;
+  height:38px;
+  display:flex;
+  align-items:center;
+  gap:3px;
+  overflow:hidden;
+}
+.voice-wave-bars span{
+  width:3px;
+  min-width:3px;
+  border-radius:99px;
+  background:linear-gradient(180deg,#34d399,#06b6d4);
+  opacity:.86;
+  transform-origin:center;
+}
+.voice-time{
+  min-width:34px;
+  font-size:11px;
+  font-weight:800;
+  color:#9ca3af;
+  text-align:right;
+}
+.voice-wave-bubble.playing .voice-wave-bars span{
+  animation:voicePulse .72s ease-in-out infinite alternate;
+}
+.voice-wave-bubble.playing .voice-wave-bars span:nth-child(2n){
+  animation-delay:.08s;
+}
+.voice-wave-bubble.playing .voice-wave-bars span:nth-child(3n){
+  animation-delay:.16s;
+}
+@keyframes voicePulse{
+  from{transform:scaleY(.62);filter:brightness(.9)}
+  to{transform:scaleY(1.15);filter:brightness(1.18)}
+}
+
+.phase2-message-menu{
+  position:fixed;
+  z-index:200000;
+  width:min(286px, calc(100vw - 22px));
+  border-radius:22px;
+  padding:8px;
+  background:rgba(15,23,42,.98);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 24px 58px rgba(0,0,0,.35);
+  backdrop-filter:blur(18px);
+  color:white;
+}
+.phase2-message-menu .menu-title{
+  padding:10px 12px 8px;
+  font-size:12px;
+  font-weight:1000;
+  color:#a7f3d0;
+  border-bottom:1px solid rgba(255,255,255,.08);
+  margin-bottom:5px;
+}
+.phase2-message-menu button{
+  width:100%;
+  border:none;
+  background:transparent;
+  color:#f8fafc;
+  padding:12px 12px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  border-radius:14px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:850;
+  text-align:left;
+}
+.phase2-message-menu button:hover,
+.phase2-message-menu button:active{
+  background:rgba(255,255,255,.09);
+}
+.phase2-message-menu button.admin-danger{
+  color:#fecaca;
+}
+.message.phase2-longpress-active{
+  outline:2px solid rgba(16,185,129,.55);
+  outline-offset:3px;
+}
+.report-modal-card{
+  width:min(420px, calc(100vw - 24px));
+  border-radius:24px;
+  background:#fff;
+  color:#111827;
+  padding:18px;
+  box-shadow:0 24px 70px rgba(0,0,0,.32);
+}
+body.dark .report-modal-card{
+  background:#0f172a;
+  color:#e5e7eb;
+}
+.report-modal-card textarea{
+  width:100%;
+  min-height:95px;
+  border-radius:16px;
+  padding:12px;
+  border:1px solid rgba(148,163,184,.45);
+  resize:none;
+  box-sizing:border-box;
+  background:rgba(148,163,184,.08);
+  color:inherit;
+  outline:none;
+}
+.report-modal-actions{
+  display:flex;
+  gap:10px;
+  justify-content:flex-end;
+  margin-top:14px;
+}
+.report-modal-actions button{
+  border:none;
+  border-radius:14px;
+  padding:11px 14px;
+  font-weight:900;
+  cursor:pointer;
+}
+.report-modal-actions .cancel{
+  background:#e5e7eb;
+}
+.report-modal-actions .send{
+  background:#ef4444;
+  color:white;
+}
+
+
+/* RickyY Phase 3: Broadcast, Activity Logs, Reports */
+.phase3-admin-card{
+  background:white;
+  border-radius:16px;
+  padding:14px;
+  margin-bottom:12px;
+  box-shadow:0 8px 22px rgba(15,23,42,.08);
+  border:1px solid rgba(15,23,42,.06);
+}
+body.dark .phase3-admin-card{
+  background:#111827;
+  color:#e5e7eb;
+  border-color:rgba(255,255,255,.08);
+}
+.phase3-admin-card h3{
+  margin:0 0 8px;
+}
+.phase3-admin-card textarea,
+.phase3-admin-card input,
+.phase3-admin-card select{
+  width:100%;
+  box-sizing:border-box;
+  border-radius:14px;
+  padding:12px;
+  border:1px solid rgba(148,163,184,.45);
+  outline:none;
+  background:rgba(148,163,184,.08);
+  color:inherit;
+  margin:7px 0;
+}
+.phase3-admin-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:10px;
+}
+.phase3-admin-actions button,
+.phase3-btn{
+  border:none;
+  border-radius:13px;
+  padding:10px 12px;
+  cursor:pointer;
+  font-weight:900;
+  background:#10b981;
+  color:white;
+}
+.phase3-btn.gray{background:#64748b;}
+.phase3-btn.red{background:#ef4444;}
+.phase3-btn.blue{background:#2563eb;}
+.phase3-log-row,
+.phase3-report-row{
+  border-radius:14px;
+  padding:12px;
+  margin-bottom:10px;
+  background:rgba(148,163,184,.10);
+  border:1px solid rgba(148,163,184,.18);
+}
+.phase3-log-title,
+.phase3-report-title{
+  font-weight:1000;
+  margin-bottom:4px;
+}
+.phase3-log-meta,
+.phase3-report-meta{
+  font-size:12px;
+  color:#64748b;
+}
+body.dark .phase3-log-meta,
+body.dark .phase3-report-meta{
+  color:#94a3b8;
+}
+.phase3-status-pill{
+  display:inline-flex;
+  align-items:center;
+  border-radius:999px;
+  padding:3px 8px;
+  font-size:11px;
+  font-weight:1000;
+  background:#dbeafe;
+  color:#1d4ed8;
+}
+.phase3-status-pill.open{background:#fee2e2;color:#b91c1c;}
+.phase3-status-pill.action_taken{background:#dcfce7;color:#15803d;}
+.phase3-status-pill.dismissed{background:#e5e7eb;color:#374151;}
+
 </style>
 </head>
 
@@ -5285,6 +5523,26 @@ function enforceAppLockIfNeeded(){
 
   const socket = io();
 
+  socket.on("admin-broadcast", data => {
+    try{
+      if(typeof showToast === "function"){
+        showToast((data.title || "Admin Broadcast") + ": " + (data.text || ""), "success");
+      }else{
+        alert((data.title || "Admin Broadcast") + "\\n" + (data.text || ""));
+      }
+    }catch(err){}
+  });
+
+  socket.on("admin-report-added", data => {
+    try{
+      if(isAppAdmin && isAppAdmin()){
+        if(typeof showToast === "function") showToast("New report from " + (data.reporter || "user"), "warning");
+        if(currentAdminTab === "reports") loadAdminReports("all");
+      }
+    }catch(err){}
+  });
+
+
   let me = localStorage.getItem("user");
 
   function normalizeNameSafe(name){
@@ -5376,6 +5634,206 @@ function enforceAppLockIfNeeded(){
     if(speakerFab) speakerFab.style.display = show ? "flex" : "none";
     if(soundUnlock) soundUnlock.style.display = show ? "flex" : "none";
   }
+
+  function adminEscape(value){
+    return escapeHtml(String(value || ""));
+  }
+
+  function phase3Date(value){
+    if(!value) return "";
+    try{
+      return new Date(value).toLocaleString();
+    }catch(err){
+      return String(value);
+    }
+  }
+
+  function loadAdminBroadcastPanel(){
+    const box = document.getElementById("adminList");
+    if(!box) return;
+
+    box.innerHTML = `
+      <div class="phase3-admin-card">
+        <h3>📢 Admin Broadcast</h3>
+        <div style="font-size:13px;color:#64748b;margin-bottom:8px;">
+          Approved users andariki notification + in-app alert send avuthundhi.
+        </div>
+        <input id="broadcastTitle" maxlength="120" placeholder="Title" value="📢 Admin Broadcast">
+        <textarea id="broadcastText" maxlength="2000" placeholder="Message to all users..."></textarea>
+        <div class="phase3-admin-actions">
+          <button onclick="sendAdminBroadcast()">Send Broadcast</button>
+        </div>
+        <div id="broadcastResult" style="margin-top:10px;font-weight:800;"></div>
+      </div>
+    `;
+  }
+
+  async function sendAdminBroadcast(){
+    const title = document.getElementById("broadcastTitle")?.value.trim() || "📢 Admin Broadcast";
+    const text = document.getElementById("broadcastText")?.value.trim() || "";
+    const result = document.getElementById("broadcastResult");
+
+    if(!text){
+      if(result) result.innerHTML = `<span style="color:#ef4444;">Message required</span>`;
+      return;
+    }
+
+    if(!confirm("Send broadcast to all approved users?")) return;
+
+    try{
+      if(result) result.innerHTML = "Sending...";
+      const admin = localStorage.getItem("user");
+      const res = await fetch("/admin/broadcast", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "x-admin-user": admin
+        },
+        body: JSON.stringify({ admin, title, text })
+      });
+      const data = await res.json().catch(() => null);
+
+      if(!data || !data.ok){
+        if(result) result.innerHTML = `<span style="color:#ef4444;">${adminEscape(data?.msg || "Broadcast failed")}</span>`;
+        return;
+      }
+
+      if(result) result.innerHTML = `<span style="color:#10b981;">Broadcast sent to ${data.sent || 0} users ✅</span>`;
+      document.getElementById("broadcastText").value = "";
+    }catch(err){
+      if(result) result.innerHTML = `<span style="color:#ef4444;">Server error</span>`;
+    }
+  }
+
+  async function loadAdminActivityLogs(){
+    const box = document.getElementById("adminList");
+    if(!box) return;
+
+    box.innerHTML = "Loading logs...";
+
+    try{
+      const admin = localStorage.getItem("user");
+      const res = await fetch("/admin/activity-logs?admin=" + encodeURIComponent(admin) + "&limit=100", {
+        headers:{ "x-admin-user": admin }
+      });
+      const data = await res.json().catch(() => null);
+
+      if(!data || !data.ok){
+        box.innerHTML = `<div style="color:red;">Failed to load logs</div>`;
+        return;
+      }
+
+      const logs = Array.isArray(data.logs) ? data.logs : [];
+
+      if(!logs.length){
+        box.innerHTML = `<div style="color:gray;">No activity logs yet</div>`;
+        return;
+      }
+
+      box.innerHTML = `
+        <div class="phase3-admin-card">
+          <h3>🧾 Activity Logs</h3>
+          <button class="phase3-btn gray" onclick="loadAdminActivityLogs()">Refresh</button>
+        </div>
+        ${logs.map(log => `
+          <div class="phase3-log-row">
+            <div class="phase3-log-title">${adminEscape(log.type || "activity")}</div>
+            <div>${adminEscape(log.text || "")}</div>
+            <div class="phase3-log-meta">
+              Actor: <b>${adminEscape(log.actor || "-")}</b> •
+              Target: <b>${adminEscape(log.target || "-")}</b> •
+              ${adminEscape(phase3Date(log.createdAt))}
+            </div>
+          </div>
+        `).join("")}
+      `;
+    }catch(err){
+      box.innerHTML = `<div style="color:red;">Server error</div>`;
+    }
+  }
+
+  async function loadAdminReports(status = "all"){
+    const box = document.getElementById("adminList");
+    if(!box) return;
+
+    box.innerHTML = "Loading reports...";
+
+    try{
+      const admin = localStorage.getItem("user");
+      const res = await fetch("/admin/reports?admin=" + encodeURIComponent(admin) + "&status=" + encodeURIComponent(status), {
+        headers:{ "x-admin-user": admin }
+      });
+      const data = await res.json().catch(() => null);
+
+      if(!data || !data.ok){
+        box.innerHTML = `<div style="color:red;">Failed to load reports</div>`;
+        return;
+      }
+
+      const reports = Array.isArray(data.reports) ? data.reports : [];
+
+      box.innerHTML = `
+        <div class="phase3-admin-card">
+          <h3>🚩 User Reports</h3>
+          <select onchange="loadAdminReports(this.value)">
+            <option value="all" ${status === "all" ? "selected" : ""}>All</option>
+            <option value="open" ${status === "open" ? "selected" : ""}>Open</option>
+            <option value="reviewed" ${status === "reviewed" ? "selected" : ""}>Reviewed</option>
+            <option value="action_taken" ${status === "action_taken" ? "selected" : ""}>Action taken</option>
+            <option value="dismissed" ${status === "dismissed" ? "selected" : ""}>Dismissed</option>
+          </select>
+          <button class="phase3-btn gray" onclick="loadAdminReports('${status}')">Refresh</button>
+        </div>
+        ${reports.length ? reports.map(r => `
+          <div class="phase3-report-row">
+            <div class="phase3-report-title">
+              🚩 ${adminEscape(r.reporter)} reported ${adminEscape(r.reportedUser || "-")}
+              <span class="phase3-status-pill ${adminEscape(r.status)}">${adminEscape(r.status)}</span>
+            </div>
+            <div style="margin:6px 0;"><b>Reason:</b> ${adminEscape(r.reason)}</div>
+            <div style="margin:6px 0;"><b>Message:</b> ${adminEscape(r.messageText || "")}</div>
+            <div class="phase3-report-meta">
+              Type: ${adminEscape(r.chatType || "-")} •
+              Peer/Group: ${adminEscape(r.peer || r.groupId || "-")} •
+              ${adminEscape(phase3Date(r.createdAt))}
+            </div>
+            <div class="phase3-admin-actions">
+              <button class="phase3-btn blue" onclick="updateReportAction('${r._id}', 'reviewed')">Mark reviewed</button>
+              <button class="phase3-btn" onclick="updateReportAction('${r._id}', 'action_taken')">Action taken</button>
+              <button class="phase3-btn red" onclick="updateReportAction('${r._id}', 'dismissed')">Dismiss</button>
+            </div>
+          </div>
+        `).join("") : `<div style="color:gray;">No reports found</div>`}
+      `;
+    }catch(err){
+      box.innerHTML = `<div style="color:red;">Server error</div>`;
+    }
+  }
+
+  async function updateReportAction(reportId, status){
+    const note = prompt("Action note (optional)", "") || "";
+    try{
+      const admin = localStorage.getItem("user");
+      const res = await fetch("/admin/report/action", {
+        method:"POST",
+        headers:{
+          "Content-Type":"application/json",
+          "x-admin-user": admin
+        },
+        body: JSON.stringify({ admin, reportId, status, note })
+      });
+      const data = await res.json().catch(() => null);
+      if(!data || !data.ok){
+        alert((data && data.msg) || "Update failed");
+        return;
+      }
+      loadAdminReports("all");
+    }catch(err){
+      alert("Server error");
+    }
+  }
+
+
   async function loadPendingUsers(){
     const list = document.getElementById("adminPendingUsersList");
     if(!list) return;
@@ -8128,7 +8586,347 @@ function setUserTypingState(username, isTyping){
     `;
   }
 
-  function showMessage(m, index, scrollToBottom = true){
+  
+  function buildVoiceWaveformHtml(mediaUrl, id){
+    const safeId = String(id || Date.now()).replace(/[^a-zA-Z0-9_-]/g, "");
+    const bars = Array.from({length:36}).map((_, i) => {
+      const h = 8 + ((i * 7 + safeId.length * 3) % 28);
+      return `<span style="height:${h}px"></span>`;
+    }).join("");
+
+    return `
+      <div class="voice-wave-bubble" data-voice-id="${safeId}">
+        <button class="voice-play-btn" type="button" onclick="toggleVoiceWave(event, '${safeId}')">▶</button>
+        <div class="voice-wave-bars">${bars}</div>
+        <div class="voice-time" id="voiceTime_${safeId}">0:00</div>
+        <audio id="voiceAudio_${safeId}" src="${mediaUrl}" preload="metadata"
+          onloadedmetadata="updateVoiceDuration('${safeId}')"
+          ontimeupdate="updateVoiceProgress('${safeId}')"
+          onended="voiceEnded('${safeId}')"></audio>
+      </div>
+    `;
+  }
+
+  function formatVoiceTime(seconds){
+    seconds = Math.max(0, Math.floor(Number(seconds || 0)));
+    const m = Math.floor(seconds / 60);
+    const s = String(seconds % 60).padStart(2, "0");
+    return `${m}:${s}`;
+  }
+
+  window.updateVoiceDuration = function(id){
+    const audio = document.getElementById("voiceAudio_" + id);
+    const time = document.getElementById("voiceTime_" + id);
+    if(audio && time && isFinite(audio.duration)){
+      time.textContent = formatVoiceTime(audio.duration);
+    }
+  };
+
+  window.updateVoiceProgress = function(id){
+    const audio = document.getElementById("voiceAudio_" + id);
+    const time = document.getElementById("voiceTime_" + id);
+    if(audio && time){
+      time.textContent = formatVoiceTime(audio.currentTime || audio.duration || 0);
+    }
+  };
+
+  window.voiceEnded = function(id){
+    const audio = document.getElementById("voiceAudio_" + id);
+    const wrap = document.querySelector(`[data-voice-id="${id}"]`);
+    const btn = wrap ? wrap.querySelector(".voice-play-btn") : null;
+    if(wrap) wrap.classList.remove("playing");
+    if(btn) btn.textContent = "▶";
+    if(audio) audio.currentTime = 0;
+    updateVoiceDuration(id);
+  };
+
+  window.toggleVoiceWave = function(event, id){
+    if(event) event.stopPropagation();
+    const audio = document.getElementById("voiceAudio_" + id);
+    const wrap = document.querySelector(`[data-voice-id="${id}"]`);
+    if(!audio || !wrap) return;
+
+    document.querySelectorAll(".voice-wave-bubble.playing audio").forEach(a => {
+      if(a !== audio){
+        a.pause();
+        const otherWrap = a.closest(".voice-wave-bubble");
+        if(otherWrap){
+          otherWrap.classList.remove("playing");
+          const b = otherWrap.querySelector(".voice-play-btn");
+          if(b) b.textContent = "▶";
+        }
+      }
+    });
+
+    const btn = wrap.querySelector(".voice-play-btn");
+
+    if(audio.paused){
+      audio.play().then(() => {
+        wrap.classList.add("playing");
+        if(btn) btn.textContent = "⏸";
+      }).catch(() => {
+        if(typeof showToast === "function") showToast("Audio play failed", "error");
+      });
+    }else{
+      audio.pause();
+      wrap.classList.remove("playing");
+      if(btn) btn.textContent = "▶";
+    }
+  };
+
+  function getMessagePlainText(messageObj){
+    if(!messageObj) return "";
+    if(messageObj.text) return String(messageObj.text);
+    if(messageObj.fileType === "image") return "Photo";
+    if(messageObj.fileType === "video") return "Video";
+    if(messageObj.fileType === "audio") return "Voice message";
+    if(messageObj.fileType) return "Attachment";
+    return "";
+  }
+
+  function closePhase2MessageMenu(){
+    const old = document.querySelector(".phase2-message-menu");
+    if(old) old.remove();
+    document.querySelectorAll(".phase2-longpress-active").forEach(el => el.classList.remove("phase2-longpress-active"));
+  }
+
+  async function copyMessageText(messageObj){
+    const text = getMessagePlainText(messageObj);
+    if(!text) return;
+    try{
+      await navigator.clipboard.writeText(text);
+      if(typeof showToast === "function") showToast("Copied", "success");
+    }catch(err){
+      const area = document.createElement("textarea");
+      area.value = text;
+      document.body.appendChild(area);
+      area.select();
+      document.execCommand("copy");
+      area.remove();
+      if(typeof showToast === "function") showToast("Copied", "success");
+    }
+  }
+
+  function openReportMessageModal(messageObj){
+    closePhase2MessageMenu();
+    if(!messageObj || !messageObj._id) return;
+
+    const old = document.getElementById("reportMessageModal");
+    if(old) old.remove();
+
+    const modal = document.createElement("div");
+    modal.id = "reportMessageModal";
+    modal.style.cssText = "position:fixed;inset:0;z-index:210000;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:12px;";
+
+    modal.innerHTML = `
+      <div class="report-modal-card">
+        <h3 style="margin:0 0 8px;">Report message</h3>
+        <p style="margin:0 0 12px;color:#64748b;font-size:13px;">Admin ki report send avuthundhi. Reason type cheyyi.</p>
+        <textarea id="reportReasonInput" maxlength="300" placeholder="Reason..."></textarea>
+        <div class="report-modal-actions">
+          <button class="cancel" type="button" onclick="document.getElementById('reportMessageModal')?.remove()">Cancel</button>
+          <button class="send" type="button" id="sendReportBtn">Report</button>
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(modal);
+    modal.addEventListener("click", e => {
+      if(e.target === modal) modal.remove();
+    });
+
+    document.getElementById("sendReportBtn").onclick = async () => {
+      const reason = document.getElementById("reportReasonInput").value.trim();
+      if(!reason){
+        if(typeof showToast === "function") showToast("Reason enter cheyyi", "warning");
+        return;
+      }
+
+      try{
+        const res = await fetch("/api/report-message", {
+          method:"POST",
+          headers:{ "Content-Type":"application/json" },
+          body: JSON.stringify({
+            reporter: me,
+            messageId: messageObj._id,
+            reason,
+            chatType: isGroupChat ? "group" : "private",
+            groupId: currentGroup || "",
+            peer: currentChat || ""
+          })
+        });
+
+        const data = await res.json().catch(() => null);
+        if(!data || !data.ok){
+          alert((data && data.msg) || "Report failed");
+          return;
+        }
+
+        modal.remove();
+        if(typeof showToast === "function") showToast("Report sent to admin", "success");
+      }catch(err){
+        alert("Server error");
+      }
+    };
+  }
+
+  function showPhase2MessageMenu(messageObj, anchorEl, event){
+    if(!messageObj || !anchorEl) return;
+
+    closePhase2MessageMenu();
+
+    anchorEl.classList.add("phase2-longpress-active");
+
+    const menu = document.createElement("div");
+    menu.className = "phase2-message-menu";
+    const canAdmin = isMainAdmin && isMainAdmin();
+    const title = canAdmin ? "Message actions • Admin" : "Message actions";
+
+    menu.innerHTML = `<div class="menu-title">${title}</div>`;
+
+    function addBtn(label, handler, cls = ""){
+      const btn = document.createElement("button");
+      btn.type = "button";
+      btn.className = cls;
+      btn.innerHTML = label;
+      btn.onclick = e => {
+        e.preventDefault();
+        e.stopPropagation();
+        handler();
+      };
+      menu.appendChild(btn);
+    }
+
+    addBtn("↩️ Reply", () => {
+      closePhase2MessageMenu();
+      if(typeof startReply === "function") startReply(messageObj);
+      else if(typeof setReply === "function") setReply(messageObj);
+    });
+
+    addBtn("↪️ Forward", () => {
+      closePhase2MessageMenu();
+      if(typeof openForwardMessageModal === "function") openForwardMessageModal(messageObj);
+    });
+
+    if(getMessagePlainText(messageObj)){
+      addBtn("📋 Copy", () => {
+        copyMessageText(messageObj);
+        closePhase2MessageMenu();
+      });
+    }
+
+    addBtn("⭐ Star", () => {
+      try{
+        const key = "rickyyStarredMessages";
+        const list = JSON.parse(localStorage.getItem(key) || "[]");
+        const id = String(messageObj._id || messageObj.createdAt || Date.now());
+        if(!list.some(x => String(x.id) === id)){
+          list.push({
+            id,
+            text: getMessagePlainText(messageObj),
+            from: messageObj.from || "",
+            at: messageObj.createdAt || new Date().toISOString()
+          });
+          localStorage.setItem(key, JSON.stringify(list.slice(-200)));
+        }
+        if(typeof showToast === "function") showToast("Starred", "success");
+      }catch(err){}
+      closePhase2MessageMenu();
+    });
+
+    addBtn("🚩 Report", () => openReportMessageModal(messageObj));
+
+    if(messageObj.from === me && typeof openSeenInfo === "function"){
+      addBtn("ℹ️ Info", () => {
+        closePhase2MessageMenu();
+        openSeenInfo(messageObj._id);
+      });
+    }
+
+    if(canAdmin){
+      if(messageObj.text && !messageObj.file){
+        addBtn("✏️ Admin edit", () => {
+          closePhase2MessageMenu();
+          adminEditMessagePrompt(messageObj);
+        });
+      }
+
+      addBtn("🗑 Admin delete", () => {
+        closePhase2MessageMenu();
+        adminDeleteMessageConfirm(messageObj);
+      }, "admin-danger");
+    }
+
+    menu.addEventListener("click", e => e.stopPropagation());
+    menu.addEventListener("touchstart", e => e.stopPropagation(), { passive:true });
+
+    document.body.appendChild(menu);
+
+    const rect = anchorEl.getBoundingClientRect();
+    const x = event?.clientX || (rect.left + rect.width / 2);
+    const y = event?.clientY || rect.top;
+    const gap = 10;
+
+    let left = Math.min(Math.max(gap, x - menu.offsetWidth / 2), window.innerWidth - menu.offsetWidth - gap);
+    let top = y - menu.offsetHeight - 12;
+    if(top < gap) top = rect.bottom + 12;
+    if(top + menu.offsetHeight > window.innerHeight - gap) top = window.innerHeight - menu.offsetHeight - gap;
+
+    menu.style.left = left + "px";
+    menu.style.top = top + "px";
+
+    setTimeout(() => {
+      function close(e){
+        if(menu && !menu.contains(e.target)){
+          closePhase2MessageMenu();
+          document.removeEventListener("click", close, true);
+          document.removeEventListener("touchstart", close, true);
+        }
+      }
+      document.addEventListener("click", close, true);
+      document.addEventListener("touchstart", close, true);
+    }, 80);
+  }
+
+  function bindPhase2MessageMenu(div, messageObj){
+    if(!div || !messageObj) return;
+
+    let timer = null;
+    let startX = 0;
+    let startY = 0;
+
+    div.addEventListener("contextmenu", e => {
+      e.preventDefault();
+      showPhase2MessageMenu(messageObj, div, e);
+    });
+
+    div.addEventListener("touchstart", e => {
+      const t = e.touches && e.touches[0];
+      if(!t) return;
+      startX = t.clientX;
+      startY = t.clientY;
+      clearTimeout(timer);
+      timer = setTimeout(() => {
+        if(navigator.vibrate) navigator.vibrate(25);
+        showPhase2MessageMenu(messageObj, div, { clientX:startX, clientY:startY });
+      }, 520);
+    }, { passive:true });
+
+    div.addEventListener("touchmove", e => {
+      const t = e.touches && e.touches[0];
+      if(!t) return;
+      if(Math.abs(t.clientX - startX) > 12 || Math.abs(t.clientY - startY) > 12){
+        clearTimeout(timer);
+      }
+    }, { passive:true });
+
+    ["touchend","touchcancel","mousedown","mouseleave"].forEach(ev => {
+      div.addEventListener(ev, () => clearTimeout(timer), { passive:true });
+    });
+  }
+
+
+function showMessage(m, index, scrollToBottom = true){
     const box = document.getElementById("messages");
   if(!box) return;
     if(shouldShowDateSeparator(currentHistory, index)){
@@ -8160,7 +8958,7 @@ function setUserTypingState(username, isTyping){
     content = `<video class="msg-media" src="${mediaUrl}" onclick="openViewer('${mediaUrl}','video')" preload="metadata" controls></video>`;
   } else if (m.file && m.fileType === "audio") {
     const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls></audio>`;
+    content = buildVoiceWaveformHtml(mediaUrl, m._id || ("p_" + index));
   } else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
     const mediaUrl = getMediaUrl(m.file);
     const filename = mediaUrl.split("/").pop();
@@ -8199,10 +8997,7 @@ function setUserTypingState(username, isTyping){
 
 
 
-    div.addEventListener("contextmenu",(e)=>{
-      e.preventDefault();
-      showReactionMenu(m, e);
-    });
+    bindPhase2MessageMenu(div, m);
 
     div.addEventListener("dblclick",(e)=>{
       showReactionMenu(m, e);
@@ -8714,8 +9509,7 @@ function setUserTypingState(username, isTyping){
       onerror="this.onerror=null; this.outerHTML='<div style=&quot;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:13px;&quot;>Video not available</div>'"></video>`;
   } else if (m.file && m.fileType === "audio") {
     const mediaUrl = getMediaUrl(m.file);
-    content = `<audio src="${mediaUrl}" controls
-      onerror="this.onerror=null; this.outerHTML='<div style=&quot;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);font-size:13px;&quot;>Audio not available</div>'"></audio>`;
+    content = buildVoiceWaveformHtml(mediaUrl, m._id || ("g_" + index));
     } else if (m.file && (m.fileType === "doc" || m.fileType === "file")) {
       const mediaUrl = getMediaUrl(m.file);
       const filename = mediaUrl.split("/").pop();
@@ -8751,10 +9545,7 @@ function setUserTypingState(username, isTyping){
       <div class="reactions">${m.reaction ? `<span class="reaction-badge">${escapeHtml(m.reaction)}</span>` : ""}</div>
     `;
 
-    div.addEventListener("contextmenu",(e)=>{
-      e.preventDefault();
-      showReactionMenu(m, e);
-    });
+    bindPhase2MessageMenu(div, m);
 
     div.addEventListener("dblclick",(e)=>{
       showReactionMenu(m, e);
@@ -12442,23 +13233,38 @@ socket.on("stop-typing", user => {
   function setAdminTab(tab){
     currentAdminTab = tab;
 
-    document.getElementById("adminTabPending")?.classList.remove("active");
-    document.getElementById("adminTabApproved")?.classList.remove("active");
-    document.getElementById("adminTabBlocked")?.classList.remove("active");
-    document.getElementById("adminTabMuted")?.classList.remove("active");
-    document.getElementById("adminTabSessions")?.classList.remove("active");
+    [
+      "adminTabPending",
+      "adminTabApproved",
+      "adminTabBlocked",
+      "adminTabMuted",
+      "adminTabSessions",
+      "adminTabBroadcast",
+      "adminTabActivity",
+      "adminTabReports"
+    ].forEach(id => document.getElementById(id)?.classList.remove("active"));
 
-    if(tab === "pending") document.getElementById("adminTabPending")?.classList.add("active");
-    if(tab === "approved") document.getElementById("adminTabApproved")?.classList.add("active");
-    if(tab === "blocked") document.getElementById("adminTabBlocked")?.classList.add("active");
-    if(tab === "muted") document.getElementById("adminTabMuted")?.classList.add("active");
-    if(tab === "sessions") document.getElementById("adminTabSessions")?.classList.add("active");
+    const tabMap = {
+      pending: "adminTabPending",
+      approved: "adminTabApproved",
+      blocked: "adminTabBlocked",
+      muted: "adminTabMuted",
+      sessions: "adminTabSessions",
+      broadcast: "adminTabBroadcast",
+      activity: "adminTabActivity",
+      reports: "adminTabReports"
+    };
+
+    document.getElementById(tabMap[tab])?.classList.add("active");
 
     if(tab === "pending") loadPendingUsers();
     if(tab === "approved") loadApprovedUsers();
     if(tab === "blocked") loadBlockedUsersForAdmin();
     if(tab === "muted") loadMutedUsers();
     if(tab === "sessions") loadAdminUserSessions();
+    if(tab === "broadcast") loadAdminBroadcastPanel();
+    if(tab === "activity") loadAdminActivityLogs();
+    if(tab === "reports") loadAdminReports();
   }
 
   async function loadPendingUsers(){
@@ -13519,6 +14325,9 @@ function openMenu(){
 <button class="tab" id="adminTabBlocked" onclick="setAdminTab('blocked')">Blocked</button>
 <button class="tab" id="adminTabMuted" onclick="setAdminTab('muted')">Muted</button>
 <button class="tab" id="adminTabSessions" onclick="setAdminTab('sessions')">Sessions</button>
+<button class="tab" id="adminTabBroadcast" onclick="setAdminTab('broadcast')">Broadcast</button>
+<button class="tab" id="adminTabActivity" onclick="setAdminTab('activity')">Logs</button>
+<button class="tab" id="adminTabReports" onclick="setAdminTab('reports')">Reports</button>
 </div>
 <div id="adminList" style="padding:15px;overflow:auto;flex:1;background:#f6f6f6;color: #000;"></div>
 </div>
