@@ -1056,11 +1056,9 @@ async function sendFcmToUser(username, payload = {}) {
 }
 
 async function sendAppNotification(username, payload = {}) {
-  // Native app only. Do NOT send web push, so Chrome/PWA notifications stop.
-  const fcmResult = await sendFcmToUser(username, payload);
-  return { fcmResult };
+  console.log("SAFE MODE: notification skipped for", username);
+  return { ok: true, skipped: true };
 }
-
 async function requireAdmin(req, res, next) {
   try {
     const adminName =
