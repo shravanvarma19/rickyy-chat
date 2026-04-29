@@ -994,7 +994,7 @@ async function sendFcmToUser(username, payload = {}) {
           data: {
             title,
             body,
-            from: String(payload.from || ""),
+            sender: String(payload.from || payload.sender || ""),
             to: String(payload.to || ""),
             group: String(payload.group || payload.groupId || ""),
             url: String(payload.url || "/chat.html"),
