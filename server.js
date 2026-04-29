@@ -977,6 +977,7 @@ async function sendFcmToUser(username, payload = {}) {
 
     const title = String(payload.title || (isCall ? "Incoming call" : "Shravan Chat"));
     const body = String(payload.body || (isCall ? "Someone is calling you" : "New message"));
+    const channelId = isCall ? "shravan_safe_calls_v1" : "shravan_safe_messages_v1";
 
     for (const item of user.fcmTokens) {
       const token = typeof item === "string" ? item : item?.token;
@@ -987,10 +988,7 @@ async function sendFcmToUser(username, payload = {}) {
       try {
         await adminSdk.messaging().send({
           token,
-
-          // IMPORTANT: data-only payload.
-          // This forces native FirebaseMessagingService to build the notification,
-          // so actions like Reply and Mark as read appear from the APK, not Chrome.
+          notification: { title, body },
           data: {
             title,
             body,
@@ -1001,23 +999,27 @@ async function sendFcmToUser(username, payload = {}) {
             tag: String(payload.tag || (isCall ? "shravan-call" : "shravan-message")),
             type: String(payload.type || (isCall ? "call" : "message")),
             notificationType: String(payload.notificationType || (isCall ? "call" : "message")),
-            canReply: String(payload.canReply !== false && !isCall),
-            canMarkRead: String(payload.canMarkRead !== false && !isCall),
-            requireInteraction: String(!!payload.requireInteraction || isCall),
-            sound: String(payload.sound || (isCall ? "ring" : "default")),
             callType: String(payload.callType || ""),
             messageId: String(payload.messageId || payload._id || "")
           },
-
           android: {
             priority: "high",
             ttl: 60 * 60 * 1000,
-            directBootOk: true
+            notification: {
+              channelId,
+              title,
+              body,
+              sound: "default",
+              visibility: "public",
+              priority: isCall ? "max" : "high",
+              defaultSound: true,
+              defaultVibrateTimings: true,
+              notificationCount: 1
+            }
           }
         });
 
         result.successCount++;
-
         validTokens.push(
           typeof item === "string"
             ? { token, platform: "android-native", lastSeenAt: new Date() }
@@ -1041,11 +1043,7 @@ async function sendFcmToUser(username, payload = {}) {
       }
     }
 
-    await User.updateOne(
-      { name: username },
-      { $set: { fcmTokens: validTokens } }
-    );
-
+    await User.updateOne({ name: username }, { $set: { fcmTokens: validTokens } });
     result.ok = result.successCount > 0;
     return result;
   } catch (err) {
@@ -1056,9 +1054,11 @@ async function sendFcmToUser(username, payload = {}) {
 }
 
 async function sendAppNotification(username, payload = {}) {
-  console.log("SAFE MODE: notification skipped for", username);
-  return { ok: true, skipped: true };
+  // Stable notifications: native FCM only, no Chrome/Web Push.
+  const fcmResult = await sendFcmToUser(username, payload);
+  return { fcmResult };
 }
+
 async function requireAdmin(req, res, next) {
   try {
     const adminName =
@@ -1928,7 +1928,7 @@ app.post("/api/fcm/test", requireAdmin, async (req, res) => {
   try {
     const username = normalizeUsername(req.body.username || req.body.user);
     const title = String(req.body.title || "Shravan Chat Test");
-    const body = String(req.body.body || "Native notification with Reply + Mark read ✅");
+    const body = String(req.body.body || "Stable native notification test ✅");
     const kind = String(req.body.kind || "message");
 
     if (!username) return res.status(400).json({ ok: false, msg: "username required" });
@@ -1937,19 +1937,16 @@ app.post("/api/fcm/test", requireAdmin, async (req, res) => {
       title,
       body,
       url: "/chat.html",
-      tag: `native-test-${Date.now()}`,
+      tag: `stable-test-${Date.now()}`,
       type: kind === "call" ? "call" : "private",
       notificationType: kind === "call" ? "call" : "message",
       callType: kind === "call" ? "voice" : "",
-      canReply: kind !== "call",
-      canMarkRead: kind !== "call",
-      requireInteraction: kind === "call",
       from: req.adminUser?.name || ADMIN_NAME,
       to: username,
       sound: kind === "call" ? "ring" : "default"
     });
 
-    return res.json({ ok: !!result.ok, msg: result.ok ? "Native FCM sent" : "Native FCM failed", result });
+    return res.json({ ok: !!result.ok, msg: result.ok ? "Stable FCM sent" : "Stable FCM failed", result });
   } catch (err) {
     console.log("FCM TEST ERROR:", err);
     return res.status(500).json({ ok: false, msg: "FCM test failed", error: err.message });

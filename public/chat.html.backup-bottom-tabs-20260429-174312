@@ -590,7 +590,7 @@ body{
 }
 
 .no-chat-screen::before{
-  content:"ðŸ’¬";
+  content:"💬";
   font-size:46px;
   line-height:1;
   opacity:.9;
@@ -5061,62 +5061,6 @@ body:not(.dark) .mobile-nav-btn.active{
   display:none;
 }
 
-
-/* RickyY bottom tabs clean separation fix */
-#inlineGroupsPanel,
-#inlineCallsPanel{
-  min-height:calc(100vh - 170px);
-}
-.status-panel.rickyy-status-tab-only{
-  display:block !important;
-  padding:10px 12px 100px !important;
-  min-height:calc(100vh - 170px);
-}
-.rickyy-tab-title{
-  margin:8px 0 12px;
-  padding:14px;
-  border-radius:18px;
-  background:linear-gradient(135deg, rgba(16,185,129,.16), rgba(6,182,212,.10));
-  border:1px solid rgba(16,185,129,.20);
-  font-weight:1000;
-  display:flex;
-  align-items:center;
-  justify-content:space-between;
-  gap:10px;
-}
-body.rickyy-tab-groups #users,
-body.rickyy-tab-groups .search-box,
-body.rickyy-tab-groups #chatFilterBar,
-body.rickyy-tab-groups .status-panel,
-body.rickyy-tab-groups #inlineCallsPanel{
-  display:none !important;
-}
-body.rickyy-tab-status #users,
-body.rickyy-tab-status .search-box,
-body.rickyy-tab-status #chatFilterBar,
-body.rickyy-tab-status #inlineGroupsPanel,
-body.rickyy-tab-status #inlineCallsPanel{
-  display:none !important;
-}
-body.rickyy-tab-calls #users,
-body.rickyy-tab-calls .search-box,
-body.rickyy-tab-calls #chatFilterBar,
-body.rickyy-tab-calls .status-panel,
-body.rickyy-tab-calls #inlineGroupsPanel{
-  display:none !important;
-}
-body.rickyy-tab-chats #inlineGroupsPanel,
-body.rickyy-tab-chats #inlineCallsPanel{
-  display:none !important;
-}
-body.rickyy-tab-chats .status-panel{
-  display:none !important;
-}
-body.rickyy-tab-groups #inlineGroupsPanel.show,
-body.rickyy-tab-calls #inlineCallsPanel.show{
-  display:block !important;
-}
-
 </style>
 </head>
 
@@ -5124,7 +5068,7 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 
 <div id="rickyyPageLoader">
   <div class="rickyy-loader-card">
-    <div class="rickyy-loader-logo">ðŸ’¬</div>
+    <div class="rickyy-loader-logo">💬</div>
     <div class="rickyy-loader-name">RickyY Chat</div>
     <div class="rickyy-loader-sub">Loading secure chats...</div>
   </div>
@@ -5133,7 +5077,7 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 
 <div id="privacyGuardOverlay" aria-hidden="true">
   <div class="privacy-card">
-    <div class="privacy-icon">ðŸ”’</div>
+    <div class="privacy-icon">🔒</div>
     <div class="privacy-title">Privacy Protected</div>
     <div class="privacy-sub">Screenshots, printing and app previews are hidden for your private chats.</div>
   </div>
@@ -5141,7 +5085,7 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 
 <div id="netStatusBanner">Connecting...</div>
 <div id="pullRefreshIndicator"><span class="pull-spinner"></span><span id="pullRefreshText">Pull to refresh</span></div>
-<div id="appInactiveShield"><div class="shield-card"><div style="font-size:34px;margin-bottom:8px;">ðŸ”’</div><div style="font-weight:900;font-size:18px;">RickyY Chat protected</div><div style="font-size:12px;color:#cbd5e1;margin-top:4px;">App preview hidden for privacy</div></div></div>
+<div id="appInactiveShield"><div class="shield-card"><div style="font-size:34px;margin-bottom:8px;">🔒</div><div style="font-weight:900;font-size:18px;">RickyY Chat protected</div><div style="font-size:12px;color:#cbd5e1;margin-top:4px;">App preview hidden for privacy</div></div></div>
 
 <div id="appSplash" class="app-splash">
   <div class="app-splash-card">
@@ -5164,13 +5108,13 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 <div class="sidebar-header">
 <div class="logo">RickyY Chat</div>
 <div class="header-buttons clean-main-header">
-<button id="adminBtn" onclick="openAdminPanel()" style="display:none;" title="Admin Controls">ðŸ›¡ï¸</button>
-<button id="themeToggleBtn" type="button" onclick="toggleHeaderTheme()" title="Theme">ðŸŒ™</button>
-<button id="mainMenuBtn" onclick="openMenu()" title="Menu">â‹®</button>
+<button id="adminBtn" onclick="openAdminPanel()" style="display:none;" title="Admin Controls">🛡️</button>
+<button id="themeToggleBtn" type="button" onclick="toggleHeaderTheme()" title="Theme">🌙</button>
+<button id="mainMenuBtn" onclick="openMenu()" title="Menu">⋮</button>
 </div>
 </div>
 <div id="mainMenuPop" class="main-menu-pop">
-  <button type="button" onclick="openProfileFromMenu()">âš™ï¸ <span>Settings</span></button>
+  <button type="button" onclick="openProfileFromMenu()">⚙️ <span>Settings</span></button>
 </div>
 <div class="status-panel">
 <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -5198,26 +5142,26 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 </div>
 <div class="chat">
 <div class="chat-header">
-<span class="back-btn" onclick="goBack()" style="display:none;">â¬…</span>
+<span class="back-btn" onclick="goBack()" style="display:none;">⬅</span>
 <img id="chatDp" onclick="openChatDpPreview()" onerror="this.src='/default.png'" src="/default.png"/>
 <div class="chat-info">
 <div class="name" id="chatName">Select a chat</div>
 <div class="typing" id="typing"></div>
 </div>
 <div class="header-icons">
-<span onclick="toggleMessageSearch()" title="Search">ðŸ”Ž</span>
-<span onclick="openGallery()" title="Gallery">ðŸ–¼ï¸</span>
-<span id="voiceCallBtn" title="Voice Call">ðŸ“ž</span>
-<span id="videoCallBtn" title="Video Call">ðŸŽ¥</span>
+<span onclick="toggleMessageSearch()" title="Search">🔎</span>
+<span onclick="openGallery()" title="Gallery">🖼️</span>
+<span id="voiceCallBtn" title="Voice Call">📞</span>
+<span id="videoCallBtn" title="Video Call">🎥</span>
 
-<span id="chatMenuBtn" onclick="toggleChatMenu()" title="Menu">â‹®</span>
+<span id="chatMenuBtn" onclick="toggleChatMenu()" title="Menu">⋮</span>
 </div>
 </div>
 <div class="search-panel" id="messageSearchPanel">
 <div class="search-panel-top">
 <input id="messageSearchInput" onkeydown="if(event.key==='Enter') runMessageSearch()" placeholder="Search messages in current chat..."/>
 <button class="small-btn" onclick="runMessageSearch()">Search</button>
-<button class="gray-btn" onclick="closeMessageSearch()">âœ•</button>
+<button class="gray-btn" onclick="closeMessageSearch()">✕</button>
 </div>
 <div class="search-results" id="messageSearchResults">
 <div style="padding:14px;color:gray;">Search current chat or current group</div>
@@ -5236,83 +5180,83 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
   overflow:hidden;
   ">
 <button onclick="openChatWallpaperModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">
-  ðŸ–¼ï¸ Change Wallpaper
+  🖼️ Change Wallpaper
 </button>
-<button id="blockBtn" onclick="blockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸš« Block</button>
-<button id="unblockBtn" onclick="unblockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">âœ… Unblock</button>
-<button id="muteBtn" onclick="muteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ”‡ Mute</button>
-<button id="unmuteBtn" onclick="unmuteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">ðŸ”Š Unmute</button>
-<button onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ“‚ Blocked Users</button>
-<button onclick="openCallHistoryPage()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ“ž Call History</button>
-<button id="hideChatBtn" onclick="toggleHideCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ™ˆ Hide Chat</button>
-<button id="favoriteChatBtn" onclick="toggleCurrentChatFavorite()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">â­ Add to Favourite</button>
-<button onclick="openPrivacyControlsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ›¡ Privacy Controls</button>
-<button onclick="openSavedMediaModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">â­ Saved Media</button>
-<button id="disappearBtn" onclick="openDisappearSettingsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">â³ Disappearing Messages</button>
-<button onclick="openScheduledQueueModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ—“ Scheduled Messages</button>
+<button id="blockBtn" onclick="blockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🚫 Block</button>
+<button id="unblockBtn" onclick="unblockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">✅ Unblock</button>
+<button id="muteBtn" onclick="muteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🔇 Mute</button>
+<button id="unmuteBtn" onclick="unmuteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">🔊 Unmute</button>
+<button onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📂 Blocked Users</button>
+<button onclick="openCallHistoryPage()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📞 Call History</button>
+<button id="hideChatBtn" onclick="toggleHideCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🙈 Hide Chat</button>
+<button id="favoriteChatBtn" onclick="toggleCurrentChatFavorite()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⭐ Add to Favourite</button>
+<button onclick="openPrivacyControlsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🛡 Privacy Controls</button>
+<button onclick="openSavedMediaModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⭐ Saved Media</button>
+<button id="disappearBtn" onclick="openDisappearSettingsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⏳ Disappearing Messages</button>
+<button onclick="openScheduledQueueModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🗓 Scheduled Messages</button>
 <div class="menu-divider"></div>
-<button onclick="clearCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ§¹ Clear Chat</button>
-<button onclick="exportCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">ðŸ“¤ Export Chat</button>
+<button onclick="clearCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🧹 Clear Chat</button>
+<button onclick="exportCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📤 Export Chat</button>
 </div>
 <div class="no-chat-screen" id="noChat">
     Select a chat to start messaging
   </div>
 <div class="messages" id="messages" style="display:none;"></div>
 <div class="input-area" id="inputArea" style="display:none;">
-<button class="attach-btn" onclick="toggleAttachMenu(event)" title="Attach">ðŸ“Ž</button>
+<button class="attach-btn" onclick="toggleAttachMenu(event)" title="Attach">📎</button>
 <div id="attachMenu" class="attach-menu" style="display:none;">
-  <button type="button" onclick="openCameraFromAttach()"><span>ðŸ“·</span><strong>Camera</strong></button>
-  <button type="button" onclick="openGalleryPicker()"><span>ðŸ–¼ï¸</span><strong>Gallery</strong></button>
-  <button type="button" onclick="openDocumentPicker()"><span>ðŸ“„</span><strong>Document</strong></button>
+  <button type="button" onclick="openCameraFromAttach()"><span>📷</span><strong>Camera</strong></button>
+  <button type="button" onclick="openGalleryPicker()"><span>🖼️</span><strong>Gallery</strong></button>
+  <button type="button" onclick="openDocumentPicker()"><span>📄</span><strong>Document</strong></button>
 </div>
 <input accept="image/*,video/*,audio/*,.pdf,.doc,.docx,.ppt,.pptx,.xls,.xlsx,.zip,.rar,.txt" hidden="" id="fileInput" type="file"/>
 <div id="replyBox" style="display:none;position:absolute;left:50px;right:176px;bottom:80px;background:#fff;border-radius:12px;padding:10px;border-left:5px solid #25d366;box-shadow:0 1px 8px rgba(0,0,0,0.15);">
 <div style="display:flex;justify-content:space-between;align-items:center;">
 <div id="replyToName" style="font-weight:700;font-size:13px;"></div>
-<button onclick="cancelReply()" style="border:none;background:none;font-size:18px;cursor:pointer;">âœ•</button>
+<button onclick="cancelReply()" style="border:none;background:none;font-size:18px;cursor:pointer;">✕</button>
 </div>
 <div id="replyToText" style="font-size:13px;color:gray;margin-top:4px;"></div>
 </div>
 <input id="msg" placeholder="Type a message..."/>
-<button class="schedule-btn" onclick="openScheduleMessageModal()" title="Schedule message">â°</button>
+<button class="schedule-btn" onclick="openScheduleMessageModal()" title="Schedule message">⏰</button>
 <button class="send-btn" onclick="send()">Send</button>
 </div>
 </div>
 </div>
 <div class="media-viewer" id="mediaViewer" style="display:none;">
-<span onclick="closeViewer()">âœ•</span>
+<span onclick="closeViewer()">✕</span>
 <div id="viewerContent"></div>
 </div>
 <div class="gallery-modal" id="galleryModal">
 <div class="gallery-box">
 <div class="gallery-top">
 <span id="galleryTitle">Gallery</span>
-<span class="gallery-close" onclick="closeGallery()">âœ•</span>
+<span class="gallery-close" onclick="closeGallery()">✕</span>
 </div>
 <div class="gallery-tabs" id="galleryTabs">
 <div class="gallery-tab-indicator" id="galleryTabIndicator"></div>
 <button class="tab active" id="tabMedia" onclick="setGalleryTab('media')">
-<span class="tab-icon">ðŸ–¼ï¸</span>
+<span class="tab-icon">🖼️</span>
 <span class="tab-label">Media</span>
 </button>
 <button class="tab" id="tabLinks" onclick="setGalleryTab('links')">
-<span class="tab-icon">ðŸ”—</span>
+<span class="tab-icon">🔗</span>
 <span class="tab-label">Links</span>
 </button>
 <button class="tab" id="tabDocs" onclick="setGalleryTab('docs')">
-<span class="tab-icon">ðŸ“„</span>
+<span class="tab-icon">📄</span>
 <span class="tab-label">Docs</span>
 </button>
 </div>
 <div class="gallery-grid" id="galleryGrid"></div>
 </div>
 </div>
-<div class="recording-pill" id="recPill">Recordingâ€¦ release to send</div>
+<div class="recording-pill" id="recPill">Recording… release to send</div>
 <div class="gallery-modal" id="statusUploadModal">
 <div class="gallery-box" style="height:40%;max-width:520px;">
 <div class="gallery-top">
 <span>Upload Status</span>
-<span class="gallery-close" onclick="closeStatusUploader()">âœ•</span>
+<span class="gallery-close" onclick="closeStatusUploader()">✕</span>
 </div>
 <div style="padding:15px;">
 <input accept="image/*,video/*" id="statusFile" type="file"/>
@@ -5329,16 +5273,16 @@ body.rickyy-tab-calls #inlineCallsPanel.show{
 <button id="statusDelBtn" onclick="deleteCurrentStatus()" style="display:none;background:#ff3b30;color:white;border:none;padding:8px 12px;border-radius:10px;cursor:pointer;font-weight:700;">
       Delete
     </button>
-<span class="status-close" onclick="closeStatusViewer()">âœ•</span>
+<span class="status-close" onclick="closeStatusViewer()">✕</span>
 </div>
 <div class="status-tapzone status-left" onclick="prevStatus()"></div>
 <div class="status-tapzone status-right" onclick="nextStatus()"></div>
 <div id="statusContent"></div>
 <div id="statusReactions" style="position:absolute;bottom:110px;display:flex;gap:14px;color:white;font-size:24px;">
-<span onclick="reactStatus('â¤ï¸')">â¤ï¸</span>
-<span onclick="reactStatus('ðŸ˜‚')">ðŸ˜‚</span>
-<span onclick="reactStatus('ðŸ”¥')">ðŸ”¥</span>
-<span onclick="reactStatus('ðŸ‘')">ðŸ‘</span>
+<span onclick="reactStatus('❤️')">❤️</span>
+<span onclick="reactStatus('😂')">😂</span>
+<span onclick="reactStatus('🔥')">🔥</span>
+<span onclick="reactStatus('👍')">👍</span>
 </div>
 <div id="statusMetaBox" style="
   position:absolute;
@@ -5389,7 +5333,7 @@ z-index:9999;
 <div class="gallery-box" style="max-width:520px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Edit Group</span>
-<span class="gallery-close" onclick="closeEditGroupModal()">âœ•</span>
+<span class="gallery-close" onclick="closeEditGroupModal()">✕</span>
 </div>
 <div style="padding:16px;overflow:auto;">
 <input id="editGroupNameInput" placeholder="Group name" style="width:100%;padding:12px;border:1px solid #ddd;border-radius:10px;box-sizing:border-box;margin-bottom:12px;"/>
@@ -5405,7 +5349,7 @@ z-index:9999;
 <div class="gallery-box" style="max-width:560px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Manage Members</span>
-<span class="gallery-close" onclick="closeManageMembersModal()">âœ•</span>
+<span class="gallery-close" onclick="closeManageMembersModal()">✕</span>
 </div>
 <div style="padding:16px;overflow:auto;">
 <div style="font-weight:800;margin-bottom:10px;">Current Members</div>
@@ -5991,11 +5935,11 @@ function enforceAppLockIfNeeded(){
 
     box.innerHTML = `
       <div class="phase3-admin-card">
-        <h3>ðŸ“¢ Admin Broadcast</h3>
+        <h3>📢 Admin Broadcast</h3>
         <div style="font-size:13px;color:#64748b;margin-bottom:8px;">
           Approved users andariki notification + in-app alert send avuthundhi.
         </div>
-        <input id="broadcastTitle" maxlength="120" placeholder="Title" value="ðŸ“¢ Admin Broadcast">
+        <input id="broadcastTitle" maxlength="120" placeholder="Title" value="📢 Admin Broadcast">
         <textarea id="broadcastText" maxlength="2000" placeholder="Message to all users..."></textarea>
         <div class="phase3-admin-actions">
           <button onclick="sendAdminBroadcast()">Send Broadcast</button>
@@ -6006,7 +5950,7 @@ function enforceAppLockIfNeeded(){
   }
 
   async function sendAdminBroadcast(){
-    const title = document.getElementById("broadcastTitle")?.value.trim() || "ðŸ“¢ Admin Broadcast";
+    const title = document.getElementById("broadcastTitle")?.value.trim() || "📢 Admin Broadcast";
     const text = document.getElementById("broadcastText")?.value.trim() || "";
     const result = document.getElementById("broadcastResult");
 
@@ -6035,7 +5979,7 @@ function enforceAppLockIfNeeded(){
         return;
       }
 
-      if(result) result.innerHTML = `<span style="color:#10b981;">Broadcast sent to ${data.sent || 0} users âœ…</span>`;
+      if(result) result.innerHTML = `<span style="color:#10b981;">Broadcast sent to ${data.sent || 0} users ✅</span>`;
       document.getElementById("broadcastText").value = "";
     }catch(err){
       if(result) result.innerHTML = `<span style="color:#ef4444;">Server error</span>`;
@@ -6069,7 +6013,7 @@ function enforceAppLockIfNeeded(){
 
       box.innerHTML = `
         <div class="phase3-admin-card">
-          <h3>ðŸ§¾ Activity Logs</h3>
+          <h3>🧾 Activity Logs</h3>
           <button class="phase3-btn gray" onclick="loadAdminActivityLogs()">Refresh</button>
         </div>
         ${logs.map(log => `
@@ -6077,8 +6021,8 @@ function enforceAppLockIfNeeded(){
             <div class="phase3-log-title">${adminEscape(log.type || "activity")}</div>
             <div>${adminEscape(log.text || "")}</div>
             <div class="phase3-log-meta">
-              Actor: <b>${adminEscape(log.actor || "-")}</b> â€¢
-              Target: <b>${adminEscape(log.target || "-")}</b> â€¢
+              Actor: <b>${adminEscape(log.actor || "-")}</b> •
+              Target: <b>${adminEscape(log.target || "-")}</b> •
               ${adminEscape(phase3Date(log.createdAt))}
             </div>
           </div>
@@ -6111,7 +6055,7 @@ function enforceAppLockIfNeeded(){
 
       box.innerHTML = `
         <div class="phase3-admin-card">
-          <h3>ðŸš© User Reports</h3>
+          <h3>🚩 User Reports</h3>
           <select onchange="loadAdminReports(this.value)">
             <option value="all" ${status === "all" ? "selected" : ""}>All</option>
             <option value="open" ${status === "open" ? "selected" : ""}>Open</option>
@@ -6124,14 +6068,14 @@ function enforceAppLockIfNeeded(){
         ${reports.length ? reports.map(r => `
           <div class="phase3-report-row">
             <div class="phase3-report-title">
-              ðŸš© ${adminEscape(r.reporter)} reported ${adminEscape(r.reportedUser || "-")}
+              🚩 ${adminEscape(r.reporter)} reported ${adminEscape(r.reportedUser || "-")}
               <span class="phase3-status-pill ${adminEscape(r.status)}">${adminEscape(r.status)}</span>
             </div>
             <div style="margin:6px 0;"><b>Reason:</b> ${adminEscape(r.reason)}</div>
             <div style="margin:6px 0;"><b>Message:</b> ${adminEscape(r.messageText || "")}</div>
             <div class="phase3-report-meta">
-              Type: ${adminEscape(r.chatType || "-")} â€¢
-              Peer/Group: ${adminEscape(r.peer || r.groupId || "-")} â€¢
+              Type: ${adminEscape(r.chatType || "-")} •
+              Peer/Group: ${adminEscape(r.peer || r.groupId || "-")} •
               ${adminEscape(phase3Date(r.createdAt))}
             </div>
             <div class="phase3-admin-actions">
@@ -6338,7 +6282,7 @@ function enforceAppLockIfNeeded(){
   }
 
   function getRoleBadge(role = ""){
-    return role === "admin" ? `<span class="name-badge">ðŸ‘‘</span>` : "";
+    return role === "admin" ? `<span class="name-badge">👑</span>` : "";
   }
 
   function getRichNameTextOnly(name = "", role = ""){
@@ -6358,10 +6302,10 @@ function enforceAppLockIfNeeded(){
     const senderPrefix = last.from === me ? "You: " : `${last.from}: `;
 
     if(last.text) return senderPrefix + last.text;
-    if(last.fileType === "image") return senderPrefix + "ðŸ“· Photo";
-    if(last.fileType === "video") return senderPrefix + "ðŸŽ¥ Video";
-    if(last.fileType === "audio") return senderPrefix + "ðŸŽ¤ Voice message";
-    if(last.fileType === "doc" || last.fileType === "file") return senderPrefix + "ðŸ“„ Document";
+    if(last.fileType === "image") return senderPrefix + "📷 Photo";
+    if(last.fileType === "video") return senderPrefix + "🎥 Video";
+    if(last.fileType === "audio") return senderPrefix + "🎤 Voice message";
+    if(last.fileType === "doc" || last.fileType === "file") return senderPrefix + "📄 Document";
     return "Message";
   }
   function setUserTypingState(username, isTyping){
@@ -6382,7 +6326,7 @@ function getUserListBottomText(u){
   }
 
   const preview = getPrivatePreview(u.name);
-  return preview + (u.muted ? " â€¢ muted" : "");
+  return preview + (u.muted ? " • muted" : "");
 }
   function getRightSeenText(u){
     if(u.online) return "online";
@@ -6652,8 +6596,8 @@ function getUserListBottomText(u){
     const titleEl = document.getElementById("chatWallpaperTitle");
     if(titleEl){
       titleEl.innerText = currentChat
-        ? `Change Wallpaper â€¢ ${currentChat}`
-        : `Change Wallpaper â€¢ Group`;
+        ? `Change Wallpaper • ${currentChat}`
+        : `Change Wallpaper • Group`;
     }
 
     document.getElementById("chatWallpaperModal").style.display = "flex";
@@ -6678,10 +6622,10 @@ function getUserListBottomText(u){
 
   function getMessagePreview(m){
     if(m.text) return m.text;
-    if(m.fileType === "image") return "ðŸ“· Photo";
-    if(m.fileType === "video") return "ðŸŽ¥ Video";
-    if(m.fileType === "audio") return "ðŸŽ¤ Voice message";
-    if(m.fileType === "doc" || m.fileType === "file") return "ðŸ“„ Document";
+    if(m.fileType === "image") return "📷 Photo";
+    if(m.fileType === "video") return "🎥 Video";
+    if(m.fileType === "audio") return "🎤 Voice message";
+    if(m.fileType === "doc" || m.fileType === "file") return "📄 Document";
     return "Message";
   }
 
@@ -6909,9 +6853,9 @@ function getUserListBottomText(u){
 
     const permission = await Notification.requestPermission();
     if (permission === "granted") {
-      alert("Notifications enabled âœ…");
+      alert("Notifications enabled ✅");
     } else {
-      alert("Notifications are blocked âŒ");
+      alert("Notifications are blocked ❌");
     }
   }
 
@@ -6950,8 +6894,8 @@ function getUserListBottomText(u){
       if(Notification.permission !== "granted") return;
 
       const title = type === "video"
-        ? "ðŸ“¹ Incoming video call"
-        : "ðŸ“ž Incoming voice call";
+        ? "📹 Incoming video call"
+        : "📞 Incoming voice call";
 
       const body = `${from} is calling you`;
       const url = `/chat.html?user=${encodeURIComponent(from)}`;
@@ -7089,10 +7033,10 @@ function getUserListBottomText(u){
     if(!last) return "No messages yet";
 
     if(last.text) return `${last.from}: ${last.text}`;
-    if(last.fileType === "image") return `${last.from}: ðŸ“· Photo`;
-    if(last.fileType === "video") return `${last.from}: ðŸŽ¥ Video`;
-    if(last.fileType === "audio") return `${last.from}: ðŸŽ¤ Voice message`;
-    if(last.fileType === "doc" || last.fileType === "file") return `${last.from}: ðŸ“„ Document`;
+    if(last.fileType === "image") return `${last.from}: 📷 Photo`;
+    if(last.fileType === "video") return `${last.from}: 🎥 Video`;
+    if(last.fileType === "audio") return `${last.from}: 🎤 Voice message`;
+    if(last.fileType === "doc" || last.fileType === "file") return `${last.from}: 📄 Document`;
     return "No messages yet";
   }
 
@@ -7119,12 +7063,12 @@ function getUserListBottomText(u){
         <div class="group-row-left">
           <img src="${g.dp || '/default-group.png'}" onerror="this.src='/default-group.png'">
           <div class="group-row-text">
-            <div class="group-row-name">ðŸ‘¥ ${escapeHtml(g.name)}</div>
+            <div class="group-row-name">👥 ${escapeHtml(g.name)}</div>
             <div class="group-row-preview">${escapeHtml(preview)}</div>
           </div>
         </div>
         <div style="display:flex;align-items:center;gap:8px;">
-          ${isMutedGroup ? `<span class="mute-chat-icon" title="Group notifications muted">ðŸ”•</span>` : ""}
+          ${isMutedGroup ? `<span class="mute-chat-icon" title="Group notifications muted">🔕</span>` : ""}
           ${unreadCount ? `<span class="badge">${unreadCount}</span>` : ""}
         </div>
       `;
@@ -7195,8 +7139,8 @@ function getUserListBottomText(u){
 
     showToast(
       mutedNow
-        ? `Group notifications muted ðŸ”•`
-        : `Group notifications unmuted ðŸ””`,
+        ? `Group notifications muted 🔕`
+        : `Group notifications unmuted 🔔`,
       mutedNow ? "warning" : "success"
     );
   }
@@ -7304,7 +7248,7 @@ function getUserListBottomText(u){
       if(data && data.ok){
         closeGroupPopup();
         await loadGroups();
-        showToast("Group created âœ…", "success");
+        showToast("Group created ✅", "success");
       }else{
         showToast((data && data.msg) || "Group create failed", "error");
       }
@@ -7352,13 +7296,13 @@ function getUserListBottomText(u){
     updateFavoriteChatButton();
     updateFavoriteChatButton();
 
-    document.getElementById("chatName").innerText = "ðŸ‘¥ " + group.name;
+    document.getElementById("chatName").innerText = "👥 " + group.name;
     document.getElementById("chatName").onclick = () => openGroupInfo(group._id);
     document.getElementById("chatDp").onclick = () => openGroupInfo(group._id);
     document.getElementById("chatDp").src = group.dp || "/default-group.png";
 
     const adminCount = Array.isArray(group.admins) ? group.admins.length : 1;
-    document.getElementById("typing").innerText = `${group.members.length} members â€¢ ${adminCount} admin${adminCount > 1 ? "s" : ""}`;
+    document.getElementById("typing").innerText = `${group.members.length} members • ${adminCount} admin${adminCount > 1 ? "s" : ""}`;
 
     document.getElementById("messages").innerHTML = "";
     currentHistory = [];
@@ -7497,12 +7441,12 @@ function getUserListBottomText(u){
 
     try{
       await navigator.clipboard.writeText(code);
-      showToast("Invite code copied âœ…", "success");
+      showToast("Invite code copied ✅", "success");
     }catch(err){
       console.log(err);
       input.select();
       document.execCommand("copy");
-      showToast("Invite code copied âœ…", "success");
+      showToast("Invite code copied ✅", "success");
     }
   }
 
@@ -7531,7 +7475,7 @@ function getUserListBottomText(u){
       currentGroupInfoData = data.group;
       document.getElementById("groupInviteCodeInput").value = data.inviteCode || "";
       await loadGroups();
-      showToast("Invite code regenerated âœ…", "success");
+      showToast("Invite code regenerated ✅", "success");
     }catch(err){
       console.log(err);
       showToast("Server error", "error");
@@ -7732,12 +7676,12 @@ function getUserListBottomText(u){
       if(currentGroup === groupId){
         const refreshed = groups.find(g => g._id === groupId);
         if(refreshed){
-          document.getElementById("chatName").innerText = "ðŸ‘¥ " + refreshed.name;
+          document.getElementById("chatName").innerText = "👥 " + refreshed.name;
           document.getElementById("chatDp").src = refreshed.dp || "/default-group.png";
         }
       }
 
-      alert("Group updated âœ…");
+      alert("Group updated ✅");
     }catch(err){
       console.log(err);
       alert("Server error");
@@ -7858,7 +7802,7 @@ function getUserListBottomText(u){
       closeManageMembersModal();
       await loadGroups();
       await openGroupInfo(currentGroupInfoData._id);
-      showToast("Members added âœ…", "success");
+      showToast("Members added ✅", "success");
     }catch(err){
       console.log(err);
       showToast("Server error", "error");
@@ -8008,7 +7952,7 @@ function getUserListBottomText(u){
     box.innerHTML = results.map((m) => `
       <div class="search-item" onclick="jumpToMessageResult(${m.__index}, '${q.replace(/'/g, "\\'")}')">
         <div class="search-item-text">${highlightText(getMessagePreview(m), q)}</div>
-        <div class="search-item-meta">${escapeHtml(m.from || "")} â€¢ ${escapeHtml(m.time || "")}</div>
+        <div class="search-item-meta">${escapeHtml(m.from || "")} • ${escapeHtml(m.time || "")}</div>
       </div>
     `).join("");
   }
@@ -8253,24 +8197,24 @@ function getUserListBottomText(u){
           <div class="user-avatar-wrap" style="position:relative;">
             <img src="${dp}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}'">
             ${u.online ? `<span class="user-online-dot"></span>` : ""}
-            ${isLockedChat ? `<span title="Chat locked" style="position:absolute;right:-4px;bottom:-4px;background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 6px;font-size:10px;line-height:1;color:#fff;">ðŸ”’</span>` : ""}
+            ${isLockedChat ? `<span title="Chat locked" style="position:absolute;right:-4px;bottom:-4px;background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 6px;font-size:10px;line-height:1;color:#fff;">🔒</span>` : ""}
           </div>
 
           <div class="user-info">
             <div class="user-top">
               <div class="user-name">
                 ${getRichNameTextOnly(u.name, u.role || "")}
-                ${isHiddenChat ? `<span class="hidden-chat-chip" title="Hidden chat">ðŸ™ˆ</span>` : ""}
+                ${isHiddenChat ? `<span class="hidden-chat-chip" title="Hidden chat">🙈</span>` : ""}
               </div>
               <div class="user-right-time">${getVisiblePresenceText(u).replace(/^last seen\s*/i,"")}</div>
             </div>
 
             <div class="user-bottom">
               <div class="user-last-message" data-preview-for="${escapeHtml(u.name)}">
-                ${escapeHtml(preview)}${u.muted ? " â€¢ muted" : ""}
+                ${escapeHtml(preview)}${u.muted ? " • muted" : ""}
               </div>
               <div class="user-actions">
-                ${isMutedChat ? `<span class="mute-chat-icon" title="Notifications muted">ðŸ”•</span>` : ""}
+                ${isMutedChat ? `<span class="mute-chat-icon" title="Notifications muted">🔕</span>` : ""}
                 ${count ? `<div class="badge">${count}</div>` : ""}
               </div>
             </div>
@@ -8377,8 +8321,8 @@ function getUserListBottomText(u){
 
     showToast(
       mutedNow
-        ? `${username} notifications muted ðŸ”•`
-        : `${username} notifications unmuted ðŸ””`,
+        ? `${username} notifications muted 🔕`
+        : `${username} notifications unmuted 🔔`,
       mutedNow ? "warning" : "success"
     );
   }
@@ -8412,7 +8356,7 @@ function getUserListBottomText(u){
         <span class="title-main" style="color:hsl(${getNameHue(name)} 78% 74%);">
           ${escapeHtml(name)}
         </span>
-        ${(u && u.role === "admin") ? '<span class="title-crown">ðŸ‘‘</span>' : ''}
+        ${(u && u.role === "admin") ? '<span class="title-crown">👑</span>' : ''}
       </span>
     `;
 
@@ -8457,7 +8401,7 @@ function updateUserPreviewOnly(username){
   const u = usersList.find(x => x.name === username);
   const preview = typingUsers[username]
     ? "typing..."
-    : (getPrivatePreview(username) + ((u && u.muted) ? " â€¢ muted" : ""));
+    : (getPrivatePreview(username) + ((u && u.muted) ? " • muted" : ""));
 
   previewEl.textContent = preview;
 
@@ -8547,7 +8491,7 @@ function setUserTypingState(username, isTyping){
       setUserTypingState(m.from, false);
       }
     if (m.from !== currentUser && !isMuted) {
-      showNotification(m.from, m.text || "ðŸ“Ž Media message", { user: m.from });
+      showNotification(m.from, m.text || "📎 Media message", { user: m.from });
     }
 
     if (m.from !== me) {
@@ -8604,7 +8548,7 @@ function setUserTypingState(username, isTyping){
 
       showNotification(
         "Group message",
-        `${m.from}: ${m.text || "ðŸ“Ž Media"}`,
+        `${m.from}: ${m.text || "📎 Media"}`,
         { group: groupId }
       );
     }
@@ -8767,7 +8711,7 @@ function setUserTypingState(username, isTyping){
       const url = URL.createObjectURL(file);
       content.innerHTML = `<audio src="${url}" controls style="width:100%;"></audio>`;
     } else {
-      content.innerHTML = `<div class="upload-preview-file">ðŸ“„ ${escapeHtml(file.name || "Document")}</div>`;
+      content.innerHTML = `<div class="upload-preview-file">📄 ${escapeHtml(file.name || "Document")}</div>`;
     }
 
     document.getElementById("uploadPreviewModal").style.display = "flex";
@@ -8829,13 +8773,13 @@ function setUserTypingState(username, isTyping){
     if(replyTo.text){
       preview = escapeHtml(replyTo.text);
     }else if(replyTo.fileType === "image"){
-      preview = "ðŸ“· Photo";
+      preview = "📷 Photo";
     }else if(replyTo.fileType === "video"){
-      preview = "ðŸŽ¥ Video";
+      preview = "🎥 Video";
     }else if(replyTo.fileType === "audio"){
-      preview = "ðŸŽ¤ Voice message";
+      preview = "🎤 Voice message";
     }else if(replyTo.fileType === "doc" || replyTo.fileType === "file"){
-      preview = "ðŸ“„ Document";
+      preview = "📄 Document";
     }
 
     return `
@@ -8917,7 +8861,7 @@ function setUserTypingState(username, isTyping){
     const filename = mediaUrl.split("/").pop();
     return `
       <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">ðŸ“„</div>
+        <div style="font-size:22px;">📄</div>
         <div>
           <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
           <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open</a>
@@ -8937,7 +8881,7 @@ function setUserTypingState(username, isTyping){
 
     return `
       <div class="voice-wave-bubble" data-voice-id="${safeId}">
-        <button class="voice-play-btn" type="button" onclick="toggleVoiceWave(event, '${safeId}')">â–¶</button>
+        <button class="voice-play-btn" type="button" onclick="toggleVoiceWave(event, '${safeId}')">▶</button>
         <div class="voice-wave-bars">${bars}</div>
         <div class="voice-time" id="voiceTime_${safeId}">0:00</div>
         <audio id="voiceAudio_${safeId}" src="${mediaUrl}" preload="metadata"
@@ -8976,7 +8920,7 @@ function setUserTypingState(username, isTyping){
     const wrap = document.querySelector(`[data-voice-id="${id}"]`);
     const btn = wrap ? wrap.querySelector(".voice-play-btn") : null;
     if(wrap) wrap.classList.remove("playing");
-    if(btn) btn.textContent = "â–¶";
+    if(btn) btn.textContent = "▶";
     if(audio) audio.currentTime = 0;
     updateVoiceDuration(id);
   };
@@ -8994,7 +8938,7 @@ function setUserTypingState(username, isTyping){
         if(otherWrap){
           otherWrap.classList.remove("playing");
           const b = otherWrap.querySelector(".voice-play-btn");
-          if(b) b.textContent = "â–¶";
+          if(b) b.textContent = "▶";
         }
       }
     });
@@ -9004,14 +8948,14 @@ function setUserTypingState(username, isTyping){
     if(audio.paused){
       audio.play().then(() => {
         wrap.classList.add("playing");
-        if(btn) btn.textContent = "â¸";
+        if(btn) btn.textContent = "⏸";
       }).catch(() => {
         if(typeof showToast === "function") showToast("Audio play failed", "error");
       });
     }else{
       audio.pause();
       wrap.classList.remove("playing");
-      if(btn) btn.textContent = "â–¶";
+      if(btn) btn.textContent = "▶";
     }
   };
 
@@ -9121,7 +9065,7 @@ function setUserTypingState(username, isTyping){
     const menu = document.createElement("div");
     menu.className = "phase2-message-menu";
     const canAdmin = isMainAdmin && isMainAdmin();
-    const title = canAdmin ? "Message actions â€¢ Admin" : "Message actions";
+    const title = canAdmin ? "Message actions • Admin" : "Message actions";
 
     menu.innerHTML = `<div class="menu-title">${title}</div>`;
 
@@ -9138,25 +9082,25 @@ function setUserTypingState(username, isTyping){
       menu.appendChild(btn);
     }
 
-    addBtn("â†©ï¸ Reply", () => {
+    addBtn("↩️ Reply", () => {
       closePhase2MessageMenu();
       if(typeof startReply === "function") startReply(messageObj);
       else if(typeof setReply === "function") setReply(messageObj);
     });
 
-    addBtn("â†ªï¸ Forward", () => {
+    addBtn("↪️ Forward", () => {
       closePhase2MessageMenu();
       if(typeof openForwardMessageModal === "function") openForwardMessageModal(messageObj);
     });
 
     if(getMessagePlainText(messageObj)){
-      addBtn("ðŸ“‹ Copy", () => {
+      addBtn("📋 Copy", () => {
         copyMessageText(messageObj);
         closePhase2MessageMenu();
       });
     }
 
-    addBtn("â­ Star", () => {
+    addBtn("⭐ Star", () => {
       try{
         const key = "rickyyStarredMessages";
         const list = JSON.parse(localStorage.getItem(key) || "[]");
@@ -9175,10 +9119,10 @@ function setUserTypingState(username, isTyping){
       closePhase2MessageMenu();
     });
 
-    addBtn("ðŸš© Report", () => openReportMessageModal(messageObj));
+    addBtn("🚩 Report", () => openReportMessageModal(messageObj));
 
     if(messageObj.from === me && typeof openSeenInfo === "function"){
-      addBtn("â„¹ï¸ Info", () => {
+      addBtn("ℹ️ Info", () => {
         closePhase2MessageMenu();
         openSeenInfo(messageObj._id);
       });
@@ -9186,13 +9130,13 @@ function setUserTypingState(username, isTyping){
 
     if(canAdmin){
       if(messageObj.text && !messageObj.file){
-        addBtn("âœï¸ Admin edit", () => {
+        addBtn("✏️ Admin edit", () => {
           closePhase2MessageMenu();
           adminEditMessagePrompt(messageObj);
         });
       }
 
-      addBtn("ðŸ—‘ Admin delete", () => {
+      addBtn("🗑 Admin delete", () => {
         closePhase2MessageMenu();
         adminDeleteMessageConfirm(messageObj);
       }, "admin-danger");
@@ -9283,9 +9227,9 @@ function showMessage(m, index, scrollToBottom = true){
 
     let ticks = "";
     if(m.from===me){
-      if(m.status==="sent") ticks="âœ“";
-      else if(m.status==="delivered") ticks="âœ“âœ“";
-      else if(m.status==="seen") ticks="<span style='color:#34b7f1'>âœ“âœ“</span>";
+      if(m.status==="sent") ticks="✓";
+      else if(m.status==="delivered") ticks="✓✓";
+      else if(m.status==="seen") ticks="<span style='color:#34b7f1'>✓✓</span>";
     }
 
     let content = "";
@@ -9305,7 +9249,7 @@ function showMessage(m, index, scrollToBottom = true){
     const filename = mediaUrl.split("/").pop();
     content = `
       <div style="display:flex;gap:10px;align-items:center;">
-        <div style="font-size:22px;">ðŸ“„</div>
+        <div style="font-size:22px;">📄</div>
         <div>
           <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
           <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
@@ -9393,7 +9337,7 @@ function showMessage(m, index, scrollToBottom = true){
       const editBtn = document.createElement("button");
       editBtn.className = "edit-btn";
       editBtn.type = "button";
-      editBtn.innerText = "âœï¸ Edit";
+      editBtn.innerText = "✏️ Edit";
       editBtn.onclick = function(e){
         e.preventDefault();
         e.stopPropagation();
@@ -9405,7 +9349,7 @@ function showMessage(m, index, scrollToBottom = true){
     const delBtn = document.createElement("button");
     delBtn.className = "delete-btn";
     delBtn.type = "button";
-    delBtn.innerText = "ðŸ—‘ Delete";
+    delBtn.innerText = "🗑 Delete";
     delBtn.onclick = function(e){
       e.preventDefault();
       e.stopPropagation();
@@ -9583,7 +9527,7 @@ function showMessage(m, index, scrollToBottom = true){
     const forwardBtn = document.createElement("button");
     forwardBtn.type = "button";
     forwardBtn.className = "forward";
-    forwardBtn.innerText = "â†ª Forward";
+    forwardBtn.innerText = "↪ Forward";
     forwardBtn.onclick = function(e){
       e.preventDefault();
       e.stopPropagation();
@@ -9596,7 +9540,7 @@ function showMessage(m, index, scrollToBottom = true){
       const scheduleBtn = document.createElement("button");
       scheduleBtn.type = "button";
       scheduleBtn.className = "schedule";
-      scheduleBtn.innerText = "â° Schedule similar";
+      scheduleBtn.innerText = "⏰ Schedule similar";
       scheduleBtn.onclick = function(e){
         e.preventDefault();
         e.stopPropagation();
@@ -9856,7 +9800,7 @@ function showMessage(m, index, scrollToBottom = true){
       const filename = mediaUrl.split("/").pop();
       content = `
         <div style="display:flex;gap:10px;align-items:center;">
-          <div style="font-size:22px;">ðŸ“„</div>
+          <div style="font-size:22px;">📄</div>
           <div>
             <div style="font-weight:600;max-width:180px;word-break:break-all;">${escapeHtml(filename)}</div>
             <a href="${mediaUrl}" target="_blank" style="color:#075e54;font-size:13px;">Open / Download</a>
@@ -10062,13 +10006,13 @@ function showMessage(m, index, scrollToBottom = true){
     if(msg.text){
       preview = msg.text;
     }else if(msg.fileType === "image"){
-      preview = "ðŸ“· Photo";
+      preview = "📷 Photo";
     }else if(msg.fileType === "video"){
-      preview = "ðŸŽ¥ Video";
+      preview = "🎥 Video";
     }else if(msg.fileType === "audio"){
-      preview = "ðŸŽ¤ Voice message";
+      preview = "🎤 Voice message";
     }else if(msg.fileType === "doc" || msg.fileType === "file"){
-      preview = "ðŸ“„ Document";
+      preview = "📄 Document";
     }
 
     document.getElementById("replyToText").innerText = preview;
@@ -10087,7 +10031,7 @@ function showMessage(m, index, scrollToBottom = true){
 
     if(messageObj.from === me){
       const infoBtn = document.createElement("span");
-      infoBtn.innerText = "ðŸ‘ï¸";
+      infoBtn.innerText = "👁️";
       infoBtn.title = "Message Info";
       infoBtn.onclick = (e) => {
         e.stopPropagation();
@@ -10097,7 +10041,7 @@ function showMessage(m, index, scrollToBottom = true){
       menu.appendChild(infoBtn);
     }
 
-    ["â¤ï¸","ðŸ˜‚","ðŸ”¥","ðŸ‘","ðŸ˜®"].forEach(emoji => {
+    ["❤️","😂","🔥","👍","😮"].forEach(emoji => {
       const span = document.createElement("span");
       span.innerText = emoji;
       span.onclick = (e) => {
@@ -10516,7 +10460,7 @@ socket.on("stop-typing", user => {
     if(disappearBtn){
       if(currentChat || currentGroup){
         disappearBtn.style.display = "block";
-        disappearBtn.innerText = `â³ Disappearing: ${formatDisappearLabel(getDisappearConfig(getCurrentChatPhase3Key()).ms || 0)}`;
+        disappearBtn.innerText = `⏳ Disappearing: ${formatDisappearLabel(getDisappearConfig(getCurrentChatPhase3Key()).ms || 0)}`;
       } else {
         disappearBtn.style.display = "none";
       }
@@ -10686,7 +10630,7 @@ socket.on("stop-typing", user => {
 
     closeScheduleMessageModal();
     renderScheduledQueueList();
-    showToast("Message scheduled â°", "success");
+    showToast("Message scheduled ⏰", "success");
   }
 
   function openScheduledQueueModal(){
@@ -10825,7 +10769,7 @@ socket.on("stop-typing", user => {
 
     renderUsers();
     renderHiddenChatsList();
-    showToast(`${username} chat hidden ðŸ‘€`, "success");
+    showToast(`${username} chat hidden 👀`, "success");
   }
 
   function unhideUserChat(username){
@@ -10848,10 +10792,10 @@ socket.on("stop-typing", user => {
 
     if(hiddenNow){
       unhideUserChat(currentChat);
-      if(btn) btn.innerText = "ðŸ™ˆ Hide Chat";
+      if(btn) btn.innerText = "🙈 Hide Chat";
     }else{
       hideUserChat(currentChat);
-      if(btn) btn.innerText = "ðŸ‘ Unhide Chat";
+      if(btn) btn.innerText = "👁 Unhide Chat";
     }
 
     const menu = document.getElementById("chatAdminMenu");
@@ -11010,7 +10954,7 @@ socket.on("stop-typing", user => {
       appSettings.savedMedia = list.slice(0, 200);
       saveAppSettings();
       renderSavedMediaList();
-      showToast("Saved to media â­", "success");
+      showToast("Saved to media ⭐", "success");
     }
   }
 
@@ -11022,12 +10966,12 @@ socket.on("stop-typing", user => {
 
     const btn = document.createElement("button");
     btn.className = "saved-media-btn" + (isSavedMediaMessage(m) ? " saved" : "");
-    btn.innerText = isSavedMediaMessage(m) ? "â˜… Saved" : "â˜† Save";
+    btn.innerText = isSavedMediaMessage(m) ? "★ Saved" : "☆ Save";
     btn.addEventListener("click", (e) => {
       e.stopPropagation();
       toggleSaveMediaFromMessage(m);
       btn.className = "saved-media-btn" + (isSavedMediaMessage(m) ? " saved" : "");
-      btn.innerText = isSavedMediaMessage(m) ? "â˜… Saved" : "â˜† Save";
+      btn.innerText = isSavedMediaMessage(m) ? "★ Saved" : "☆ Save";
     });
 
     div.appendChild(btn);
@@ -11074,7 +11018,7 @@ socket.on("stop-typing", user => {
       if(item.fileType === "video"){
         return `
           <div class="saved-media-item">
-            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">âœ•</button>
+            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
             <video src="${mediaUrl}" controls muted playsinline preload="metadata"></video>
             <span class="saved-media-tag">${tag}</span>
           </div>
@@ -11084,7 +11028,7 @@ socket.on("stop-typing", user => {
       if(item.fileType === "image"){
         return `
           <div class="saved-media-item">
-            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">âœ•</button>
+            <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
             <img src="${mediaUrl}" alt="saved media" onclick="openViewer('${mediaUrl}','image')" onerror="this.src='/default.png'">
             <span class="saved-media-tag">${tag}</span>
           </div>
@@ -11093,9 +11037,9 @@ socket.on("stop-typing", user => {
 
       return `
         <div class="saved-media-item" style="display:flex;align-items:center;justify-content:center;padding:14px;text-align:center;">
-          <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">âœ•</button>
+          <button class="saved-media-remove" onclick="removeSavedMedia('${String(item.id).replace(/'/g, "\'")}')">✕</button>
           <div>
-            <div style="font-size:34px;">ðŸ“„</div>
+            <div style="font-size:34px;">📄</div>
             <div style="font-size:12px;color:#e5e7eb;word-break:break-word;margin-top:8px;">${escapeHtml((item.file || '').split('/').pop() || 'file')}</div>
             <a href="${mediaUrl}" target="_blank" style="display:inline-block;margin-top:10px;color:#93c5fd;">Open</a>
           </div>
@@ -11174,8 +11118,8 @@ socket.on("stop-typing", user => {
 
     showToast(
       lockedNow
-        ? `${username} chat locked ðŸ”’`
-        : `${username} chat unlocked ðŸ”“`,
+        ? `${username} chat locked 🔒`
+        : `${username} chat unlocked 🔓`,
       lockedNow ? "warning" : "success"
     );
   }
@@ -11251,10 +11195,10 @@ socket.on("stop-typing", user => {
     const prefix = last.from === me ? "You: " : `${last.from}: `;
 
     if(last.text) return prefix + last.text;
-    if(last.fileType === "image") return prefix + "ðŸ“· Photo";
-    if(last.fileType === "video") return prefix + "ðŸŽ¥ Video";
-    if(last.fileType === "audio") return prefix + "ðŸŽ¤ Voice message";
-    if(last.fileType === "doc" || last.fileType === "file") return prefix + "ðŸ“„ Document";
+    if(last.fileType === "image") return prefix + "📷 Photo";
+    if(last.fileType === "video") return prefix + "🎥 Video";
+    if(last.fileType === "audio") return prefix + "🎤 Voice message";
+    if(last.fileType === "doc" || last.fileType === "file") return prefix + "📄 Document";
     return "No messages yet";
   }
 
@@ -11591,7 +11535,7 @@ socket.on("stop-typing", user => {
   }
   function openGallery(){
     if(!currentChat && !currentGroup) return;
-    document.getElementById("galleryTitle").innerText = (currentChat || "Group") + " â€¢ Gallery";
+    document.getElementById("galleryTitle").innerText = (currentChat || "Group") + " • Gallery";
     currentGalleryTab = "media";
     setActiveTab("media");
     renderGallery("media");
@@ -11898,7 +11842,7 @@ socket.on("stop-typing", user => {
   }
 
   function getRoleBadge(role = ""){
-    return role === "admin" ? `<span class="name-badge">ðŸ‘‘</span>` : "";
+    return role === "admin" ? `<span class="name-badge">👑</span>` : "";
   }
 
   function getRichNameTextOnly(name = "", role = ""){
@@ -11937,10 +11881,10 @@ socket.on("stop-typing", user => {
         return;
       }
 
-      document.getElementById("statusMsg").innerText = "Uploaded âœ…";
+      document.getElementById("statusMsg").innerText = "Uploaded ✅";
       closeStatusUploader();
       await loadStatuses();
-      showToast("Status uploaded âœ…", "success");
+      showToast("Status uploaded ✅", "success");
     }catch(err){
       console.log("UPLOAD STATUS ERROR:", err);
       document.getElementById("statusMsg").innerText = "Upload error";
@@ -12004,7 +11948,7 @@ socket.on("stop-typing", user => {
     viewersListEl.innerHTML = viewers.map(viewerName => {
       const foundReaction = reactions.find(r => r.user === viewerName);
       const emoji = foundReaction ? ` ${foundReaction.emoji}` : "";
-      return `<div style="color:#ddd;line-height:1.8;">â€¢ ${escapeHtml(viewerName)}${escapeHtml(emoji)}</div>`;
+      return `<div style="color:#ddd;line-height:1.8;">• ${escapeHtml(viewerName)}${escapeHtml(emoji)}</div>`;
     }).join("");
   }
 
@@ -12203,7 +12147,7 @@ socket.on("stop-typing", user => {
       body:JSON.stringify({ statusId: status._id, user: me, emoji })
     }).catch(()=>{});
 
-    document.getElementById("statusReply").placeholder = "Reaction sent " + emoji + " âœ…";
+    document.getElementById("statusReply").placeholder = "Reaction sent " + emoji + " ✅";
     setTimeout(()=>{
       document.getElementById("statusReply").placeholder = "Reply to status...";
     }, 1200);
@@ -12727,7 +12671,7 @@ socket.on("stop-typing", user => {
 
       if(document.hidden || !document.hasFocus()){
         showNotification(
-          groupCallType === "video" ? "ðŸ“¹ Incoming group video call" : "ðŸ“ž Incoming group voice call",
+          groupCallType === "video" ? "📹 Incoming group video call" : "📞 Incoming group voice call",
           `${data.from} is calling in ${data.groupName || "Group"}`,
           { group: data.groupId }
         );
@@ -12739,8 +12683,8 @@ socket.on("stop-typing", user => {
       if(incomingType){
         incomingType.innerText =
           groupCallType === "video"
-            ? `Incoming group video call â€¢ ${data.groupName || "Group"}`
-            : `Incoming group voice call â€¢ ${data.groupName || "Group"}`;
+            ? `Incoming group video call • ${data.groupName || "Group"}`
+            : `Incoming group voice call • ${data.groupName || "Group"}`;
       }
 
       setCallUI({
@@ -12867,7 +12811,7 @@ socket.on("stop-typing", user => {
 
     setCallUI({
       title: from,
-      sub: "Ringingâ€¦",
+      sub: "Ringing…",
       showAccept: true,
       showInCallControls: false
     });
@@ -13052,7 +12996,7 @@ socket.on("stop-typing", user => {
 
       setCallUI({
         title: callPeer,
-        sub: "Connectingâ€¦",
+        sub: "Connecting…",
         showAccept: false,
         showInCallControls: false
       });
@@ -13240,7 +13184,7 @@ socket.on("stop-typing", user => {
     const incomingType = document.getElementById("incomingType");
 
     if(titleEl) titleEl.innerText = "Incoming call";
-    if(subEl) subEl.innerText = "Ringingâ€¦";
+    if(subEl) subEl.innerText = "Ringing…";
     if(incomingName) incomingName.innerText = "Caller";
     if(incomingType) incomingType.innerText = "Incoming call";
 
@@ -13627,7 +13571,7 @@ socket.on("stop-typing", user => {
 
   function getRoleBadge(role = ""){
     if(role === "admin"){
-      return `<span class="name-badge" title="Admin">ðŸ‘‘</span>`;
+      return `<span class="name-badge" title="Admin">👑</span>`;
     }
     return "";
   }
@@ -13862,13 +13806,13 @@ socket.on("stop-typing", user => {
     const sessionRows = sessions.length ? sessions.map(s => `
       <div class="admin-device-row">
         <div class="admin-device-title">
-          <span>ðŸ“± ${escapeHtml(s.deviceName || "Unknown device")}</span>
+          <span>📱 ${escapeHtml(s.deviceName || "Unknown device")}</span>
           <span style="color:${(s.active || s.current) ? "#059669" : "#64748b"}">${escapeHtml(sessionStatusText(s))}</span>
         </div>
         <div class="admin-device-meta">
-          Browser: ${escapeHtml(s.browserName || "-")} â€¢ OS: ${escapeHtml(s.osName || "-")}<br>
+          Browser: ${escapeHtml(s.browserName || "-")} • OS: ${escapeHtml(s.osName || "-")}<br>
           IP: ${escapeHtml(s.ip || "-")}<br>
-          Login: ${escapeHtml(formatAdminTime(s.loginAt))} â€¢ Last active: ${escapeHtml(formatAdminTime(s.lastActiveAt))}
+          Login: ${escapeHtml(formatAdminTime(s.loginAt))} • Last active: ${escapeHtml(formatAdminTime(s.lastActiveAt))}
         </div>
         <div class="admin-device-actions">
           ${user.name !== "shravan" && (s.active || s.current) ? `<button class="admin-force-btn" onclick="forceLogoutSession('${encodeURIComponent(user.name)}','${encodeURIComponent(s.sessionId || "")}')">Force logout device</button>` : ""}
@@ -13883,7 +13827,7 @@ socket.on("stop-typing", user => {
           <div style="flex:1;min-width:0;">
             <div class="admin-session-name">${escapeHtml(user.name || "Unknown")}</div>
             <div class="admin-session-status ${user.online ? "online" : ""}">
-              ${user.online ? "ðŸŸ¢ Online" : "âšª Offline"} â€¢ sockets: ${Number(user.socketCount || 0)}
+              ${user.online ? "🟢 Online" : "⚪ Offline"} • sockets: ${Number(user.socketCount || 0)}
             </div>
           </div>
           ${user.name !== "shravan" ? `<button class="admin-force-btn" onclick="forceLogoutUser('${encodeURIComponent(user.name)}')">Force logout all</button>` : ""}
@@ -14126,7 +14070,7 @@ socket.on("stop-typing", user => {
         if(unmuteBtn) unmuteBtn.style.display = targetUser.muted ? "block" : "none";
         if(hideChatBtn){
           hideChatBtn.style.display = "block";
-          hideChatBtn.innerText = isChatHidden(currentChat) ? "ðŸ‘ Unhide Chat" : "ðŸ™ˆ Hide Chat";
+          hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
         }
       }
     } else {
@@ -14136,7 +14080,7 @@ socket.on("stop-typing", user => {
       if(unmuteBtn) unmuteBtn.style.display = "none";
       if(hideChatBtn){
         hideChatBtn.style.display = "block";
-        hideChatBtn.innerText = isChatHidden(currentChat) ? "ðŸ‘ Unhide Chat" : "ðŸ™ˆ Hide Chat";
+        hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
       }
     }
 
@@ -14206,7 +14150,7 @@ socket.on("stop-typing", user => {
       if(input) input.value = "";
 
       await loadGroups();
-      showToast("Joined group successfully âœ…", "success");
+      showToast("Joined group successfully ✅", "success");
 
       if(data.group){
         openGroup(data.group);
@@ -14441,10 +14385,10 @@ window.addEventListener("load", () => {
     const popup = document.getElementById("centerPopup");
     if(!wrap || !popup) return;
 
-    let icon = "â„¹ï¸";
-    if(type === "success") icon = "âœ…";
-    if(type === "error") icon = "âŒ";
-    if(type === "warning") icon = "âš ï¸";
+    let icon = "ℹ️";
+    if(type === "success") icon = "✅";
+    if(type === "error") icon = "❌";
+    if(type === "warning") icon = "⚠️";
 
     clearTimeout(centerPopupTimer);
 
@@ -14699,7 +14643,7 @@ function openProfileFromMenu(){
 function updateThemeButton(){
   const btn = document.getElementById("themeToggleBtn");
   if(!btn) return;
-  btn.textContent = appSettings.theme === "dark" ? "â˜€ï¸" : "ðŸŒ™";
+  btn.textContent = appSettings.theme === "dark" ? "☀️" : "🌙";
   btn.title = appSettings.theme === "dark" ? "Light mode" : "Dark mode";
 }
 
@@ -14759,7 +14703,7 @@ function updateFavoriteChatButton(){
   if(!btn) return;
   const key = currentChatFavoriteKey();
   const exists = key && isFavoriteKey(key);
-  btn.innerHTML = exists ? "â­ Remove Favourite" : "â­ Add to Favourite";
+  btn.innerHTML = exists ? "⭐ Remove Favourite" : "⭐ Add to Favourite";
 }
 
 function setChatListFilter(type){
@@ -14905,7 +14849,7 @@ if(document.readyState === "loading"){
 </div>
 <div style="flex:1;">
 <div id="callTitle" style="font-weight:800;font-size:18px;line-height:1.2;">Incoming call</div>
-<div id="callSub" style="margin-top:4px;font-size:13px;color:rgba(255,255,255,0.72);">Ringingâ€¦</div>
+<div id="callSub" style="margin-top:4px;font-size:13px;color:rgba(255,255,255,0.72);">Ringing…</div>
 <div id="callTimer" style="margin-top:6px;font-size:13px;color:rgba(255,255,255,0.75);"></div>
 </div>
 <button id="acceptBtn" onclick="acceptCall()" style="display:none;border:none;background:rgba(37,211,102,0.95);color:#fff;padding:10px 12px;border-radius:14px;cursor:pointer;font-weight:900;">
@@ -14927,22 +14871,22 @@ if(document.readyState === "loading"){
 <video autoplay="" id="localVideo" muted="" playsinline="" style="position:absolute;right:14px;bottom:150px;width:120px;height:160px;border-radius:16px;border:2px solid rgba(255,255,255,0.35);box-shadow:0 12px 40px rgba(0,0,0,0.6);display:none;z-index:6;"></video>
 <div id="inCallControls" style="position:absolute;left:0;right:0;bottom:0;padding:20px 16px 28px;display:none;z-index:12;">
 <div style="display:flex;gap:16px;justify-content:center;">
-<button onclick="toggleMute()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">ðŸŽ¤</button>
-<button onclick="toggleCamera()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">ðŸ“·</button>
-<button onclick="switchCamera()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">ðŸ”„</button>
-<button onclick="endCall()" style="background:rgba(255,59,48,0.95);border:none;color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">âŒ</button>
+<button onclick="toggleMute()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">🎤</button>
+<button onclick="toggleCamera()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">📷</button>
+<button onclick="switchCamera()" style="background:rgba(255,255,255,0.12);border:1px solid rgba(255,255,255,0.18);color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">🔄</button>
+<button onclick="endCall()" style="background:rgba(255,59,48,0.95);border:none;color:white;padding:14px;border-radius:999px;font-size:18px;cursor:pointer;">❌</button>
 </div>
 </div>
 </div>
 <audio autoplay="" id="remoteAudio" playsinline=""></audio>
 <div id="soundUnlock" onclick="tryUnlockSounds()" style="display:none;position:fixed;bottom:20px;left:20px;z-index:30000;background:#075e54;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
-ðŸ”Š
+🔊
 </div>
 <audio id="msgSound" preload="auto" src="/sounds/message.mp3"></audio>
 <audio id="ringSound" loop="" preload="auto" src="/sounds/ring.mp3"></audio>
 <audio id="ringingSound" loop="" preload="auto" src="/sounds/ringing.mp3"></audio>
 <div class="media-viewer" id="dpModal" style="display:none;">
-<span onclick="closeDpPreview()">âœ•</span>
+<span onclick="closeDpPreview()">✕</span>
 <div style="text-align:center;color:white;">
 <div id="dpViewerName" style="font-weight:800;font-size:18px;margin-bottom:12px;"></div>
 <img id="dpViewerImg" src="" style="max-width:92vw;max-height:82vh;border-radius:14px;"/>
@@ -14952,7 +14896,7 @@ if(document.readyState === "loading"){
 <div class="gallery-box" style="max-width:700px;height:78%;">
 <div class="gallery-top">
 <span>Admin Controls</span>
-<span class="gallery-close" onclick="closeAdminPanel()">âœ•</span>
+<span class="gallery-close" onclick="closeAdminPanel()">✕</span>
 </div>
 <div class="gallery-tabs">
 <button class="tab active" id="adminTabPending" onclick="setAdminTab('pending')">Pending</button>
@@ -14971,7 +14915,7 @@ if(document.readyState === "loading"){
 <div class="gallery-box" style="max-width:650px;height:70%;">
 <div class="gallery-top">
 <span>Blocked Users</span>
-<span class="gallery-close" onclick="closeBlockedUsersModal()">âœ•</span>
+<span class="gallery-close" onclick="closeBlockedUsersModal()">✕</span>
 </div>
 <div id="blockedUsersList" style="padding:15px;overflow:auto;flex:1;background:#f6f6f6;"></div>
 </div>
@@ -15000,7 +14944,7 @@ z-index:99999;
   ">
 <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:12px;">
 <div style="font-size:18px;font-weight:800;">Group Info</div>
-<button onclick="closeGroupInfo()" style="border:none;background:none;font-size:22px;cursor:pointer;">âœ•</button>
+<button onclick="closeGroupInfo()" style="border:none;background:none;font-size:22px;cursor:pointer;">✕</button>
 </div>
 <div style="text-align:center;margin-bottom:14px;">
 <img id="groupInfoDp" onerror="this.src='/default-group.png'" src="/default-group.png" style="width:84px;height:84px;border-radius:50%;object-fit:cover;border:3px solid #eee;"/>
@@ -15042,7 +14986,7 @@ z-index:99999;
 <div id="groupDrawer">
 <div class="groupDrawerHeader">
 <span>Groups</span>
-<button onclick="openCreateGroup()">ï¼‹</button>
+<button onclick="openCreateGroup()">＋</button>
 </div>
 <div style="padding:12px;border-bottom:1px solid #eee;background:#fafafa;">
 <div style="display:flex;gap:8px;">
@@ -15056,7 +15000,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:560px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Appearance &amp; Notifications</span>
-<span class="gallery-close" onclick="closeSettingsModal()">âœ•</span>
+<span class="gallery-close" onclick="closeSettingsModal()">✕</span>
 </div>
 <div id="settingsContent" style="padding:16px;overflow:auto;background:#fff;">
 <div class="settings-option">
@@ -15074,7 +15018,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:560px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span id="chatWallpaperTitle">Change Chat Wallpaper</span>
-<span class="gallery-close" onclick="closeChatWallpaperModal()">âœ•</span>
+<span class="gallery-close" onclick="closeChatWallpaperModal()">✕</span>
 </div>
 <div id="chatWallpaperContent" style="padding:16px;overflow:auto;background:#fff;">
 <div style="font-size:12px;color:gray;margin-bottom:12px;">
@@ -15100,7 +15044,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:420px;height:auto;max-height:80vh;">
 <div class="gallery-top">
 <span>Message Info</span>
-<span class="gallery-close" onclick="closeSeenInfoModal()">âœ•</span>
+<span class="gallery-close" onclick="closeSeenInfoModal()">✕</span>
 </div>
 <div style="padding:16px;overflow:auto;">
 <div style="font-size:13px;font-weight:800;color:#075e54;margin-bottom:8px;">Seen By</div>
@@ -15114,7 +15058,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:420px;height:auto;max-height:85vh;">
 <div class="gallery-top">
 <span>User Profile</span>
-<span class="gallery-close" onclick="closeUserProfileModal()">âœ•</span>
+<span class="gallery-close" onclick="closeUserProfileModal()">✕</span>
 </div>
 <div style="padding:18px;text-align:center;">
 <img id="userProfileDp" src="/default.png" style="width:110px;height:110px;border-radius:50%;object-fit:cover;margin-bottom:14px;border:3px solid #25d366;"/>
@@ -15134,7 +15078,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:640px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Admin Approval Requests</span>
-<span class="gallery-close" onclick="closeAdminApprovalModal()">âœ•</span>
+<span class="gallery-close" onclick="closeAdminApprovalModal()">✕</span>
 </div>
 <div style="padding:16px;overflow:auto;">
 <div style="display:flex;gap:10px;flex-wrap:wrap;margin-bottom:14px;">
@@ -15150,7 +15094,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:560px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Preview before send</span>
-<span class="gallery-close" onclick="closeUploadPreview()">âœ•</span>
+<span class="gallery-close" onclick="closeUploadPreview()">✕</span>
 </div>
 <div style="padding:16px;overflow:auto;">
 <div id="uploadPreviewContent" style="display:flex;justify-content:center;align-items:center;min-height:220px;"></div>
@@ -15187,12 +15131,12 @@ z-index:99999;
     backdrop-filter:blur(14px);
   ">
 <div style="display:flex;align-items:center;gap:12px;">
-<div style="width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:22px;">ðŸ“²</div>
+<div style="width:46px;height:46px;border-radius:16px;background:linear-gradient(135deg,#10b981,#06b6d4);display:flex;align-items:center;justify-content:center;font-size:22px;">📲</div>
 <div style="flex:1;min-width:0;">
 <div style="font-weight:900;color:#fff;">Install RickyY Chat</div>
 <div style="font-size:13px;color:#cbd5e1;">Fast open, app-like experience, better notifications.</div>
 </div>
-<button onclick="hideInstallSheet()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;">âœ•</button>
+<button onclick="hideInstallSheet()" style="border:none;background:none;color:#fff;font-size:18px;cursor:pointer;">✕</button>
 </div>
 <div style="display:flex;gap:10px;margin-top:14px;">
 <button class="small-btn" onclick="installAppNow()" style="flex:1;">Install</button>
@@ -15204,7 +15148,7 @@ z-index:99999;
 <div class="gallery-box" style="max-width:520px;height:auto;max-height:88vh;">
 <div class="gallery-top">
 <span>Create Poll</span>
-<span class="gallery-close" onclick="closePollModal()">âœ•</span>
+<span class="gallery-close" onclick="closePollModal()">✕</span>
 </div>
 <div style="padding:16px;">
 <input class="bio-input" id="pollQuestion" placeholder="Poll question" style="margin-bottom:10px;"/>
@@ -15221,7 +15165,7 @@ z-index:99999;
 </div>
 <div id="appLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
   <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
-    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">ðŸ”’ App Locked</div>
+    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 App Locked</div>
     <div style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Enter PIN to continue</div>
 
     <input
@@ -15243,7 +15187,7 @@ z-index:99999;
 </div>
 <div id="chatAppLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
   <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
-    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">ðŸ”’ Chat Locked</div>
+    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 Chat Locked</div>
     <div id="chatLockSubtitle" style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Use Fingerprint / Face ID</div>
 
     <div id="chatLockBioWrap">
@@ -15273,7 +15217,7 @@ z-index:99999;
 
 <div id="userChatLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
   <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
-    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">ðŸ”’ Chat Locked</div>
+    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 Chat Locked</div>
     <div id="userChatLockSubtitle" style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Use Fingerprint / Face ID</div>
 
     <div id="userChatLockBioWrap">
@@ -15309,7 +15253,7 @@ z-index:99999;
         <div class="phase2-title">Hidden Chats</div>
         
       </div>
-      <button class="phase2-close" onclick="closeHiddenChatsModal()">âœ•</button>
+      <button class="phase2-close" onclick="closeHiddenChatsModal()">✕</button>
     </div>
     <div class="phase2-body">
       
@@ -15325,7 +15269,7 @@ z-index:99999;
         <div class="phase2-title">Privacy Controls</div>
         <div class="phase2-row-sub">Device-side privacy display settings</div>
       </div>
-      <button class="phase2-close" onclick="closePrivacyControlsModal()">âœ•</button>
+      <button class="phase2-close" onclick="closePrivacyControlsModal()">✕</button>
     </div>
     <div class="phase2-body">
       <div class="phase2-note">Ivi current device UI lo visible info ni control chestayi. Server-side global privacy kaadu.</div>
@@ -15341,7 +15285,7 @@ z-index:99999;
         <div class="phase2-title">Saved Media</div>
         <div class="phase2-row-sub">Your locally saved media shortcuts</div>
       </div>
-      <button class="phase2-close" onclick="closeSavedMediaModal()">âœ•</button>
+      <button class="phase2-close" onclick="closeSavedMediaModal()">✕</button>
     </div>
     <div class="phase2-body">
       <div id="savedMediaList"></div>
@@ -15357,7 +15301,7 @@ z-index:99999;
         <div class="phase3-title">Disappearing Messages</div>
         <div class="phase3-note" style="margin:4px 0 0;">Set timer for this chat</div>
       </div>
-      <button class="phase3-close" onclick="closeDisappearSettingsModal()">âœ•</button>
+      <button class="phase3-close" onclick="closeDisappearSettingsModal()">✕</button>
     </div>
     <div class="phase3-body">
       <div class="phase3-note">Timer apply ayyaka kotha messages timer complete ayina tarvatha UI nunchi hide avutayi.</div>
@@ -15373,7 +15317,7 @@ z-index:99999;
         <div class="phase3-title">Forward Message</div>
         <div class="phase3-note" style="margin:4px 0 0;">Select user or group</div>
       </div>
-      <button class="phase3-close" onclick="closeForwardMessageModal()">âœ•</button>
+      <button class="phase3-close" onclick="closeForwardMessageModal()">✕</button>
     </div>
     <div class="phase3-body">
       <input id="forwardSearchInput" class="phase3-field" placeholder="Search user or group..." oninput="renderForwardTargets()">
@@ -15389,7 +15333,7 @@ z-index:99999;
         <div class="phase3-title">Schedule Message</div>
         <div class="phase3-note" style="margin:4px 0 0;">Text message scheduling</div>
       </div>
-      <button class="phase3-close" onclick="closeScheduleMessageModal()">âœ•</button>
+      <button class="phase3-close" onclick="closeScheduleMessageModal()">✕</button>
     </div>
     <div class="phase3-body">
       <div class="phase3-note">Ithi local device schedule. App/server active unnapude exact ga send avvadam best.</div>
@@ -15412,7 +15356,7 @@ z-index:99999;
         <div class="phase3-title">Scheduled Messages</div>
         <div class="phase3-note" style="margin:4px 0 0;">Pending local queue</div>
       </div>
-      <button class="phase3-close" onclick="closeScheduledQueueModal()">âœ•</button>
+      <button class="phase3-close" onclick="closeScheduledQueueModal()">✕</button>
     </div>
     <div class="phase3-body">
       <div id="scheduledQueueList"></div>
@@ -15428,7 +15372,7 @@ z-index:99999;
         <div class="mini-camera-title">Mini Camera</div>
         <div class="phase3-note" style="margin:4px 0 0;">Take a photo and send instantly</div>
       </div>
-      <button class="mini-camera-close" onclick="closeMiniCameraModal()">âœ•</button>
+      <button class="mini-camera-close" onclick="closeMiniCameraModal()">✕</button>
     </div>
     <div class="mini-camera-body">
       <div class="mini-camera-preview">
@@ -15440,8 +15384,8 @@ z-index:99999;
         </div>
       </div>
       <div class="mini-camera-actions">
-        <button class="mini-camera-btn" onclick="flipMiniCamera()">ðŸ”„ Flip</button>
-        <button class="mini-camera-btn primary capture" onclick="captureMiniCameraPhoto()">ðŸ“¸ Capture</button>
+        <button class="mini-camera-btn" onclick="flipMiniCamera()">🔄 Flip</button>
+        <button class="mini-camera-btn primary capture" onclick="captureMiniCameraPhoto()">📸 Capture</button>
         <button class="mini-camera-btn" onclick="closeMiniCameraModal()">Cancel</button>
       </div>
       <div class="mini-camera-note">Photo capture ayyaka normal upload preview open avuthundhi.</div>
@@ -15451,10 +15395,10 @@ z-index:99999;
 
 
 <nav id="mobileBottomNav" aria-label="Mobile app navigation">
-  <button class="mobile-nav-btn active" id="navChatsBtn" type="button" onclick="phaseNavChats()"><span class="nav-ico">ðŸ’¬<span class="nav-badge" id="navChatsBadge"></span></span><span>Chats</span></button>
-  <button class="mobile-nav-btn" id="navGroupsBtn" type="button" onclick="phaseNavGroups()"><span class="nav-ico">ðŸ‘¥<span class="nav-badge" id="navGroupsBadge"></span></span><span>Groups</span></button>
-  <button class="mobile-nav-btn" id="navStatusBtn" type="button" onclick="phaseNavStatus()"><span class="nav-ico">â­•<span class="nav-dot" id="navStatusDot"></span></span><span>Status</span></button>
-  <button class="mobile-nav-btn" id="navCallsBtn" type="button" onclick="phaseNavCalls()"><span class="nav-ico">ðŸ“ž<span class="nav-badge" id="navCallsBadge"></span></span><span>Calls</span></button>
+  <button class="mobile-nav-btn active" id="navChatsBtn" type="button" onclick="phaseNavChats()"><span class="nav-ico">💬<span class="nav-badge" id="navChatsBadge"></span></span><span>Chats</span></button>
+  <button class="mobile-nav-btn" id="navGroupsBtn" type="button" onclick="phaseNavGroups()"><span class="nav-ico">👥<span class="nav-badge" id="navGroupsBadge"></span></span><span>Groups</span></button>
+  <button class="mobile-nav-btn" id="navStatusBtn" type="button" onclick="phaseNavStatus()"><span class="nav-ico">⭕<span class="nav-dot" id="navStatusDot"></span></span><span>Status</span></button>
+  <button class="mobile-nav-btn" id="navCallsBtn" type="button" onclick="phaseNavCalls()"><span class="nav-ico">📞<span class="nav-badge" id="navCallsBadge"></span></span><span>Calls</span></button>
 </nav>
 
 
@@ -15531,7 +15475,7 @@ z-index:99999;
 
     const title = `
       <div class="inline-groups-title">
-        <span>ðŸ‘¥ Groups</span>
+        <span>👥 Groups</span>
         <button type="button" onclick="openCreateGroupModal()">+ New</button>
       </div>
     `;
@@ -15609,12 +15553,12 @@ z-index:99999;
       panel.classList.add("show");
       panel.innerHTML = `
         <div class="inline-calls-title">
-          <span>ðŸ“ž Calls</span>
+          <span>📞 Calls</span>
           <span style="font-size:12px;color:#93a4b5;">Tap user to call</span>
         </div>
         ${latestCalls.length ? latestCalls.map(c => `
           <div class="inline-call-row">
-            <div class="inline-call-icon">${c.type === "video" ? "ðŸŽ¥" : "ðŸ“ž"}</div>
+            <div class="inline-call-icon">${c.type === "video" ? "🎥" : "📞"}</div>
             <div class="inline-call-meta">
               <div class="inline-call-name">${(typeof escapeHtml === "function") ? escapeHtml(c.name || c.to || c.from || "Call") : (c.name || c.to || c.from || "Call")}</div>
               <div class="inline-call-time">${(typeof escapeHtml === "function") ? escapeHtml(c.time || c.status || "Recent call") : (c.time || c.status || "Recent call")}</div>
@@ -15622,7 +15566,7 @@ z-index:99999;
           </div>
         `).join("") : `
           <div class="inline-call-row">
-            <div class="inline-call-icon">ðŸ“ž</div>
+            <div class="inline-call-icon">📞</div>
             <div class="inline-call-meta">
               <div class="inline-call-name">No recent calls</div>
               <div class="inline-call-time">Open any chat and tap audio/video call.</div>
@@ -15767,7 +15711,7 @@ z-index:99999;
     if(navigator.onLine){
       if(banner) banner.classList.remove("show", "good", "connecting", "bad");
     }else{
-      showNetBanner("No internet â€¢ Connecting...", "bad", true);
+      showNetBanner("No internet • Connecting...", "bad", true);
     }
   }
 
@@ -16390,7 +16334,7 @@ z-index:99999;
 
     const btn = document.getElementById("themeToggleBtn");
     if(btn){
-      btn.textContent = mode === "dark" ? "â˜€ï¸" : "ðŸŒ™";
+      btn.textContent = mode === "dark" ? "☀️" : "🌙";
       btn.title = mode === "dark" ? "Light mode" : "Dark mode";
     }
   }
@@ -16411,10 +16355,10 @@ z-index:99999;
     if(!m) return "No messages yet";
     if(m.deleted) return "This message was deleted";
     if(m.text) return String(m.text);
-    if(m.fileType === "image") return "ðŸ“· Photo";
-    if(m.fileType === "video") return "ðŸŽ¥ Video";
-    if(m.fileType === "audio") return "ðŸŽ¤ Voice message";
-    if(m.fileType) return "ðŸ“„ Document";
+    if(m.fileType === "image") return "📷 Photo";
+    if(m.fileType === "video") return "🎥 Video";
+    if(m.fileType === "audio") return "🎤 Voice message";
+    if(m.fileType) return "📄 Document";
     return "Message";
   }
 
@@ -16538,7 +16482,7 @@ z-index:99999;
 
     const btn = document.getElementById("themeToggleBtn");
     if(btn){
-      btn.textContent = mode === "dark" ? "â˜€ï¸" : "ðŸŒ™";
+      btn.textContent = mode === "dark" ? "☀️" : "🌙";
       btn.title = mode === "dark" ? "Light mode" : "Dark mode";
     }
   }
@@ -16582,18 +16526,18 @@ z-index:99999;
     const btn = document.getElementById("favoriteChatBtn");
     if(!btn) return;
     const key = favKey();
-    btn.innerHTML = key && getFavs().includes(key) ? "â­ Remove Favourite" : "â­ Add to Favourite";
+    btn.innerHTML = key && getFavs().includes(key) ? "⭐ Remove Favourite" : "⭐ Add to Favourite";
   }
 
   function messagePreview(m){
     if(!m) return "No messages yet";
     if(m.deleted) return "This message was deleted";
     if(m.text) return String(m.text);
-    if(m.fileType === "image") return "ðŸ“· Photo";
-    if(m.fileType === "video") return "ðŸŽ¥ Video";
-    if(m.fileType === "audio") return "ðŸŽ¤ Voice message";
-    if(m.fileType === "doc" || m.fileType === "file") return "ðŸ“„ Document";
-    if(m.file) return "ðŸ“Ž Media";
+    if(m.fileType === "image") return "📷 Photo";
+    if(m.fileType === "video") return "🎥 Video";
+    if(m.fileType === "audio") return "🎤 Voice message";
+    if(m.fileType === "doc" || m.fileType === "file") return "📄 Document";
+    if(m.file) return "📎 Media";
     return "Message";
   }
 
@@ -16795,266 +16739,6 @@ z-index:99999;
     hardUpdateFilterCounts();
     hardApplyFilter();
   }, 2500);
-})();
-</script>
-
-
-<script>
-(function rickyyBottomTabsCleanFix(){
-  if(window.__rickyyBottomTabsCleanFix) return;
-  window.__rickyyBottomTabsCleanFix = true;
-
-  let currentTab = localStorage.getItem("rickyyBottomTab") || "chats";
-
-  function $(sel){ return document.querySelector(sel); }
-  function byId(id){ return document.getElementById(id); }
-
-  function setActive(btnId){
-    ["navChatsBtn","navGroupsBtn","navStatusBtn","navCallsBtn","navProfileBtn"].forEach(id=>{
-      const b = byId(id);
-      if(b) b.classList.toggle("active", id === btnId);
-    });
-  }
-
-  function setBodyTab(tab){
-    document.body.classList.remove("rickyy-tab-chats","rickyy-tab-groups","rickyy-tab-status","rickyy-tab-calls");
-    document.body.classList.add("rickyy-tab-" + tab);
-    currentTab = tab;
-    localStorage.setItem("rickyyBottomTab", tab);
-  }
-
-  function closeChatIfOpen(){
-    try{
-      if(document.body.classList.contains("mobile-chat-open") && typeof goBack === "function") goBack();
-    }catch(e){}
-  }
-
-  function hidePanels(){
-    const groups = byId("inlineGroupsPanel");
-    const calls = byId("inlineCallsPanel");
-    const status = $(".status-panel");
-
-    if(groups) groups.classList.remove("show");
-    if(calls) calls.classList.remove("show");
-    if(status) status.classList.remove("rickyy-status-tab-only");
-
-    try{ if(typeof closeGroupsSlide === "function") closeGroupsSlide(); }catch(e){}
-  }
-
-  function showChats(){
-    setBodyTab("chats");
-    setActive("navChatsBtn");
-    hidePanels();
-
-    const users = byId("users");
-    const search = $(".search-box");
-    const filter = byId("chatFilterBar");
-    const status = $(".status-panel");
-
-    if(users) users.style.display = "";
-    if(search) search.style.display = "";
-    if(filter) filter.style.display = "";
-    if(status) status.style.display = "none";
-
-    try{
-      const filterType = localStorage.getItem("rickyyChatListFilter") || "all";
-      applyChatRowsFilter(filterType);
-    }catch(e){}
-  }
-
-  function ensureGroupsRendered(){
-    const groupsPanel = byId("inlineGroupsPanel");
-    if(!groupsPanel) return;
-
-    groupsPanel.classList.add("show");
-    groupsPanel.style.display = "block";
-
-    try{
-      if(typeof renderInlineGroups === "function"){
-        renderInlineGroups();
-        return;
-      }
-    }catch(e){}
-
-    try{
-      if(typeof loadGroups === "function"){
-        Promise.resolve(loadGroups()).then(()=>{
-          try{ if(typeof renderInlineGroups === "function") renderInlineGroups(); }catch(e){}
-        });
-        return;
-      }
-    }catch(e){}
-
-    if(!groupsPanel.innerHTML.trim()){
-      groupsPanel.innerHTML = `
-        <div class="inline-groups-title">
-          <span>ðŸ‘¥ Groups</span>
-          <button type="button" onclick="typeof openCreateGroupModal==='function' ? openCreateGroupModal() : alert('Create group option not found')">+ Group</button>
-        </div>
-        <div style="padding:16px;color:#64748b;">No groups found</div>
-      `;
-    }
-  }
-
-  function showGroups(){
-    closeChatIfOpen();
-    setBodyTab("groups");
-    setActive("navGroupsBtn");
-    hidePanels();
-
-    const groups = byId("inlineGroupsPanel");
-    if(groups){
-      groups.classList.add("show");
-      groups.style.display = "block";
-    }
-
-    ensureGroupsRendered();
-  }
-
-  function showStatus(){
-    closeChatIfOpen();
-    setBodyTab("status");
-    setActive("navStatusBtn");
-    hidePanels();
-
-    const status = $(".status-panel");
-    if(status){
-      status.style.display = "block";
-      status.classList.add("rickyy-status-tab-only");
-
-      if(!status.querySelector(".rickyy-tab-title")){
-        const title = document.createElement("div");
-        title.className = "rickyy-tab-title";
-        title.innerHTML = `<span>â­• Status</span><span style="font-size:12px;color:#64748b;">Updates</span>`;
-        status.insertBefore(title, status.firstChild);
-      }
-    }
-
-    try{ if(typeof loadStatuses === "function") loadStatuses(); }catch(e){}
-    try{ if(typeof rickyyMarkStatusesSeen === "function") rickyyMarkStatusesSeen(); }catch(e){}
-  }
-
-  function ensureCallsRendered(){
-    const calls = byId("inlineCallsPanel");
-    if(!calls) return;
-
-    calls.classList.add("show");
-    calls.style.display = "block";
-
-    try{
-      if(typeof showInlineCalls === "function"){
-        showInlineCalls();
-        calls.classList.add("show");
-        calls.style.display = "block";
-        return;
-      }
-    }catch(e){}
-
-    if(!calls.innerHTML.trim()){
-      calls.innerHTML = `
-        <div class="inline-calls-title">
-          <span>ðŸ“ž Calls</span>
-          <span style="font-size:12px;color:#93a4b5;">Recent calls</span>
-        </div>
-        <div class="inline-call-row">
-          <div class="inline-call-icon">ðŸ“ž</div>
-          <div class="inline-call-meta">
-            <div class="inline-call-name">No recent calls</div>
-            <div class="inline-call-time">Open a user chat and tap call</div>
-          </div>
-        </div>
-      `;
-    }
-  }
-
-  function showCalls(){
-    closeChatIfOpen();
-    setBodyTab("calls");
-    setActive("navCallsBtn");
-    hidePanels();
-
-    const calls = byId("inlineCallsPanel");
-    if(calls){
-      calls.classList.add("show");
-      calls.style.display = "block";
-    }
-
-    try{ if(typeof rickyyClearCallBadge === "function") rickyyClearCallBadge(); }catch(e){}
-    ensureCallsRendered();
-  }
-
-  function applyChatRowsFilter(type){
-    type = type || localStorage.getItem("rickyyChatListFilter") || "all";
-
-    if(type === "groups"){
-      showGroups();
-      return;
-    }
-
-    if(currentTab !== "chats") return;
-
-    const favs = (() => {
-      try{return JSON.parse(localStorage.getItem("rickyyFavoriteChats") || "[]");}
-      catch(e){return [];}
-    })();
-
-    document.querySelectorAll("#users .user[data-username]").forEach(row=>{
-      const name = row.getAttribute("data-username") || "";
-      let show = true;
-
-      if(type === "unread"){
-        try{ show = Number(unread?.[name] || 0) > 0; }catch(e){ show = false; }
-      }else if(type === "fav"){
-        show = favs.includes("user:" + name);
-      }else{
-        show = true;
-      }
-
-      row.style.display = show ? "" : "none";
-    });
-  }
-
-  window.phaseNavChats = function(){ showChats(); };
-  window.phaseNavGroups = function(){ showGroups(); };
-  window.phaseNavStatus = function(){ showStatus(); };
-  window.phaseNavCalls = function(){ showCalls(); };
-
-  const oldSetChatListFilter = window.setChatListFilter;
-  window.setChatListFilter = function(type){
-    localStorage.setItem("rickyyChatListFilter", type || "all");
-
-    if(type === "groups"){
-      showGroups();
-      return;
-    }
-
-    showChats();
-
-    try{
-      if(typeof oldSetChatListFilter === "function") oldSetChatListFilter(type);
-    }catch(e){}
-
-    applyChatRowsFilter(type || "all");
-  };
-
-  function boot(){
-    if(currentTab === "groups") showGroups();
-    else if(currentTab === "status") showStatus();
-    else if(currentTab === "calls") showCalls();
-    else showChats();
-  }
-
-  if(document.readyState === "loading"){
-    document.addEventListener("DOMContentLoaded", ()=>setTimeout(boot, 500));
-  }else{
-    setTimeout(boot, 500);
-  }
-
-  setInterval(()=>{
-    if(currentTab === "groups") showGroups();
-    else if(currentTab === "status") showStatus();
-    else if(currentTab === "calls") showCalls();
-  }, 1500);
 })();
 </script>
 
