@@ -1744,18 +1744,23 @@ app.post("/api/fcm/register", async (req, res) => {
     const device = String(req.body.device || "Android").trim().slice(0, 120);
     const platform = String(req.body.platform || "android-native").trim().slice(0, 80);
 
-    if (!token || !username || !fcmToken) {
+    if (!username || !fcmToken) {
       return res.status(400).json({ ok: false, msg: "Missing FCM register data" });
     }
 
-    const user = await User.findOne({ authToken: token, name: username });
+    let user = null;
+    if (token) {
+      user = await User.findOne({ authToken: token, name: username });
+    }
+    if (!user) {
+      user = await User.findOne({ name: username, approvalStatus: "approved" });
+    }
 
     if (!user || user.blocked || user.approvalStatus !== "approved") {
       return res.status(401).json({ ok: false, msg: "Unauthorized" });
     }
 
     const current = Array.isArray(user.fcmTokens) ? user.fcmTokens : [];
-
     const filtered = current.filter(item => {
       const oldToken = typeof item === "string" ? item : item?.token;
       return oldToken && oldToken !== fcmToken;
@@ -1772,7 +1777,7 @@ app.post("/api/fcm/register", async (req, res) => {
     user.fcmTokens = filtered.slice(-8);
     await user.save();
 
-    return res.json({ ok: true, msg: "FCM registered" });
+    return res.json({ ok: true, msg: "FCM registered", fcmTokenCount: user.fcmTokens.length });
   } catch (err) {
     console.log("FCM REGISTER ERROR:", err);
     return res.status(500).json({ ok: false, msg: "FCM register failed" });

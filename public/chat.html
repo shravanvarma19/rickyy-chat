@@ -4928,6 +4928,117 @@ body.dark .phase3-report-meta{
   display:block;
 }
 
+
+/* RickyY emergency stable hotfix */
+body:not(.dark){
+  background:
+    radial-gradient(circle at top left, rgba(16,185,129,.10), transparent 22%),
+    radial-gradient(circle at top right, rgba(34,211,238,.08), transparent 18%),
+    linear-gradient(135deg,#f8fafc 0%,#eef2f7 45%,#e9f5ef 100%) !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .sidebar{
+  background:#ffffff !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .logo,
+body:not(.dark) .status-title-text,
+body:not(.dark) .user-name,
+body:not(.dark) .chat-title-rich,
+body:not(.dark) .title-main{
+  color:#0f172a !important;
+}
+body:not(.dark) .search-box input{
+  background:#f1f5f9 !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .user{
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border-color:rgba(15,23,42,.08) !important;
+}
+body:not(.dark) .user-last-message,
+body:not(.dark) .user-right-time,
+body:not(.dark) .user-status{
+  color:#64748b !important;
+}
+body.dark #themeToggleBtn{background:rgba(251,191,36,.18) !important;}
+body:not(.dark) #themeToggleBtn{background:rgba(15,23,42,.08) !important;color:#0f172a !important;}
+
+
+/* RickyY FINAL STABLE: light mode, no speaker, real native UI */
+#speakerFab,
+#soundUnlock,
+.speaker-fab,
+.sound-unlock,
+.unlock-sound,
+#groupFab.speaker{
+  display:none !important;
+  opacity:0 !important;
+  pointer-events:none !important;
+}
+body:not(.dark){
+  background:#f8fafc !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .app,
+body:not(.dark) .sidebar,
+body:not(.dark) .chat{
+  background:#ffffff !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .sidebar-header{
+  background:linear-gradient(135deg, rgba(16,185,129,.16), rgba(34,211,238,.08)) !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .logo,
+body:not(.dark) .status-title-text,
+body:not(.dark) .user-name,
+body:not(.dark) .title-main,
+body:not(.dark) .chat-title-rich{
+  color:#0f172a !important;
+}
+body:not(.dark) .header-buttons button{
+  background:rgba(15,23,42,.08) !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .search-box input{
+  background:#f1f5f9 !important;
+  color:#0f172a !important;
+}
+body:not(.dark) .user{
+  background:#ffffff !important;
+  color:#0f172a !important;
+  border:1px solid rgba(15,23,42,.08) !important;
+  box-shadow:0 8px 18px rgba(15,23,42,.05) !important;
+}
+body:not(.dark) .user-last-message,
+body:not(.dark) .user-right-time,
+body:not(.dark) .user-status{
+  color:#64748b !important;
+}
+body:not(.dark) .chat-filter-chip{
+  background:#eef2f7 !important;
+  color:#334155 !important;
+  border-color:rgba(15,23,42,.08) !important;
+}
+body:not(.dark) .chat-filter-chip.active{
+  background:#d1fae5 !important;
+  color:#065f46 !important;
+  border-color:#86efac !important;
+}
+body:not(.dark) #mobileBottomNav{
+  background:rgba(255,255,255,.96) !important;
+  border-color:rgba(15,23,42,.08) !important;
+}
+body:not(.dark) .mobile-nav-btn{
+  color:#475569 !important;
+}
+body:not(.dark) .mobile-nav-btn.active{
+  color:#047857 !important;
+  background:#d1fae5 !important;
+}
+
 </style>
 </head>
 
@@ -4976,7 +5087,7 @@ body.dark .phase3-report-meta{
 <div class="logo">RickyY Chat</div>
 <div class="header-buttons clean-main-header">
 <button id="adminBtn" onclick="openAdminPanel()" style="display:none;" title="Admin Controls">🛡️</button>
-<button id="themeToggleBtn" onclick="toggleHeaderTheme()" title="Theme">🌙</button>
+<button id="themeToggleBtn" type="button" onclick="toggleHeaderTheme()" title="Theme">🌙</button>
 <button id="mainMenuBtn" onclick="openMenu()" title="Menu">⋮</button>
 </div>
 </div>
@@ -8347,6 +8458,8 @@ function setUserTypingState(username, isTyping){
   });
 
   socket.on("private-message", (m) => {
+    /* FINAL_PREVIEW_PATCH */
+    try{ const peer = m.from === me ? m.to : m.from; if(peer && typeof privateLastMessages !== "undefined"){ privateLastMessages[peer] = m; } }catch(e){}
     const currentUser = localStorage.getItem("user");
     const isMuted = isChatMuted(m.from);
     
@@ -15179,7 +15292,6 @@ z-index:99999;
   <button class="mobile-nav-btn" id="navGroupsBtn" type="button" onclick="phaseNavGroups()"><span class="nav-ico">👥<span class="nav-badge" id="navGroupsBadge"></span></span><span>Groups</span></button>
   <button class="mobile-nav-btn" id="navStatusBtn" type="button" onclick="phaseNavStatus()"><span class="nav-ico">⭕<span class="nav-dot" id="navStatusDot"></span></span><span>Status</span></button>
   <button class="mobile-nav-btn" id="navCallsBtn" type="button" onclick="phaseNavCalls()"><span class="nav-ico">📞<span class="nav-badge" id="navCallsBadge"></span></span><span>Calls</span></button>
-  <button class="mobile-nav-btn" id="navProfileBtn" type="button" onclick="phaseNavProfile()"><span class="nav-ico">👤</span><span>Profile</span></button>
 </nav>
 
 
@@ -16090,6 +16202,436 @@ z-index:99999;
     patchNavClicks();
     refreshBadges();
   }, 1800);
+})();
+</script>
+
+
+<script>
+(function rickyyEmergencyStableHotfix(){
+  function safeJSON(key, fallback){
+    try{return JSON.parse(localStorage.getItem(key) || JSON.stringify(fallback));}
+    catch(e){return fallback;}
+  }
+
+  function setThemeHard(mode){
+    mode = mode === "dark" ? "dark" : "light";
+    try{
+      localStorage.setItem("theme", mode);
+      if(typeof appSettings !== "undefined") appSettings.theme = mode;
+      document.body.classList.toggle("dark", mode === "dark");
+      if(typeof saveAppSettings === "function") saveAppSettings();
+      if(typeof applyAppSettings === "function") applyAppSettings();
+    }catch(err){
+      document.body.classList.toggle("dark", mode === "dark");
+    }
+
+    const btn = document.getElementById("themeToggleBtn");
+    if(btn){
+      btn.textContent = mode === "dark" ? "☀️" : "🌙";
+      btn.title = mode === "dark" ? "Light mode" : "Dark mode";
+    }
+  }
+
+  window.toggleHeaderTheme = function(){
+    const current = document.body.classList.contains("dark") || localStorage.getItem("theme") === "dark" ? "dark" : "light";
+    const next = current === "dark" ? "light" : "dark";
+    setThemeHard(next);
+    try{ if(typeof showToast === "function") showToast(next === "dark" ? "Dark mode" : "Light mode", "success"); }catch(e){}
+  };
+
+  function bootTheme(){
+    const mode = localStorage.getItem("theme") || (typeof appSettings !== "undefined" && appSettings.theme) || "light";
+    setThemeHard(mode);
+  }
+
+  function mediaPreview(m){
+    if(!m) return "No messages yet";
+    if(m.deleted) return "This message was deleted";
+    if(m.text) return String(m.text);
+    if(m.fileType === "image") return "📷 Photo";
+    if(m.fileType === "video") return "🎥 Video";
+    if(m.fileType === "audio") return "🎤 Voice message";
+    if(m.fileType) return "📄 Document";
+    return "Message";
+  }
+
+  function updatePrivatePreview(m){
+    try{
+      if(!m || !m.from || !m.to || !window.me && typeof me === "undefined") return;
+      const currentUser = (typeof me !== "undefined" ? me : window.me);
+      const peer = m.from === currentUser ? m.to : m.from;
+      if(!peer) return;
+      if(typeof privateLastMessages !== "undefined"){
+        privateLastMessages[peer] = m;
+      }
+      const el = document.querySelector(`[data-preview-for="${CSS.escape(peer)}"]`);
+      if(el) el.textContent = (m.from === currentUser ? "You: " : "") + mediaPreview(m);
+      if(typeof renderUsers === "function") setTimeout(() => { try{renderUsers();}catch(e){} }, 80);
+      if(typeof updateChatFilterCounts === "function") setTimeout(updateChatFilterCounts, 120);
+      if(typeof rickyyRefreshNavBadges === "function") setTimeout(rickyyRefreshNavBadges, 140);
+    }catch(err){}
+  }
+
+  function hookSocket(){
+    try{
+      if(typeof socket === "undefined" || !socket || window.__rickyyEmergencySocketHooked) return;
+      window.__rickyyEmergencySocketHooked = true;
+
+      socket.on("private-message", msg => {
+        updatePrivatePreview(msg);
+        setTimeout(() => {
+          try{ if(typeof fetchPrivateLastMessages === "function") fetchPrivateLastMessages().then(() => renderUsers()); }catch(e){}
+        }, 350);
+      });
+
+      socket.on("group-message", msg => {
+        try{
+          if(typeof loadGroups === "function") setTimeout(loadGroups, 250);
+          if(typeof rickyyRefreshNavBadges === "function") setTimeout(rickyyRefreshNavBadges, 350);
+        }catch(e){}
+      });
+
+      socket.on("unread-counts", () => {
+        try{
+          if(typeof renderUsers === "function") setTimeout(renderUsers, 80);
+          if(typeof rickyyRefreshNavBadges === "function") setTimeout(rickyyRefreshNavBadges, 100);
+        }catch(e){}
+      });
+
+      socket.on("group-unread-counts", () => {
+        try{
+          if(typeof renderGroups === "function" && typeof groups !== "undefined") setTimeout(() => renderGroups(groups), 80);
+          if(typeof rickyyRefreshNavBadges === "function") setTimeout(rickyyRefreshNavBadges, 100);
+        }catch(e){}
+      });
+    }catch(err){}
+  }
+
+  function syncNativeSessionOften(){
+    try{
+      if(!window.RickyYAndroid || !window.RickyYAndroid.syncSession) return;
+      const u = localStorage.getItem("user") || "";
+      const role = localStorage.getItem("role") || "";
+      const token = localStorage.getItem("authToken") || localStorage.getItem("token") || "";
+      if(u) window.RickyYAndroid.syncSession(u, role, token);
+    }catch(err){}
+  }
+
+  function forceNativeFeel(){
+    try{
+      if(window.RickyYAndroid){
+        document.documentElement.classList.add("native-apk");
+        document.body.classList.remove("privacy-guard-active","app-inactive-secure");
+        const pwaPrompt = document.getElementById("installPrompt") || document.querySelector(".install-popup,.pwa-install,.install-banner");
+        if(pwaPrompt) pwaPrompt.style.display = "none";
+      }
+    }catch(err){}
+  }
+
+  function boot(){
+    bootTheme();
+    hookSocket();
+    syncNativeSessionOften();
+    forceNativeFeel();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", () => setTimeout(boot, 500));
+  }else{
+    setTimeout(boot, 500);
+  }
+
+  setInterval(() => {
+    hookSocket();
+    syncNativeSessionOften();
+    forceNativeFeel();
+  }, 2500);
+})();
+</script>
+
+
+<script>
+(function rickyyFinalStablePatch(){
+  function currentMe(){
+    try{return localStorage.getItem("user") || (typeof me !== "undefined" ? me : "");}
+    catch(e){return "";}
+  }
+
+  function getTheme(){
+    return localStorage.getItem("theme") === "dark" ? "dark" : "light";
+  }
+
+  function applyThemeHard(mode){
+    mode = mode === "dark" ? "dark" : "light";
+    localStorage.setItem("theme", mode);
+    try{ if(typeof appSettings !== "undefined") appSettings.theme = mode; }catch(e){}
+    document.body.classList.toggle("dark", mode === "dark");
+
+    try{ if(typeof saveAppSettings === "function") saveAppSettings(); }catch(e){}
+    try{ if(typeof applyAppSettings === "function") applyAppSettings(); }catch(e){}
+
+    // applyAppSettings may override; force class again
+    document.body.classList.toggle("dark", mode === "dark");
+
+    const btn = document.getElementById("themeToggleBtn");
+    if(btn){
+      btn.textContent = mode === "dark" ? "☀️" : "🌙";
+      btn.title = mode === "dark" ? "Light mode" : "Dark mode";
+    }
+  }
+
+  window.toggleHeaderTheme = function(){
+    const next = getTheme() === "dark" ? "light" : "dark";
+    applyThemeHard(next);
+    try{ if(typeof showToast === "function") showToast(next === "dark" ? "Dark mode enabled" : "Light mode enabled", "success"); }catch(e){}
+  };
+
+  function getFavs(){
+    try{return JSON.parse(localStorage.getItem("rickyyFavoriteChats") || "[]");}
+    catch(e){return [];}
+  }
+
+  function saveFavs(list){
+    localStorage.setItem("rickyyFavoriteChats", JSON.stringify([...new Set(list || [])]));
+  }
+
+  function favKey(){
+    try{
+      if(typeof currentGroup !== "undefined" && currentGroup) return "group:" + String(currentGroup);
+      if(typeof currentChat !== "undefined" && currentChat) return "user:" + String(currentChat);
+    }catch(e){}
+    return "";
+  }
+
+  window.toggleCurrentChatFavorite = function(){
+    const key = favKey();
+    if(!key){ try{showToast("Open a chat/group first","warning");}catch(e){} return; }
+    const favs = getFavs();
+    const exists = favs.includes(key);
+    saveFavs(exists ? favs.filter(x => x !== key) : [...favs, key]);
+    updateFavoriteButton();
+    hardUpdateFilterCounts();
+    hardApplyFilter();
+    try{showToast(exists ? "Removed Favourite" : "Added Favourite", "success");}catch(e){}
+  };
+
+  function updateFavoriteButton(){
+    const btn = document.getElementById("favoriteChatBtn");
+    if(!btn) return;
+    const key = favKey();
+    btn.innerHTML = key && getFavs().includes(key) ? "⭐ Remove Favourite" : "⭐ Add to Favourite";
+  }
+
+  function messagePreview(m){
+    if(!m) return "No messages yet";
+    if(m.deleted) return "This message was deleted";
+    if(m.text) return String(m.text);
+    if(m.fileType === "image") return "📷 Photo";
+    if(m.fileType === "video") return "🎥 Video";
+    if(m.fileType === "audio") return "🎤 Voice message";
+    if(m.fileType === "doc" || m.fileType === "file") return "📄 Document";
+    if(m.file) return "📎 Media";
+    return "Message";
+  }
+
+  function putLastMessage(m){
+    try{
+      const meName = currentMe();
+      const peer = m.from === meName ? m.to : m.from;
+      if(!peer) return;
+
+      if(typeof privateLastMessages !== "undefined"){
+        privateLastMessages[peer] = m;
+      }
+
+      const el = document.querySelector(`[data-preview-for="${CSS.escape(peer)}"]`);
+      if(el){
+        el.textContent = (m.from === meName ? "You: " : (m.from ? m.from + ": " : "")) + messagePreview(m);
+      }
+    }catch(e){}
+  }
+
+  function getPrivateRows(){
+    return Array.from(document.querySelectorAll("#users .user[data-username]"));
+  }
+
+  function privateUnreadTotal(){
+    try{return Object.values(typeof unread !== "undefined" ? unread : {}).reduce((s,v)=>s+Number(v||0),0);}
+    catch(e){return 0;}
+  }
+
+  function groupUnreadTotal(){
+    try{return Object.values(typeof unreadGroups !== "undefined" ? unreadGroups : {}).reduce((s,v)=>s+Number(v||0),0);}
+    catch(e){return 0;}
+  }
+
+  function hardUpdateFilterCounts(){
+    try{
+      const rows = getPrivateRows();
+      const favs = getFavs();
+      const countAll = rows.length;
+      const countUnread = privateUnreadTotal() + groupUnreadTotal();
+      const countFav = favs.length;
+      const countGroups = Array.isArray(typeof groups !== "undefined" ? groups : []) ? groups.length : 0;
+
+      const map = {countAll, countUnread, countFav, countGroups};
+      Object.entries(map).forEach(([id,val]) => {
+        const el = document.getElementById(id);
+        if(el) el.textContent = val > 99 ? "99+" : String(val);
+      });
+    }catch(e){}
+  }
+
+  window.setChatListFilter = function(type){
+    type = type || "all";
+    localStorage.setItem("rickyyChatListFilter", type);
+
+    const idMap = {all:"filterAllBtn", unread:"filterUnreadBtn", fav:"filterFavBtn", groups:"filterGroupsBtn"};
+    Object.values(idMap).forEach(id => document.getElementById(id)?.classList.remove("active"));
+    document.getElementById(idMap[type] || "filterAllBtn")?.classList.add("active");
+
+    hardApplyFilter();
+    hardUpdateFilterCounts();
+  };
+
+  function hardApplyFilter(){
+    const type = localStorage.getItem("rickyyChatListFilter") || "all";
+    const usersBox = document.getElementById("users");
+    const searchBox = document.querySelector(".search-box");
+    const statusPanel = document.querySelector(".status-panel");
+    const favs = getFavs();
+
+    if(type === "groups"){
+      if(usersBox) usersBox.style.display = "none";
+      if(searchBox) searchBox.style.display = "none";
+      if(statusPanel) statusPanel.style.display = "none";
+      try{ if(typeof showInlineGroups === "function") showInlineGroups(); }catch(e){}
+      return;
+    }
+
+    try{ if(typeof hideInlineGroups === "function") hideInlineGroups(); }catch(e){}
+    if(usersBox) usersBox.style.display = "";
+    if(searchBox) searchBox.style.display = "";
+    if(statusPanel) statusPanel.style.display = "";
+
+    getPrivateRows().forEach(row => {
+      const name = row.getAttribute("data-username") || "";
+      let show = true;
+
+      if(type === "unread"){
+        try{ show = Number(unread?.[name] || 0) > 0; }catch(e){ show = false; }
+      }else if(type === "fav"){
+        show = favs.includes("user:" + name);
+      }else{
+        show = true;
+      }
+
+      row.style.display = show ? "" : "none";
+    });
+  }
+
+  window.hardApplyFilter = hardApplyFilter;
+  window.hardUpdateFilterCounts = hardUpdateFilterCounts;
+
+  function patchRenderUsers(){
+    try{
+      if(typeof renderUsers !== "function" || window.__rickyyRenderUsersHardPatched) return;
+      window.__rickyyRenderUsersHardPatched = true;
+      const oldRenderUsers = renderUsers;
+      renderUsers = function(){
+        const result = oldRenderUsers.apply(this, arguments);
+        setTimeout(() => {
+          hardApplyFilter();
+          hardUpdateFilterCounts();
+          updateFavoriteButton();
+        }, 0);
+        return result;
+      };
+    }catch(e){}
+  }
+
+  function patchSocket(){
+    try{
+      if(typeof socket === "undefined" || !socket || window.__rickyySocketFinalPatched) return;
+      window.__rickyySocketFinalPatched = true;
+
+      socket.on("private-message", m => {
+        putLastMessage(m);
+        setTimeout(() => {
+          try{ if(typeof renderUsers === "function") renderUsers(); }catch(e){}
+          hardUpdateFilterCounts();
+          hardApplyFilter();
+        }, 60);
+      });
+
+      socket.on("unread-counts", counts => {
+        setTimeout(() => {
+          try{ if(typeof renderUsers === "function") renderUsers(); }catch(e){}
+          hardUpdateFilterCounts();
+          hardApplyFilter();
+        }, 60);
+      });
+
+      socket.on("group-message", () => {
+        setTimeout(() => {
+          try{ if(typeof loadGroups === "function") loadGroups(); }catch(e){}
+          hardUpdateFilterCounts();
+        }, 180);
+      });
+
+      socket.on("group-unread-counts", () => {
+        setTimeout(() => {
+          try{ if(typeof renderGroups === "function" && typeof groups !== "undefined") renderGroups(groups); }catch(e){}
+          hardUpdateFilterCounts();
+        }, 60);
+      });
+    }catch(e){}
+  }
+
+  function syncNative(){
+    try{
+      if(!window.RickyYAndroid || !window.RickyYAndroid.syncSession) return;
+      window.RickyYAndroid.syncSession(
+        localStorage.getItem("user") || "",
+        localStorage.getItem("role") || "",
+        localStorage.getItem("authToken") || localStorage.getItem("token") || ""
+      );
+      document.documentElement.classList.add("native-apk");
+      document.body.classList.remove("privacy-guard-active","app-inactive-secure");
+    }catch(e){}
+  }
+
+  function boot(){
+    applyThemeHard(getTheme());
+    patchRenderUsers();
+    patchSocket();
+    syncNative();
+    setChatListFilter(localStorage.getItem("rickyyChatListFilter") || "all");
+    updateFavoriteButton();
+
+    const favBtn = document.getElementById("favoriteChatBtn");
+    if(favBtn) favBtn.onclick = window.toggleCurrentChatFavorite;
+
+    // Speaker symbol/button complete remove
+    ["speakerFab","soundUnlock"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.remove();
+    });
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", () => setTimeout(boot, 800));
+  }else{
+    setTimeout(boot, 800);
+  }
+
+  setInterval(() => {
+    patchRenderUsers();
+    patchSocket();
+    syncNative();
+    hardUpdateFilterCounts();
+    hardApplyFilter();
+  }, 2500);
 })();
 </script>
 
