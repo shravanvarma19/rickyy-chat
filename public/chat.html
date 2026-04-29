@@ -4793,6 +4793,141 @@ body.dark .phase3-report-meta{
 .phase3-status-pill.action_taken{background:#dcfce7;color:#15803d;}
 .phase3-status-pill.dismissed{background:#e5e7eb;color:#374151;}
 
+
+/* RickyY WhatsApp-style filters + header theme/menu */
+.chat-filter-bar{
+  display:flex;
+  gap:8px;
+  padding:10px 12px 4px;
+  overflow-x:auto;
+  scrollbar-width:none;
+}
+.chat-filter-bar::-webkit-scrollbar{display:none;}
+.chat-filter-chip{
+  border:none;
+  outline:none;
+  flex:0 0 auto;
+  display:inline-flex;
+  align-items:center;
+  gap:6px;
+  padding:9px 12px;
+  border-radius:999px;
+  background:rgba(255,255,255,.08);
+  color:#d1d5db;
+  font-size:12px;
+  font-weight:950;
+  cursor:pointer;
+  border:1px solid rgba(255,255,255,.07);
+  transition:.18s ease;
+}
+.chat-filter-chip.active{
+  background:linear-gradient(135deg, rgba(16,185,129,.28), rgba(6,182,212,.16));
+  color:#ecfdf5;
+  border-color:rgba(16,185,129,.28);
+}
+.chat-filter-chip .count{
+  min-width:18px;
+  height:18px;
+  border-radius:999px;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  padding:0 6px;
+  background:rgba(16,185,129,.28);
+  color:#ecfdf5;
+  font-size:10px;
+  font-weight:1000;
+}
+#themeToggleBtn{
+  display:flex;
+}
+.main-menu-pop{
+  position:fixed;
+  top:62px;
+  right:14px;
+  z-index:220000;
+  width:190px;
+  padding:8px;
+  border-radius:20px;
+  background:rgba(15,23,42,.98);
+  border:1px solid rgba(255,255,255,.10);
+  box-shadow:0 22px 58px rgba(0,0,0,.34);
+  backdrop-filter:blur(18px);
+  display:none;
+}
+.main-menu-pop.show{
+  display:block;
+}
+.main-menu-pop button{
+  width:100%;
+  border:none;
+  background:transparent;
+  color:#f8fafc;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  padding:12px;
+  border-radius:14px;
+  font-weight:900;
+  cursor:pointer;
+  text-align:left;
+}
+.main-menu-pop button:hover,
+.main-menu-pop button:active{
+  background:rgba(255,255,255,.09);
+}
+@media(max-width:768px){
+  #navProfileBtn{
+    display:none !important;
+  }
+  #mobileBottomNav{
+    grid-template-columns:repeat(4, minmax(0,1fr)) !important;
+  }
+}
+
+
+/* RickyY bottom nav badges like real app */
+.mobile-nav-btn .nav-ico{
+  position:relative;
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+}
+.nav-badge{
+  position:absolute;
+  top:-9px;
+  right:-13px;
+  min-width:19px;
+  height:19px;
+  padding:0 5px;
+  border-radius:999px;
+  background:#10b981;
+  color:white;
+  font-size:10px;
+  font-weight:1000;
+  display:none;
+  align-items:center;
+  justify-content:center;
+  box-shadow:0 0 0 2px rgba(8,15,26,.96), 0 8px 16px rgba(16,185,129,.32);
+}
+.nav-badge.show{
+  display:inline-flex;
+}
+.nav-dot{
+  position:absolute;
+  top:-5px;
+  right:-7px;
+  width:11px;
+  height:11px;
+  border-radius:999px;
+  background:#10b981;
+  display:none;
+  box-shadow:0 0 0 2px rgba(8,15,26,.96), 0 6px 14px rgba(16,185,129,.38);
+}
+.nav-dot.show{
+  display:block;
+}
+
 </style>
 </head>
 
@@ -4841,8 +4976,12 @@ body.dark .phase3-report-meta{
 <div class="logo">RickyY Chat</div>
 <div class="header-buttons clean-main-header">
 <button id="adminBtn" onclick="openAdminPanel()" style="display:none;" title="Admin Controls">🛡️</button>
+<button id="themeToggleBtn" onclick="toggleHeaderTheme()" title="Theme">🌙</button>
 <button id="mainMenuBtn" onclick="openMenu()" title="Menu">⋮</button>
 </div>
+</div>
+<div id="mainMenuPop" class="main-menu-pop">
+  <button type="button" onclick="openProfileFromMenu()">⚙️ <span>Settings</span></button>
 </div>
 <div class="status-panel">
 <div style="display:flex;align-items:center;justify-content:space-between;">
@@ -4853,6 +4992,14 @@ body.dark .phase3-report-meta{
 </div>
 <div id="statusStrip" style="display:flex;gap:10px;overflow:auto;margin-top:10px;padding-bottom:5px;"></div>
 </div>
+
+<div class="chat-filter-bar" id="chatFilterBar">
+  <button class="chat-filter-chip active" id="filterAllBtn" type="button" onclick="setChatListFilter('all')">All messages <span class="count" id="countAll">0</span></button>
+  <button class="chat-filter-chip" id="filterUnreadBtn" type="button" onclick="setChatListFilter('unread')">Unread <span class="count" id="countUnread">0</span></button>
+  <button class="chat-filter-chip" id="filterFavBtn" type="button" onclick="setChatListFilter('fav')">Favourite <span class="count" id="countFav">0</span></button>
+  <button class="chat-filter-chip" id="filterGroupsBtn" type="button" onclick="setChatListFilter('groups')">Groups <span class="count" id="countGroups">0</span></button>
+</div>
+
 <div class="search-box">
 <input id="userSearch" onkeyup="filterUsers()" placeholder="Search users..." type="text"/>
 </div>
@@ -4909,6 +5056,7 @@ body.dark .phase3-report-meta{
 <button onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📂 Blocked Users</button>
 <button onclick="openCallHistoryPage()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📞 Call History</button>
 <button id="hideChatBtn" onclick="toggleHideCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🙈 Hide Chat</button>
+<button id="favoriteChatBtn" onclick="toggleCurrentChatFavorite()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⭐ Add to Favourite</button>
 <button onclick="openPrivacyControlsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🛡 Privacy Controls</button>
 <button onclick="openSavedMediaModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⭐ Saved Media</button>
 <button id="disappearBtn" onclick="openDisappearSettingsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">⏳ Disappearing Messages</button>
@@ -7012,6 +7160,8 @@ function getUserListBottomText(u){
 
     showChatUI();
     closeMessageSearch();
+    updateFavoriteChatButton();
+    updateFavoriteChatButton();
 
     document.getElementById("chatName").innerText = "👥 " + group.name;
     document.getElementById("chatName").onclick = () => openGroupInfo(group._id);
@@ -14248,17 +14398,226 @@ window.addEventListener("load", () => {
   }
 
 function openMenu(){
-  if (typeof openSettingsModal === "function") {
-    openSettingsModal();
+  const pop = document.getElementById("mainMenuPop");
+  if(!pop) return;
+  pop.classList.toggle("show");
+
+  setTimeout(() => {
+    function close(e){
+      if(pop && !pop.contains(e.target) && e.target?.id !== "mainMenuBtn"){
+        pop.classList.remove("show");
+        document.removeEventListener("click", close, true);
+        document.removeEventListener("touchstart", close, true);
+      }
+    }
+    document.addEventListener("click", close, true);
+    document.addEventListener("touchstart", close, true);
+  }, 60);
+}
+
+function openProfileFromMenu(){
+  const pop = document.getElementById("mainMenuPop");
+  if(pop) pop.classList.remove("show");
+  openProfile();
+}
+
+function updateThemeButton(){
+  const btn = document.getElementById("themeToggleBtn");
+  if(!btn) return;
+  btn.textContent = appSettings.theme === "dark" ? "☀️" : "🌙";
+  btn.title = appSettings.theme === "dark" ? "Light mode" : "Dark mode";
+}
+
+function toggleHeaderTheme(){
+  const next = appSettings.theme === "dark" ? "light" : "dark";
+  setThemeMode(next);
+  updateThemeButton();
+  if(typeof showToast === "function"){
+    showToast(next === "dark" ? "Dark mode enabled" : "Light mode enabled", "success");
+  }
+}
+
+let chatListFilter = localStorage.getItem("rickyyChatListFilter") || "all";
+
+function getFavoriteChats(){
+  try{
+    return JSON.parse(localStorage.getItem("rickyyFavoriteChats") || "[]");
+  }catch(err){
+    return [];
+  }
+}
+
+function saveFavoriteChats(list){
+  localStorage.setItem("rickyyFavoriteChats", JSON.stringify([...(new Set(list || []))]));
+}
+
+function currentChatFavoriteKey(){
+  if(currentGroup) return "group:" + String(currentGroup);
+  if(currentChat) return "user:" + String(currentChat);
+  return "";
+}
+
+function isFavoriteKey(key){
+  return getFavoriteChats().includes(key);
+}
+
+function toggleCurrentChatFavorite(){
+  const key = currentChatFavoriteKey();
+  if(!key){
+    showToast("Open a chat/group first", "warning");
     return;
   }
 
-  if (typeof toggleGroupDrawer === "function") {
-    toggleGroupDrawer();
+  const list = getFavoriteChats();
+  const exists = list.includes(key);
+  const next = exists ? list.filter(x => x !== key) : [...list, key];
+  saveFavoriteChats(next);
+  updateFavoriteChatButton();
+  updateChatFilterCounts();
+  applyChatListFilter();
+
+  showToast(exists ? "Removed from Favourite" : "Added to Favourite", "success");
+}
+
+function updateFavoriteChatButton(){
+  const btn = document.getElementById("favoriteChatBtn");
+  if(!btn) return;
+  const key = currentChatFavoriteKey();
+  const exists = key && isFavoriteKey(key);
+  btn.innerHTML = exists ? "⭐ Remove Favourite" : "⭐ Add to Favourite";
+}
+
+function setChatListFilter(type){
+  chatListFilter = type || "all";
+  localStorage.setItem("rickyyChatListFilter", chatListFilter);
+
+  ["filterAllBtn","filterUnreadBtn","filterFavBtn","filterGroupsBtn"].forEach(id => {
+    document.getElementById(id)?.classList.remove("active");
+  });
+
+  const activeMap = {
+    all:"filterAllBtn",
+    unread:"filterUnreadBtn",
+    fav:"filterFavBtn",
+    groups:"filterGroupsBtn"
+  };
+
+  document.getElementById(activeMap[chatListFilter] || "filterAllBtn")?.classList.add("active");
+  applyChatListFilter();
+  updateChatFilterCounts();
+}
+
+function getVisiblePrivateUsers(){
+  return (Array.isArray(usersList) ? usersList : []).filter(u => {
+    if(!u || u.name === me || u.blocked) return false;
+    if(isChatHidden && isChatHidden(u.name) && !hiddenChatOpenMode) return false;
+    return true;
+  });
+}
+
+function updateChatFilterCounts(){
+  try{
+    const privateUsers = getVisiblePrivateUsers();
+    const favs = getFavoriteChats();
+
+    const unreadPrivate = privateUsers.filter(u => Number(unread?.[u.name] || 0) > 0).length;
+    const unreadGroupItems = Object.values(unreadGroups || {}).filter(v => Number(v || 0) > 0).length;
+    const favCount = favs.length;
+    const groupCount = Array.isArray(groups) ? groups.length : 0;
+
+    const counts = {
+      countAll: privateUsers.length,
+      countUnread: unreadPrivate + unreadGroupItems,
+      countFav: favCount,
+      countGroups: groupCount
+    };
+
+    Object.entries(counts).forEach(([id, value]) => {
+      const el = document.getElementById(id);
+      if(el) el.textContent = value > 99 ? "99+" : String(value);
+    });
+  }catch(err){}
+}
+
+function applyChatListFilter(){
+  const usersBox = document.getElementById("users");
+  const groupsPanel = document.getElementById("inlineGroupsPanel");
+  const callsPanel = document.getElementById("inlineCallsPanel");
+  const searchBox = document.querySelector(".search-box");
+  const statusPanel = document.querySelector(".status-panel");
+
+  if(callsPanel) callsPanel.classList.remove("show");
+
+  if(chatListFilter === "groups"){
+    if(usersBox) usersBox.style.display = "none";
+    if(searchBox) searchBox.style.display = "none";
+    if(statusPanel) statusPanel.style.display = "none";
+    if(typeof showInlineGroups === "function"){
+      showInlineGroups();
+    }else if(groupsPanel){
+      groupsPanel.classList.add("show");
+    }
     return;
   }
 
-  console.log("openMenu fallback not found");
+  if(typeof hideInlineGroups === "function") hideInlineGroups();
+  if(groupsPanel) groupsPanel.classList.remove("show");
+  if(usersBox) usersBox.style.display = "";
+  if(searchBox) searchBox.style.display = "";
+  if(statusPanel) statusPanel.style.display = "";
+
+  const favs = getFavoriteChats();
+
+  document.querySelectorAll("#users .user").forEach(row => {
+    const name = row.getAttribute("data-username") || "";
+    let show = true;
+
+    if(chatListFilter === "unread"){
+      show = Number(unread?.[name] || 0) > 0;
+    }else if(chatListFilter === "fav"){
+      show = favs.includes("user:" + name);
+    }
+
+    row.style.display = show ? "" : "none";
+  });
+}
+
+function setupChatFilterWrap(){
+  const oldRenderUsers = renderUsers;
+  renderUsers = function(){
+    oldRenderUsers();
+    updateChatFilterCounts();
+    applyChatListFilter();
+  };
+
+  if(typeof renderGroups === "function"){
+    const oldRenderGroups = renderGroups;
+    renderGroups = function(groupItems){
+      oldRenderGroups(groupItems);
+      updateChatFilterCounts();
+      if(chatListFilter === "groups" && typeof renderInlineGroups === "function") renderInlineGroups();
+    };
+  }
+
+  if(typeof loadGroups === "function"){
+    const oldLoadGroups = loadGroups;
+    loadGroups = async function(){
+      const result = await oldLoadGroups();
+      updateChatFilterCounts();
+      if(chatListFilter === "groups" && typeof renderInlineGroups === "function") renderInlineGroups();
+      return result;
+    };
+  }
+
+  updateThemeButton();
+  setChatListFilter(chatListFilter);
+  setInterval(updateChatFilterCounts, 2000);
+}
+
+if(document.readyState === "loading"){
+  document.addEventListener("DOMContentLoaded", () => setTimeout(setupChatFilterWrap, 300));
+}else{
+  setTimeout(setupChatFilterWrap, 300);
 }
 </script>
 <div id="callModal" style="display:none;position:fixed;inset:0;z-index:20000;background:#000;color:#fff;align-items:center;justify-content:center;flex-direction:column;">
@@ -14816,10 +15175,10 @@ z-index:99999;
 
 
 <nav id="mobileBottomNav" aria-label="Mobile app navigation">
-  <button class="mobile-nav-btn active" id="navChatsBtn" type="button" onclick="phaseNavChats()"><span class="nav-ico">💬</span><span>Chats</span></button>
-  <button class="mobile-nav-btn" id="navGroupsBtn" type="button" onclick="phaseNavGroups()"><span class="nav-ico">👥</span><span>Groups</span></button>
-  <button class="mobile-nav-btn" id="navStatusBtn" type="button" onclick="phaseNavStatus()"><span class="nav-ico">⭕</span><span>Status</span></button>
-  <button class="mobile-nav-btn" id="navCallsBtn" type="button" onclick="phaseNavCalls()"><span class="nav-ico">📞</span><span>Calls</span></button>
+  <button class="mobile-nav-btn active" id="navChatsBtn" type="button" onclick="phaseNavChats()"><span class="nav-ico">💬<span class="nav-badge" id="navChatsBadge"></span></span><span>Chats</span></button>
+  <button class="mobile-nav-btn" id="navGroupsBtn" type="button" onclick="phaseNavGroups()"><span class="nav-ico">👥<span class="nav-badge" id="navGroupsBadge"></span></span><span>Groups</span></button>
+  <button class="mobile-nav-btn" id="navStatusBtn" type="button" onclick="phaseNavStatus()"><span class="nav-ico">⭕<span class="nav-dot" id="navStatusDot"></span></span><span>Status</span></button>
+  <button class="mobile-nav-btn" id="navCallsBtn" type="button" onclick="phaseNavCalls()"><span class="nav-ico">📞<span class="nav-badge" id="navCallsBadge"></span></span><span>Calls</span></button>
   <button class="mobile-nav-btn" id="navProfileBtn" type="button" onclick="phaseNavProfile()"><span class="nav-ico">👤</span><span>Profile</span></button>
 </nav>
 
@@ -15554,6 +15913,183 @@ z-index:99999;
   setInterval(clean, 1200);
   window.addEventListener("focus", clean);
   window.addEventListener("pageshow", clean);
+})();
+</script>
+
+
+<script>
+(function rickyyBottomNavBadges(){
+  let callBadgeCount = Number(localStorage.getItem("rickyyCallBadgeCount") || 0);
+  let lastStatusSeenAt = localStorage.getItem("rickyyLastStatusSeenAt") || "0";
+
+  function niceCount(n){
+    n = Number(n || 0);
+    return n > 99 ? "99+" : String(n);
+  }
+
+  function setBadge(id, value){
+    const el = document.getElementById(id);
+    if(!el) return;
+    const n = Number(value || 0);
+    el.textContent = niceCount(n);
+    el.classList.toggle("show", n > 0);
+  }
+
+  function setDot(id, show){
+    const el = document.getElementById(id);
+    if(!el) return;
+    el.classList.toggle("show", !!show);
+  }
+
+  function privateUnreadTotal(){
+    try{
+      return Object.values(window.unread || unread || {}).reduce((sum, v) => sum + Number(v || 0), 0);
+    }catch(err){
+      return 0;
+    }
+  }
+
+  function groupUnreadTotal(){
+    try{
+      return Object.values(window.unreadGroups || unreadGroups || {}).reduce((sum, v) => sum + Number(v || 0), 0);
+    }catch(err){
+      return 0;
+    }
+  }
+
+  function checkStatusDotFromCache(){
+    try{
+      const cache = window.allStatusesCache || window.allStatusescache || allStatusesCache || [];
+      const last = Number(localStorage.getItem("rickyyLastStatusSeenAt") || "0");
+      const hasNew = Array.isArray(cache) && cache.some(s => {
+        if(!s || !s.user || s.user === (window.me || me)) return false;
+        const t = new Date(s.createdAt || 0).getTime();
+        return t > last;
+      });
+      setDot("navStatusDot", hasNew);
+    }catch(err){}
+  }
+
+  function refreshBadges(){
+    setBadge("navChatsBadge", privateUnreadTotal());
+    setBadge("navGroupsBadge", groupUnreadTotal());
+    setBadge("navCallsBadge", callBadgeCount);
+    checkStatusDotFromCache();
+  }
+
+  window.rickyyRefreshNavBadges = refreshBadges;
+
+  window.rickyyIncrementCallBadge = function(){
+    callBadgeCount += 1;
+    localStorage.setItem("rickyyCallBadgeCount", String(callBadgeCount));
+    refreshBadges();
+  };
+
+  window.rickyyClearCallBadge = function(){
+    callBadgeCount = 0;
+    localStorage.setItem("rickyyCallBadgeCount", "0");
+    refreshBadges();
+  };
+
+  window.rickyyMarkStatusesSeen = function(){
+    const now = Date.now();
+    localStorage.setItem("rickyyLastStatusSeenAt", String(now));
+    lastStatusSeenAt = String(now);
+    setDot("navStatusDot", false);
+  };
+
+  function patchSocketBadges(){
+    if(!window.socket || window.__rickyyBadgeSocketPatched) return;
+    window.__rickyyBadgeSocketPatched = true;
+
+    socket.on("unread-counts", () => setTimeout(refreshBadges, 80));
+    socket.on("group-unread-counts", () => setTimeout(refreshBadges, 80));
+
+    ["incoming-call", "call-missed", "missed-call", "group-call-invite"].forEach(eventName => {
+      socket.on(eventName, () => {
+        try{
+          if(eventName.includes("call") || eventName.includes("invite")) window.rickyyIncrementCallBadge();
+        }catch(err){}
+      });
+    });
+
+    socket.on("status-update", () => {
+      setTimeout(() => {
+        checkStatusDotFromCache();
+        setDot("navStatusDot", true);
+      }, 800);
+    });
+  }
+
+  function patchNavClicks(){
+    const callsBtn = document.getElementById("navCallsBtn");
+    const statusBtn = document.getElementById("navStatusBtn");
+
+    if(callsBtn && !callsBtn.dataset.badgePatched){
+      callsBtn.dataset.badgePatched = "1";
+      callsBtn.addEventListener("click", () => {
+        window.rickyyClearCallBadge();
+      }, true);
+    }
+
+    if(statusBtn && !statusBtn.dataset.badgePatched){
+      statusBtn.dataset.badgePatched = "1";
+      statusBtn.addEventListener("click", () => {
+        window.rickyyMarkStatusesSeen();
+      }, true);
+    }
+  }
+
+  function patchRenderers(){
+    if(window.__rickyyBadgeRenderPatched) return;
+    window.__rickyyBadgeRenderPatched = true;
+
+    if(typeof window.renderUsers === "function"){
+      const old = window.renderUsers;
+      window.renderUsers = function(){
+        const r = old.apply(this, arguments);
+        setTimeout(refreshBadges, 60);
+        return r;
+      };
+    }
+
+    if(typeof window.renderGroups === "function"){
+      const oldG = window.renderGroups;
+      window.renderGroups = function(){
+        const r = oldG.apply(this, arguments);
+        setTimeout(refreshBadges, 60);
+        return r;
+      };
+    }
+
+    if(typeof window.loadStatuses === "function"){
+      const oldS = window.loadStatuses;
+      window.loadStatuses = async function(){
+        const r = await oldS.apply(this, arguments);
+        setTimeout(checkStatusDotFromCache, 100);
+        return r;
+      };
+    }
+  }
+
+  function boot(){
+    patchSocketBadges();
+    patchNavClicks();
+    patchRenderers();
+    refreshBadges();
+  }
+
+  if(document.readyState === "loading"){
+    document.addEventListener("DOMContentLoaded", () => setTimeout(boot, 800));
+  }else{
+    setTimeout(boot, 800);
+  }
+
+  setInterval(() => {
+    patchSocketBadges();
+    patchNavClicks();
+    refreshBadges();
+  }, 1800);
 })();
 </script>
 
