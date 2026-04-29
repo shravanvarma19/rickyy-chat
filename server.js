@@ -947,41 +947,76 @@ async function sendPushToUser(username, payload) {
 }
 
 async function sendFcmToUser(username, payload = {}) {
+  const result = {
+    ok: false,
+    username,
+    firebaseAdminReady,
+    totalTokens: 0,
+    successCount: 0,
+    failureCount: 0,
+    errors: []
+  };
+
   try {
-    if (!firebaseAdminReady) return;
+    if (!firebaseAdminReady) {
+      result.errors.push("firebaseAdminReady=false");
+      return result;
+    }
 
     const user = await User.findOne({ name: username }).select("fcmTokens name");
-    if (!user || !Array.isArray(user.fcmTokens) || !user.fcmTokens.length) return;
+    if (!user || !Array.isArray(user.fcmTokens) || !user.fcmTokens.length) {
+      result.errors.push("no_fcm_tokens");
+      return result;
+    }
 
     const validTokens = [];
+    const isCall =
+      String(payload.notificationType || "").toLowerCase() === "call" ||
+      String(payload.type || "").toLowerCase() === "call" ||
+      String(payload.tag || "").toLowerCase().includes("call");
+
+    const title = String(payload.title || (isCall ? "Incoming call" : "Shravan Chat"));
+    const body = String(payload.body || (isCall ? "Someone is calling you" : "New message"));
 
     for (const item of user.fcmTokens) {
       const token = typeof item === "string" ? item : item?.token;
       if (!token) continue;
 
+      result.totalTokens++;
+
       try {
         await adminSdk.messaging().send({
           token,
+
+          // IMPORTANT: data-only payload.
+          // This forces native FirebaseMessagingService to build the notification,
+          // so actions like Reply and Mark as read appear from the APK, not Chrome.
           data: {
-            title: String(payload.title || "RickyY Chat"),
-            body: String(payload.body || "New message"),
+            title,
+            body,
             from: String(payload.from || ""),
             to: String(payload.to || ""),
             group: String(payload.group || payload.groupId || ""),
             url: String(payload.url || "/chat.html"),
-            tag: String(payload.tag || "rickyy-message"),
-            type: String(payload.type || ""),
-            notificationType: String(payload.notificationType || "message"),
-            canReply: String(payload.canReply !== false),
-            requireInteraction: String(!!payload.requireInteraction),
-            sound: String(payload.sound || ""),
-            callType: String(payload.callType || "")
+            tag: String(payload.tag || (isCall ? "shravan-call" : "shravan-message")),
+            type: String(payload.type || (isCall ? "call" : "message")),
+            notificationType: String(payload.notificationType || (isCall ? "call" : "message")),
+            canReply: String(payload.canReply !== false && !isCall),
+            canMarkRead: String(payload.canMarkRead !== false && !isCall),
+            requireInteraction: String(!!payload.requireInteraction || isCall),
+            sound: String(payload.sound || (isCall ? "ring" : "default")),
+            callType: String(payload.callType || ""),
+            messageId: String(payload.messageId || payload._id || "")
           },
+
           android: {
             priority: "high",
-            ttl: 60 * 60 * 1000
+            ttl: 60 * 60 * 1000,
+            directBootOk: true
           }
         });
+
+        result.successCount++;
 
         validTokens.push(
           typeof item === "string"
@@ -989,13 +1024,15 @@ async function sendFcmToUser(username, payload = {}) {
             : { ...item, lastSeenAt: new Date() }
         );
       } catch (err) {
+        result.failureCount++;
         const code = String(err?.errorInfo?.code || err?.code || "");
+        result.errors.push({ code, message: err.message });
 
         if (
           code.includes("registration-token-not-registered") ||
           code.includes("invalid-registration-token")
         ) {
-          console.log("Removed invalid FCM token for", username);
+          console.log("Removed invalid FCM token for", username, code);
           continue;
         }
 
@@ -1008,14 +1045,20 @@ async function sendFcmToUser(username, payload = {}) {
       { name: username },
       { $set: { fcmTokens: validTokens } }
     );
+
+    result.ok = result.successCount > 0;
+    return result;
   } catch (err) {
+    result.errors.push({ code: "sendFcmToUser_exception", message: err.message });
     console.log("sendFcmToUser ERROR:", err);
+    return result;
   }
 }
 
 async function sendAppNotification(username, payload = {}) {
-  await sendPushToUser(username, payload);
-  await sendFcmToUser(username, payload);
+  // Native app only. Do NOT send web push, so Chrome/PWA notifications stop.
+  const fcmResult = await sendFcmToUser(username, payload);
+  return { fcmResult };
 }
 
 async function requireAdmin(req, res, next) {
@@ -1817,6 +1860,40 @@ app.post("/api/call/decline", async (req, res) => {
   }
 });
 
+
+app.post("/api/fcm/test-call", requireAdmin, async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body.username || req.body.user);
+    const from = normalizeUsername(req.body.from || req.adminUser?.name || ADMIN_NAME);
+    if (!username) return res.status(400).json({ ok: false, msg: "username required" });
+
+    const result = await sendFcmToUser(username, {
+      title: "📞 Incoming voice call",
+      body: `${from} is calling you`,
+      url: `/chat.html?user=${encodeURIComponent(from)}&call=1`,
+      tag: `incoming-call-test-${Date.now()}`,
+      type: "call",
+      notificationType: "call",
+      callType: "voice",
+      canReply: false,
+      requireInteraction: true,
+      from,
+      to: username,
+      sound: "ring"
+    });
+
+    return res.json({
+      ok: !!result.ok,
+      msg: result.ok ? "Call notification test sent" : "Call notification failed",
+      result
+    });
+  } catch (err) {
+    console.log("FCM TEST CALL ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Call test failed", error: err.message });
+  }
+});
+
+
 app.get("/api/fcm/debug", async (req, res) => {
   try {
     const username = normalizeUsername(req.query.user);
@@ -1852,30 +1929,32 @@ app.get("/api/fcm/debug", async (req, res) => {
 app.post("/api/fcm/test", requireAdmin, async (req, res) => {
   try {
     const username = normalizeUsername(req.body.username || req.body.user);
-    const title = String(req.body.title || "RickyY Test Notification");
-    const body = String(req.body.body || "Native notification test from server");
+    const title = String(req.body.title || "Shravan Chat Test");
+    const body = String(req.body.body || "Native notification with Reply + Mark read ✅");
+    const kind = String(req.body.kind || "message");
 
-    if (!username) {
-      return res.status(400).json({ ok: false, msg: "username required" });
-    }
+    if (!username) return res.status(400).json({ ok: false, msg: "username required" });
 
-    await sendAppNotification(username, {
+    const result = await sendFcmToUser(username, {
       title,
       body,
       url: "/chat.html",
-      tag: `fcm-test-${Date.now()}`,
-      type: "private",
-      notificationType: "message",
-      canReply: true,
+      tag: `native-test-${Date.now()}`,
+      type: kind === "call" ? "call" : "private",
+      notificationType: kind === "call" ? "call" : "message",
+      callType: kind === "call" ? "voice" : "",
+      canReply: kind !== "call",
+      canMarkRead: kind !== "call",
+      requireInteraction: kind === "call",
       from: req.adminUser?.name || ADMIN_NAME,
       to: username,
-      sound: "default"
+      sound: kind === "call" ? "ring" : "default"
     });
 
-    return res.json({ ok: true, msg: "Test notification sent" });
+    return res.json({ ok: !!result.ok, msg: result.ok ? "Native FCM sent" : "Native FCM failed", result });
   } catch (err) {
     console.log("FCM TEST ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "FCM test failed" });
+    return res.status(500).json({ ok: false, msg: "FCM test failed", error: err.message });
   }
 });
 
@@ -1927,6 +2006,58 @@ app.post("/api/push/unsubscribe", async (req, res) => {
     res.status(500).json({ ok: false, msg: "Unsubscribe failed" });
   }
 });
+
+
+app.post("/api/notification-read", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    let user = null;
+
+    if (token) {
+      user = await User.findOne({ authToken: token }).select("name");
+    }
+
+    const username = normalizeUsername(req.body.user || req.body.username);
+    if (!user && username) {
+      user = await User.findOne({ name: username, approvalStatus: "approved" }).select("name");
+    }
+
+    if (!user) return res.status(401).json({ ok: false, msg: "Unauthorized" });
+
+    const from = normalizeUsername(req.body.from || req.body.peer);
+    const group = String(req.body.group || req.body.groupId || "").trim();
+
+    if (group) {
+      await Message.updateMany(
+        { group, from: { $ne: user.name } },
+        { $addToSet: { seenBy: user.name } }
+      );
+
+      const gCounts = await calculateGroupUnread(user.name);
+      io.to(user.name).emit("group-unread-counts", gCounts);
+      return res.json({ ok: true, type: "group", group });
+    }
+
+    if (from) {
+      await Message.updateMany(
+        { from, to: user.name, status: { $ne: "seen" } },
+        { status: "seen" }
+      );
+
+      io.to(from).emit("messages-seen", { by: user.name });
+      const counts = await calculateUnread(user.name);
+      io.to(user.name).emit("unread-counts", counts);
+
+      return res.json({ ok: true, type: "private", from });
+    }
+
+    return res.status(400).json({ ok: false, msg: "from or group required" });
+  } catch (err) {
+    console.log("NOTIFICATION READ ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Mark read failed" });
+  }
+});
+
 
 app.post("/api/notification-reply", async (req, res) => {
   try {
