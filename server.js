@@ -930,7 +930,9 @@ async function sendFcmToUser(username, payload = {}) {
             type: String(payload.type || ""),
             notificationType: String(payload.notificationType || "message"),
             canReply: String(payload.canReply !== false),
-            requireInteraction: String(!!payload.requireInteraction)
+            requireInteraction: String(!!payload.requireInteraction),
+            sound: String(payload.sound || ""),
+            callType: String(payload.callType || "")
           },
           android: {
             priority: "high",
@@ -1734,6 +1736,69 @@ app.post("/api/fcm/register", async (req, res) => {
   }
 });
 
+
+app.get("/api/fcm/debug", async (req, res) => {
+  try {
+    const username = normalizeUsername(req.query.user);
+    if (!username) {
+      return res.status(400).json({ ok: false, msg: "user query required" });
+    }
+
+    const user = await User.findOne({ name: username }).select("name fcmTokens pushSubscriptions approvalStatus blocked online");
+
+    if (!user) {
+      return res.status(404).json({ ok: false, msg: "User not found" });
+    }
+
+    return res.json({
+      ok: true,
+      firebaseAdminReady,
+      user: user.name,
+      approved: user.approvalStatus === "approved",
+      blocked: !!user.blocked,
+      online: !!user.online,
+      fcmTokenCount: Array.isArray(user.fcmTokens) ? user.fcmTokens.length : 0,
+      pushSubscriptionCount: Array.isArray(user.pushSubscriptions) ? user.pushSubscriptions.length : 0,
+      lastFcmSeenAt: Array.isArray(user.fcmTokens) && user.fcmTokens.length
+        ? user.fcmTokens.map(t => t.lastSeenAt || t.createdAt || null).filter(Boolean).slice(-1)[0]
+        : null
+    });
+  } catch (err) {
+    console.log("FCM DEBUG ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "FCM debug failed" });
+  }
+});
+
+app.post("/api/fcm/test", requireAdmin, async (req, res) => {
+  try {
+    const username = normalizeUsername(req.body.username || req.body.user);
+    const title = String(req.body.title || "RickyY Test Notification");
+    const body = String(req.body.body || "Native notification test from server");
+
+    if (!username) {
+      return res.status(400).json({ ok: false, msg: "username required" });
+    }
+
+    await sendAppNotification(username, {
+      title,
+      body,
+      url: "/chat.html",
+      tag: `fcm-test-${Date.now()}`,
+      type: "private",
+      notificationType: "message",
+      canReply: true,
+      from: req.adminUser?.name || ADMIN_NAME,
+      to: username,
+      sound: "default"
+    });
+
+    return res.json({ ok: true, msg: "Test notification sent" });
+  } catch (err) {
+    console.log("FCM TEST ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "FCM test failed" });
+  }
+});
+
 app.post("/api/push/subscribe", async (req, res) => {
   try {
     const { username, subscription } = req.body;
@@ -1843,11 +1908,11 @@ app.post("/api/notification-reply", async (req, res) => {
       io.to(roomNameForGroup(groupId)).emit("group-message", msg);
       await emitGroupUnreadForMembers(groupId).catch(() => {});
 
-      const offlineMembers = (group.members || []).filter(member => {
-        return member !== sender.name && !(userSocketIds[member] && userSocketIds[member].size);
+      const notificationMembers = (group.members || []).filter(member => {
+        return member !== sender.name;
       });
 
-      for (const member of offlineMembers) {
+      for (const member of notificationMembers) {
         await sendAppNotification(member, {
           title: `👥 ${group.name || "Group"}`,
           body: `${sender.name}: ${safeNotificationBody(msg)}`,
@@ -1859,7 +1924,8 @@ app.post("/api/notification-reply", async (req, res) => {
           notificationType: "message",
           canReply: true,
           from: sender.name,
-          group: String(groupId)
+          group: String(groupId),
+          sound: "default"
         });
       }
 
@@ -1899,21 +1965,22 @@ app.post("/api/notification-reply", async (req, res) => {
     if (receiverOnline) {
       const counts = await calculateUnread(to);
       io.to(to).emit("unread-counts", counts);
-    } else {
-      await sendAppNotification(to, {
-        title: sender.name,
-        body: safeNotificationBody(msg),
-        url: `/chat.html?user=${encodeURIComponent(sender.name)}`,
-        tag: `private-${sender.name}`,
-        icon: "/icons/icon-192.png",
-        badge: "/icons/icon-192.png",
-        type: "private",
-        notificationType: "message",
-        canReply: true,
-        from: sender.name,
-        to
-      });
     }
+
+    await sendAppNotification(to, {
+      title: sender.name,
+      body: safeNotificationBody(msg),
+      url: `/chat.html?user=${encodeURIComponent(sender.name)}`,
+      tag: `private-${sender.name}`,
+      icon: "/icons/icon-192.png",
+      badge: "/icons/icon-192.png",
+      type: "private",
+      notificationType: "message",
+      canReply: true,
+      from: sender.name,
+      to,
+      sound: "default"
+    });
 
     return res.json({ ok: true, msg });
   } catch (err) {
@@ -4172,21 +4239,25 @@ socket.on("delete-message", async data => {
       });
 
       await newMsg.save();
-      if (!receiverOnline && data.to !== data.from) {
-  await sendAppNotification(data.to, {
-    title: data.from,
-    body: safeNotificationBody(newMsg),
-    url: `/chat.html?user=${encodeURIComponent(data.from)}`,
-    tag: `private-${data.from}`,
-    icon: "/icons/icon-192.png",
-    badge: "/icons/icon-192.png",
-    type: "private",
-    notificationType: "message",
-    canReply: true,
-    from: data.from,
-    to: data.to
-  });
-}
+
+      // Native APK background socket sometimes stays "online", so always send FCM/PWA notification.
+      // Android app will show real notification with sound; sender never receives duplicate.
+      if (data.to !== data.from) {
+        await sendAppNotification(data.to, {
+          title: data.from,
+          body: safeNotificationBody(newMsg),
+          url: `/chat.html?user=${encodeURIComponent(data.from)}`,
+          tag: `private-${data.from}`,
+          icon: "/icons/icon-192.png",
+          badge: "/icons/icon-192.png",
+          type: "private",
+          notificationType: "message",
+          canReply: true,
+          from: data.from,
+          to: data.to,
+          sound: "default"
+        });
+      }
 
       io.to(data.from).emit("private-message", newMsg);
       io.to(data.to).emit("private-message", newMsg);
@@ -4238,10 +4309,11 @@ socket.on("delete-message", async data => {
       });
 
       await newMsg.save();
-      const offlineRecipients = group.members.filter(
-  member => member !== data.from && !userSocketIds[member]?.size
-);
-for (const member of offlineRecipients) {
+      // Native APK may keep socket online in background, so notify every group member except sender.
+      const notificationRecipients = group.members.filter(
+        member => member !== data.from
+      );
+      for (const member of notificationRecipients) {
   const isMentioned = validMentions.includes(member);
 
   await sendAppNotification(member, {
@@ -4250,14 +4322,15 @@ for (const member of offlineRecipients) {
       ? `${data.from} mentioned you: ${safeNotificationBody(newMsg)}`
       : `${data.from}: ${safeNotificationBody(newMsg)}`,
     url: `/chat.html?group=${encodeURIComponent(String(data.group))}`,
-    tag: isMentioned ? `mention-${data.group}-${member}` : `group-${data.group}`,
+    tag: isMentioned ? `mention-${data.group}-${member}` : `group-${data.group}-${member}`,
     icon: "/icons/icon-192.png",
     badge: "/icons/icon-192.png",
     type: "group",
     notificationType: "message",
     canReply: true,
     from: data.from,
-    group: String(data.group)
+    group: String(data.group),
+    sound: "default"
   });
 }
 // Duplicate offline group push removed. The mention-aware loop above already sends the notification.
@@ -4366,7 +4439,11 @@ for (const member of offlineRecipients) {
           tag: `group-call-${group._id}`,
           icon: "/icons/icon-192.png",
           badge: "/icons/icon-192.png",
+          type: "call",
+          notificationType: "call",
+          callType,
           requireInteraction: true,
+          sound: "ring",
           vibrate: [300, 120, 300, 120, 500]
         });
       }
@@ -4490,7 +4567,12 @@ for (const member of offlineRecipients) {
       url: `/chat.html?user=${encodeURIComponent(from)}`,
       tag: `incoming-call-${from}`,
       icon: "/icons/icon-192.png",
-      badge: "/icons/icon-192.png"
+      badge: "/icons/icon-192.png",
+      type: "call",
+      notificationType: "call",
+      callType,
+      requireInteraction: true,
+      sound: "ring"
     });
 
     // 25 sec lo accept kakapothe missed
