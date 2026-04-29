@@ -1785,6 +1785,38 @@ app.post("/api/fcm/register", async (req, res) => {
 });
 
 
+
+app.post("/api/call/decline", async (req, res) => {
+  try {
+    const from = normalizeUsername(req.body.from); // caller
+    const to = normalizeUsername(req.body.to);     // receiver
+    if (!from || !to) {
+      return res.status(400).json({ ok: false, msg: "from/to required" });
+    }
+
+    io.to(from).emit("call-unavailable", { to, reason: "declined" });
+    io.to(from).emit("call-end", { from: to });
+
+    clearCall(from);
+    clearCall(to);
+    delete pendingCallOffers[from];
+    delete pendingCallOffers[to];
+
+    await Call.create({
+      from,
+      to,
+      type: String(req.body.callType || "voice"),
+      status: "declined",
+      time: formatTime()
+    });
+
+    return res.json({ ok: true });
+  } catch (err) {
+    console.log("CALL DECLINE API ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "decline failed" });
+  }
+});
+
 app.get("/api/fcm/debug", async (req, res) => {
   try {
     const username = normalizeUsername(req.query.user);
@@ -4777,46 +4809,50 @@ socket.on("delete-message", async data => {
 
   socket.on("call-user", async ({ to, from, type }) => {
   try {
+    to = normalizeUsername(to);
+    from = normalizeUsername(from);
     const callType = type === "video" ? "video" : "voice";
+
+    if (!to || !from || to === from) {
+      socket.emit("call-unavailable", { to, reason: "invalid" });
+      return;
+    }
 
     if (isBusy(from)) {
       socket.emit("call-busy", { to, reason: "you_busy" });
+      socket.emit("call-unavailable", { to, reason: "you_busy" });
       return;
     }
 
     if (isBusy(to)) {
       socket.emit("call-busy", { to, reason: "user_busy" });
+      socket.emit("call-unavailable", { to, reason: "user_busy" });
       return;
     }
 
     setCall(from, to, "ringing", callType);
 
-    // caller side ringback always start avvali
     io.to(from).emit("call-ringing", { to, type: callType });
 
-    const online = await isUserOnline(to);
+    // socket online unte immediate app popup; offline/background ki FCM full-screen notification.
+    io.to(to).emit("incoming-call", { from, type: callType });
 
-    // callee app open unte direct incoming-call emit
-    if (online) {
-      io.to(to).emit("incoming-call", { from, type: callType });
-    }
-
-    // app close/recent clear/background unna push ravali
     await sendAppNotification(to, {
       title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
       body: `${from} is calling you`,
-      url: `/chat.html?user=${encodeURIComponent(from)}`,
-      tag: `incoming-call-${from}`,
+      url: `/chat.html?user=${encodeURIComponent(from)}&call=1`,
+      tag: `incoming-call-${from}-${Date.now()}`,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       type: "call",
       notificationType: "call",
       callType,
       requireInteraction: true,
-      sound: "ring"
+      sound: "ring",
+      from,
+      to
     });
 
-    // 25 sec lo accept kakapothe missed
     setTimeout(async () => {
       try {
         if (callState[from] && callState[from].status === "ringing") {
@@ -4839,11 +4875,26 @@ socket.on("delete-message", async data => {
           );
 
           io.to(from).emit("call-unavailable", { to, reason: "missed" });
+
+          await sendAppNotification(to, {
+            title: "Missed call",
+            body: `${from} called you`,
+            url: `/chat.html?user=${encodeURIComponent(from)}`,
+            tag: `missed-call-${from}-${Date.now()}`,
+            icon: "/icons/icon-192.png",
+            badge: "/icons/icon-192.png",
+            type: "call",
+            notificationType: "call",
+            callType,
+            sound: "default",
+            from,
+            to
+          });
         }
       } catch (err) {
         console.log("MISSED CALL TIMER ERROR:", err);
       }
-    }, 25000);
+    }, 30000);
   } catch (e) {
     console.log("call-user error", e);
     socket.emit("call-unavailable", { to, reason: "error" });
@@ -4851,11 +4902,18 @@ socket.on("delete-message", async data => {
 });
 
  socket.on("call-offer", ({ to, from, offer, type }) => {
-  if (!callState[from] || callState[from].peer !== to) return;
+  to = normalizeUsername(to);
+  from = normalizeUsername(from);
+  if (!to || !from || !offer) return;
 
-  const callType = callState[from].type || (type === "video" ? "video" : "voice");
+  const callType =
+    (callState[from] && callState[from].type) ||
+    (type === "video" ? "video" : "voice");
 
-  // callee app close ayina join ayyaka resend cheyyadaniki store chestham
+  if (!callState[from] || callState[from].peer !== to) {
+    setCall(from, to, "ringing", callType);
+  }
+
   pendingCallOffers[to] = {
     from,
     offer,
@@ -4868,12 +4926,21 @@ socket.on("delete-message", async data => {
 
   socket.on("call-answer", async ({ to, from, answer, type }) => {
   try {
-    if (!callState[from] || callState[from].peer !== to) return;
+    to = normalizeUsername(to);
+    from = normalizeUsername(from);
+    if (!to || !from || !answer) return;
 
-    callState[from].status = "in_call";
+    const callType =
+      (callState[from] && callState[from].type) ||
+      (callState[to] && callState[to].type) ||
+      (type === "video" ? "video" : "voice");
+
+    if (!callState[from] || callState[from].peer !== to) {
+      setCall(from, to, "in_call", callType);
+    }
+
+    if (callState[from]) callState[from].status = "in_call";
     if (callState[to]) callState[to].status = "in_call";
-
-    const callType = callState[from].type || (type === "video" ? "video" : "voice");
 
     delete pendingCallOffers[from];
     delete pendingCallOffers[to];
@@ -4888,15 +4955,45 @@ socket.on("delete-message", async data => {
       time: formatTime()
     });
   } catch (err) {
-    console.log(err);
+    console.log("CALL ANSWER ERROR:", err);
   }
 });
 
   socket.on("call-ice", ({ to, from, candidate, type }) => {
-    if (!callState[from] || callState[from].peer !== to) return;
-    const callType = callState[from].type || (type === "video" ? "video" : "voice");
+    to = normalizeUsername(to);
+    from = normalizeUsername(from);
+    if (!to || !from || !candidate) return;
+    const callType =
+      (callState[from] && callState[from].type) ||
+      (type === "video" ? "video" : "voice");
     io.to(to).emit("call-ice", { from, candidate, type: callType });
   });
+
+  socket.on("call-decline", async ({ to, from }) => {
+  try {
+    to = normalizeUsername(to);
+    from = normalizeUsername(from);
+    if (!to || !from) return;
+
+    io.to(to).emit("call-unavailable", { to: from, reason: "declined" });
+    io.to(to).emit("call-end", { from });
+
+    clearCall(from);
+    clearCall(to);
+    delete pendingCallOffers[from];
+    delete pendingCallOffers[to];
+
+    await Call.create({
+      from: to,
+      to: from,
+      type: "voice",
+      status: "declined",
+      time: formatTime()
+    });
+  } catch (err) {
+    console.log("CALL DECLINE ERROR:", err);
+  }
+});
 
   socket.on("call-end", async ({ to, from }) => {
   try {

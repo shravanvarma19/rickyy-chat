@@ -5039,6 +5039,28 @@ body:not(.dark) .mobile-nav-btn.active{
   background:#d1fae5 !important;
 }
 
+
+/* RickyY WhatsApp calling final */
+#speakerFab,#soundUnlock,.speaker-fab,.sound-unlock{display:none!important;opacity:0!important;pointer-events:none!important;}
+#callModal{
+  z-index:250000!important;
+}
+.call-debug-pill{
+  position:absolute;
+  left:50%;
+  bottom:92px;
+  transform:translateX(-50%);
+  color:#d1fae5;
+  background:rgba(15,23,42,.72);
+  border:1px solid rgba(16,185,129,.24);
+  border-radius:999px;
+  padding:7px 12px;
+  font-size:12px;
+  font-weight:800;
+  z-index:8;
+  display:none;
+}
+
 </style>
 </head>
 
@@ -12212,8 +12234,12 @@ socket.on("stop-typing", user => {
   const rtcConfig = {
     iceServers: [
       { urls: "stun:stun.l.google.com:19302" },
-      { urls: "stun:stun1.l.google.com:19302" }
-    ]
+      { urls: "stun:stun1.l.google.com:19302" },
+      { urls: "stun:stun2.l.google.com:19302" },
+      { urls: "stun:stun3.l.google.com:19302" },
+      { urls: "stun:stun4.l.google.com:19302" }
+    ],
+    iceCandidatePoolSize: 10
   };
 
   function showCallModal(){
@@ -12298,23 +12324,26 @@ socket.on("stop-typing", user => {
   }
 
   async function createPeerIfNeeded(){
-    if(pc) return;
+    if(pc && pc.signalingState !== "closed") return;
 
     pc = new RTCPeerConnection(rtcConfig);
 
     pc.onicecandidate = (e)=>{
       if(e.candidate && callPeer){
-        socket.emit("call-ice", { to: callPeer, from: me, candidate: e.candidate });
+        socket.emit("call-ice", { to: callPeer, from: me, candidate: e.candidate, type: callMode || "voice" });
       }
     };
 
     pc.ontrack = (e)=>{
-      const stream = e.streams[0];
+      const stream = e.streams && e.streams[0];
+      if(!stream) return;
 
       if(callMode === "video"){
         const rv = document.getElementById("remoteVideo");
         if(rv){
           rv.srcObject = stream;
+          rv.muted = false;
+          rv.volume = 1;
           rv.play().catch(()=>{});
         }
         videoEls(true, true);
@@ -12328,19 +12357,80 @@ socket.on("stop-typing", user => {
         }
         videoEls(false, false);
       }
+
+      const pill = document.getElementById("callDebugPill");
+      if(pill){ pill.style.display = "block"; pill.textContent = "Connected audio"; }
+    };
+
+    pc.oniceconnectionstatechange = ()=>{
+      const pill = document.getElementById("callDebugPill");
+      if(pill && pc){
+        pill.style.display = "block";
+        pill.textContent = "Network: " + pc.iceConnectionState;
+      }
+
+      if(!pc) return;
+      if(pc.iceConnectionState === "failed"){
+        try{ pc.restartIce && pc.restartIce(); }catch(e){}
+      }
     };
 
     pc.onconnectionstatechange = ()=>{
       if(!pc) return;
-      if(pc.connectionState === "failed" || pc.connectionState === "disconnected"){
-        cleanupCall();
+      const pill = document.getElementById("callDebugPill");
+      if(pill){
+        pill.style.display = "block";
+        pill.textContent = "Call: " + pc.connectionState;
+      }
+
+      if(pc.connectionState === "connected"){
+        stopAllRings();
+        inCall = true;
+        startCallTimer();
+        setCallUI({
+          title: callPeer || "In call",
+          sub: "Connected",
+          showAccept: false,
+          showInCallControls: true
+        });
+      }
+
+      if(pc.connectionState === "failed"){
+        setTimeout(() => {
+          if(pc && pc.connectionState === "failed"){
+            alert("Call network failed. Try again with stronger internet.");
+            cleanupCall();
+          }
+        }, 2500);
       }
     };
   }
 
   async function getLocalStream(mode){
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      alert("Calling not supported on this device/browser WebView");
+      throw new Error("getUserMedia not supported");
+    }
+
     const wantVideo = (mode === "video");
-    localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video: wantVideo });
+
+    try{
+      if(localStream){
+        localStream.getTracks().forEach(t => t.stop());
+        localStream = null;
+      }
+
+      localStream = await navigator.mediaDevices.getUserMedia({
+        audio: { echoCancellation:true, noiseSuppression:true, autoGainControl:true },
+        video: wantVideo ? { facingMode: currentFacing || "user" } : false
+      });
+    }catch(err){
+      console.log("getLocalStream error:", err);
+      alert(wantVideo
+        ? "Camera/Microphone permission allow cheyyi"
+        : "Microphone permission allow cheyyi");
+      throw err;
+    }
 
     if(wantVideo){
       const lv = document.getElementById("localVideo");
@@ -12354,7 +12444,9 @@ socket.on("stop-typing", user => {
       videoEls(false, false);
     }
 
-    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    localStream.getTracks().forEach(t => {
+      try{ pc.addTrack(t, localStream); }catch(e){}
+    });
   }
 
 
@@ -12608,26 +12700,37 @@ socket.on("stop-typing", user => {
     }
   }
 
-  async function startCall(){
+  async function startOneToOneCall(type = "voice"){
     if(currentGroup && !currentChat){
-      await startGroupCall("voice");
+      await startGroupCall(type === "video" ? "video" : "voice");
       return;
     }
-    if(!currentChat) return;
+
+    if(!currentChat){
+      showToast ? showToast("Open a user chat first", "warning") : alert("Open a user chat first");
+      return;
+    }
+
+    if(!socket || !socket.connected){
+      try{ socket.connect(); }catch(e){}
+      showToast ? showToast("Connecting socket...", "info") : null;
+      await new Promise(resolve => setTimeout(resolve, 900));
+    }
 
     try{
       await tryUnlockSounds();
 
       cleanupCall();
+
       callPeer = currentChat;
-      callMode = "voice";
+      callMode = type === "video" ? "video" : "voice";
       pendingOffer = null;
       inCall = false;
 
       setCallerInfo(callPeer);
 
       const incomingType = document.getElementById("incomingType");
-      if(incomingType) incomingType.innerText = "Calling";
+      if(incomingType) incomingType.innerText = callMode === "video" ? "Video calling" : "Calling";
 
       setCallUI({
         title: callPeer,
@@ -12636,96 +12739,69 @@ socket.on("stop-typing", user => {
         showInCallControls: false
       });
 
+      const pill = document.getElementById("callDebugPill");
+      if(pill){ pill.style.display = "block"; pill.textContent = "Starting call..."; }
+
       startRingback();
 
       await createPeerIfNeeded();
-      await getLocalStream("voice");
+      await getLocalStream(callMode);
 
-      const offer = await pc.createOffer();
+      const offer = await pc.createOffer({
+        offerToReceiveAudio: true,
+        offerToReceiveVideo: callMode === "video"
+      });
+
       await pc.setLocalDescription(offer);
 
       socket.emit("call-user", {
         to: callPeer,
         from: me,
-        type: "voice"
+        type: callMode
       });
 
-      socket.emit("call-offer", {
-        to: callPeer,
-        from: me,
-        offer,
-        type: "voice"
-      });
+      // Socket order + server state settle kosam small delay.
+      setTimeout(() => {
+        socket.emit("call-offer", {
+          to: callPeer,
+          from: me,
+          offer: pc ? pc.localDescription : offer,
+          type: callMode
+        });
+      }, 260);
 
+      setTimeout(() => {
+        if(callPeer && !inCall){
+          const p = document.getElementById("callDebugPill");
+          if(p){ p.style.display = "block"; p.textContent = "Still ringing..."; }
+        }
+      }, 10000);
     }catch(err){
-      console.log("startCall error:", err);
+      console.log("startOneToOneCall error:", err);
+      stopAllRings();
+      cleanupCall();
     }
+  }
+
+  async function startCall(){
+    await startOneToOneCall("voice");
   }
 
   async function startVideoCall(){
-    if(currentGroup && !currentChat){
-      await startGroupCall("video");
-      return;
-    }
-    if(!currentChat) return;
-
-    try{
-      await tryUnlockSounds();
-
-      cleanupCall();
-      callPeer = currentChat;
-      callMode = "video";
-      pendingOffer = null;
-      inCall = false;
-
-      setCallerInfo(callPeer);
-
-      const incomingType = document.getElementById("incomingType");
-      if(incomingType) incomingType.innerText = "Video calling";
-
-      setCallUI({
-        title: callPeer,
-        sub: "Ringing...",
-        showAccept: false,
-        showInCallControls: false
-      });
-
-      startRingback();
-
-      await createPeerIfNeeded();
-      await getLocalStream("video");
-
-      const offer = await pc.createOffer();
-      await pc.setLocalDescription(offer);
-
-      socket.emit("call-user", {
-        to: callPeer,
-        from: me,
-        type: "video"
-      });
-
-      socket.emit("call-offer", {
-        to: callPeer,
-        from: me,
-        offer,
-        type: "video"
-      });
-
-    }catch(err){
-      console.log("startVideoCall error:", err);
-    }
+    await startOneToOneCall("video");
   }
 
   socket.on("incoming-call", async ({ from, type })=>{
-    if(callPeer && callPeer !== from) return;
+    if(callPeer && callPeer !== from) {
+      socket.emit("call-busy", { to: from, from: me, reason: "user_busy" });
+      return;
+    }
 
     callPeer = from;
     callMode = (type === "video") ? "video" : "voice";
     inCall = false;
 
-    if(document.hidden || !document.hasFocus()){
-      await showIncomingCallNotification(from, callMode);
-    }
+    await showIncomingCallNotification(from, callMode).catch(()=>{});
 
     setCallerInfo(from);
 
@@ -12739,6 +12815,9 @@ socket.on("stop-typing", user => {
       showAccept: true,
       showInCallControls: false
     });
+
+    const pill = document.getElementById("callDebugPill");
+    if(pill){ pill.style.display = "block"; pill.textContent = "Incoming call"; }
 
     startRingtone();
   });
@@ -12776,9 +12855,7 @@ socket.on("stop-typing", user => {
     callMode = (type === "video") ? "video" : "voice";
     pendingOffer = offer;
 
-    if(document.hidden || !document.hasFocus()){
-      await showIncomingCallNotification(from, callMode);
-    }
+    await showIncomingCallNotification(from, callMode).catch(()=>{});
 
     setCallerInfo(from);
 
@@ -12792,6 +12869,9 @@ socket.on("stop-typing", user => {
       showAccept: true,
       showInCallControls: false
     });
+
+    const pill = document.getElementById("callDebugPill");
+    if(pill){ pill.style.display = "block"; pill.textContent = "Offer received"; }
 
     startRingtone();
   });
@@ -12860,6 +12940,14 @@ socket.on("stop-typing", user => {
     cleanupCall();
   });
 
+  async function waitForPendingOffer(ms = 7000){
+    const start = Date.now();
+    while(!pendingOffer && Date.now() - start < ms){
+      await new Promise(resolve => setTimeout(resolve, 180));
+    }
+    return pendingOffer;
+  }
+
   async function acceptCall(){
     if(groupCallInvite && groupCallInvite.groupId){
       await tryUnlockSounds();
@@ -12913,16 +13001,22 @@ socket.on("stop-typing", user => {
         showInCallControls: false
       });
 
+      const pill = document.getElementById("callDebugPill");
+      if(pill){ pill.style.display = "block"; pill.textContent = "Waiting for offer..."; }
+
       await createPeerIfNeeded();
       await getLocalStream(callMode || "voice");
 
-      if(!pendingOffer){
-        alert("Offer not received yet");
+      const offer = await waitForPendingOffer(7000);
+      if(!offer){
+        alert("Call offer not received. Ask caller to call again.");
         cleanupCall();
         return;
       }
 
-      await pc.setRemoteDescription(new RTCSessionDescription(pendingOffer));
+      if(pill) pill.textContent = "Accepting...";
+
+      await pc.setRemoteDescription(new RTCSessionDescription(offer));
 
       const answer = await pc.createAnswer();
       await pc.setLocalDescription(answer);
@@ -12930,7 +13024,7 @@ socket.on("stop-typing", user => {
       socket.emit("call-answer", {
         to: callPeer,
         from: me,
-        answer,
+        answer: pc.localDescription || answer,
         type: callMode
       });
 
@@ -12946,12 +13040,12 @@ socket.on("stop-typing", user => {
       });
     }catch(err){
       console.log("acceptCall error:", err);
-      alert("Call accept failed");
+      alert("Call accept failed: " + (err.message || "permission/network"));
       cleanupCall();
     }
   }
 
-  socket.on("call-answer", async ({ answer }) => {
+  socket.on("call-answer", async ({ from, answer }) => {
     try{
       if(!pc) return;
 
@@ -12962,11 +13056,14 @@ socket.on("stop-typing", user => {
       startCallTimer();
 
       setCallUI({
-        title: callPeer || "In call",
+        title: callPeer || from || "In call",
         sub: "Connected",
         showAccept: false,
         showInCallControls: true
       });
+
+      const pill = document.getElementById("callDebugPill");
+      if(pill){ pill.style.display = "block"; pill.textContent = "Connected"; }
 
       if(callMode === "voice"){
         const ra = getRemoteAudioEl();
@@ -12993,6 +13090,15 @@ socket.on("stop-typing", user => {
     cleanupCall();
   });
 
+
+  function declineCall(){
+    try{
+      if(callPeer){
+        socket.emit("call-decline", { to: callPeer, from: me });
+      }
+    }catch(e){}
+    cleanupCall();
+  }
 
   function endCall(){
     try{
@@ -14736,6 +14842,7 @@ if(document.readyState === "loading"){
 <div id="callModal" style="display:none;position:fixed;inset:0;z-index:20000;background:#000;color:#fff;align-items:center;justify-content:center;flex-direction:column;">
 <video autoplay="" id="remoteVideo" playsinline="" style="position:absolute;inset:0;width:100%;height:100%;object-fit:cover;display:none;"></video>
 <div id="callOverlay" style="position:absolute;inset:0;background:radial-gradient(circle at top, rgba(255,255,255,0.06), rgba(0,0,0,0.92));"></div>
+<div id="callDebugPill" class="call-debug-pill">Connecting...</div>
 <div style="position:absolute;top:0;left:0;right:0;padding:18px 16px;display:flex;align-items:center;gap:12px;z-index:5;">
 <div style="width:52px;height:52px;border-radius:50%;overflow:hidden;border:2px solid rgba(255,255,255,0.4);flex:0 0 auto;box-shadow:0 6px 18px rgba(0,0,0,0.45);">
 <img alt="dp" id="callDp" src="/default.png" style="width:100%;height:100%;object-fit:cover;"/>
