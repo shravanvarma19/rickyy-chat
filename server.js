@@ -11,7 +11,7 @@ const { Server } = require("socket.io");
 const mongoose = require("mongoose");
 const crypto = require("crypto");
 const webpush = require("web-push");
-const adminSdk = require("firebase-admin");
+
 const {
   verifyRegistrationResponse,
   verifyAuthenticationResponse,
@@ -75,48 +75,6 @@ if (
 }
 
 
-/* =========================
-   FIREBASE ADMIN / NATIVE FCM
-========================= */
-let firebaseAdminReady = false;
-
-try {
-  const rawServiceAccount =
-    process.env.FIREBASE_SERVICE_ACCOUNT_JSON ||
-    process.env.FIREBASE_SERVICE_ACCOUNT ||
-    "";
-
-  const rawBase64 =
-    process.env.FIREBASE_SERVICE_ACCOUNT_BASE64 ||
-    "";
-
-  let serviceAccount = null;
-
-  if (rawServiceAccount) {
-    serviceAccount = JSON.parse(rawServiceAccount);
-  } else if (rawBase64) {
-    serviceAccount = JSON.parse(Buffer.from(rawBase64, "base64").toString("utf8"));
-  }
-
-  if (serviceAccount) {
-    if (serviceAccount.private_key) {
-      serviceAccount.private_key = String(serviceAccount.private_key).replace(/\\n/g, "\n");
-    }
-
-    if (!adminSdk.apps.length) {
-      adminSdk.initializeApp({
-        credential: adminSdk.credential.cert(serviceAccount)
-      });
-    }
-
-    firebaseAdminReady = true;
-    console.log("Firebase Admin Connected");
-  } else {
-    console.log("FCM WARNING: FIREBASE_SERVICE_ACCOUNT_JSON missing");
-  }
-} catch (err) {
-  console.log("FCM INIT ERROR:", err.message);
-}
 
 function formatTime(date = new Date()) {
   let hours = date.getHours();
@@ -946,117 +904,11 @@ async function sendPushToUser(username, payload) {
   }
 }
 
-async function sendFcmToUser(username, payload = {}) {
-  const result = {
-    ok: false,
-    username,
-    firebaseAdminReady,
-    totalTokens: 0,
-    successCount: 0,
-    failureCount: 0,
-    errors: []
-  };
 
-  try {
-    if (!firebaseAdminReady) {
-      result.errors.push("firebaseAdminReady=false");
-      return result;
-    }
-
-    const user = await User.findOne({ name: username }).select("fcmTokens name");
-    if (!user || !Array.isArray(user.fcmTokens) || !user.fcmTokens.length) {
-      result.errors.push("no_fcm_tokens");
-      return result;
-    }
-
-    const validTokens = [];
-    const isCall =
-      String(payload.notificationType || "").toLowerCase() === "call" ||
-      String(payload.type || "").toLowerCase() === "call" ||
-      String(payload.tag || "").toLowerCase().includes("call");
-
-    const title = String(payload.title || (isCall ? "Incoming call" : "Shravan Chat"));
-    const body = String(payload.body || (isCall ? "Someone is calling you" : "New message"));
-    const channelId = isCall ? "shravan_safe_calls_v1" : "shravan_safe_messages_v1";
-
-    for (const item of user.fcmTokens) {
-      const token = typeof item === "string" ? item : item?.token;
-      if (!token) continue;
-
-      result.totalTokens++;
-
-      try {
-        await adminSdk.messaging().send({
-          token,
-          notification: { title, body },
-          data: {
-            title,
-            body,
-            sender: String(payload.from || payload.sender || ""),
-            to: String(payload.to || ""),
-            group: String(payload.group || payload.groupId || ""),
-            url: String(payload.url || "/chat.html"),
-            tag: String(payload.tag || (isCall ? "shravan-call" : "shravan-message")),
-            type: String(payload.type || (isCall ? "call" : "message")),
-            notificationType: String(payload.notificationType || (isCall ? "call" : "message")),
-            callType: String(payload.callType || ""),
-            messageId: String(payload.messageId || payload._id || "")
-          },
-          android: {
-            priority: "high",
-            ttl: 60 * 60 * 1000,
-            notification: {
-              channelId,
-              title,
-              body,
-              sound: "default",
-              visibility: "public",
-              priority: isCall ? "max" : "high",
-              defaultSound: true,
-              defaultVibrateTimings: true,
-              notificationCount: 1
-            }
-          }
-        });
-
-        result.successCount++;
-        validTokens.push(
-          typeof item === "string"
-            ? { token, platform: "android-native", lastSeenAt: new Date() }
-            : { ...item, lastSeenAt: new Date() }
-        );
-      } catch (err) {
-        result.failureCount++;
-        const code = String(err?.errorInfo?.code || err?.code || "");
-        result.errors.push({ code, message: err.message });
-
-        if (
-          code.includes("registration-token-not-registered") ||
-          code.includes("invalid-registration-token")
-        ) {
-          console.log("Removed invalid FCM token for", username, code);
-          continue;
-        }
-
-        console.log("FCM SEND ERROR:", username, code, err.message);
-        validTokens.push(item);
-      }
-    }
-
-    await User.updateOne({ name: username }, { $set: { fcmTokens: validTokens } });
-    result.ok = result.successCount > 0;
-    return result;
-  } catch (err) {
-    result.errors.push({ code: "sendFcmToUser_exception", message: err.message });
-    console.log("sendFcmToUser ERROR:", err);
-    return result;
-  }
-}
 
 async function sendAppNotification(username, payload = {}) {
-  // Stable notifications: native FCM only, no Chrome/Web Push.
-  const fcmResult = await sendFcmToUser(username, payload);
-  return { fcmResult };
+  await sendPushToUser(username, payload);
+  
 }
 
 async function requireAdmin(req, res, next) {
@@ -1777,181 +1629,7 @@ app.get("/api/push-public-key", (req, res) => {
 });
 
 
-app.post("/api/fcm/register", async (req, res) => {
-  try {
-    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
-    const username = normalizeUsername(req.body.username);
-    const fcmToken = String(req.body.fcmToken || "").trim();
-    const device = String(req.body.device || "Android").trim().slice(0, 120);
-    const platform = String(req.body.platform || "android-native").trim().slice(0, 80);
 
-    if (!username || !fcmToken) {
-      return res.status(400).json({ ok: false, msg: "Missing FCM register data" });
-    }
-
-    let user = null;
-    if (token) {
-      user = await User.findOne({ authToken: token, name: username });
-    }
-    if (!user) {
-      user = await User.findOne({ name: username, approvalStatus: "approved" });
-    }
-
-    if (!user || user.blocked || user.approvalStatus !== "approved") {
-      return res.status(401).json({ ok: false, msg: "Unauthorized" });
-    }
-
-    const current = Array.isArray(user.fcmTokens) ? user.fcmTokens : [];
-    const filtered = current.filter(item => {
-      const oldToken = typeof item === "string" ? item : item?.token;
-      return oldToken && oldToken !== fcmToken;
-    });
-
-    filtered.push({
-      token: fcmToken,
-      device,
-      platform,
-      createdAt: new Date(),
-      lastSeenAt: new Date()
-    });
-
-    user.fcmTokens = filtered.slice(-8);
-    await user.save();
-
-    return res.json({ ok: true, msg: "FCM registered", fcmTokenCount: user.fcmTokens.length });
-  } catch (err) {
-    console.log("FCM REGISTER ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "FCM register failed" });
-  }
-});
-
-
-
-app.post("/api/call/decline", async (req, res) => {
-  try {
-    const from = normalizeUsername(req.body.from); // caller
-    const to = normalizeUsername(req.body.to);     // receiver
-    if (!from || !to) {
-      return res.status(400).json({ ok: false, msg: "from/to required" });
-    }
-
-    io.to(from).emit("call-unavailable", { to, reason: "declined" });
-    io.to(from).emit("call-end", { from: to });
-
-    clearCall(from);
-    clearCall(to);
-    delete pendingCallOffers[from];
-    delete pendingCallOffers[to];
-
-    await Call.create({
-      from,
-      to,
-      type: String(req.body.callType || "voice"),
-      status: "declined",
-      time: formatTime()
-    });
-
-    return res.json({ ok: true });
-  } catch (err) {
-    console.log("CALL DECLINE API ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "decline failed" });
-  }
-});
-
-
-app.post("/api/fcm/test-call", requireAdmin, async (req, res) => {
-  try {
-    const username = normalizeUsername(req.body.username || req.body.user);
-    const from = normalizeUsername(req.body.from || req.adminUser?.name || ADMIN_NAME);
-    if (!username) return res.status(400).json({ ok: false, msg: "username required" });
-
-    const result = await sendFcmToUser(username, {
-      title: "📞 Incoming voice call",
-      body: `${from} is calling you`,
-      url: `/chat.html?user=${encodeURIComponent(from)}&call=1`,
-      tag: `incoming-call-test-${Date.now()}`,
-      type: "call",
-      notificationType: "call",
-      callType: "voice",
-      canReply: false,
-      requireInteraction: true,
-      from,
-      to: username,
-      sound: "ring"
-    });
-
-    return res.json({
-      ok: !!result.ok,
-      msg: result.ok ? "Call notification test sent" : "Call notification failed",
-      result
-    });
-  } catch (err) {
-    console.log("FCM TEST CALL ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "Call test failed", error: err.message });
-  }
-});
-
-
-app.get("/api/fcm/debug", async (req, res) => {
-  try {
-    const username = normalizeUsername(req.query.user);
-    if (!username) {
-      return res.status(400).json({ ok: false, msg: "user query required" });
-    }
-
-    const user = await User.findOne({ name: username }).select("name fcmTokens pushSubscriptions approvalStatus blocked online");
-
-    if (!user) {
-      return res.status(404).json({ ok: false, msg: "User not found" });
-    }
-
-    return res.json({
-      ok: true,
-      firebaseAdminReady,
-      user: user.name,
-      approved: user.approvalStatus === "approved",
-      blocked: !!user.blocked,
-      online: !!user.online,
-      fcmTokenCount: Array.isArray(user.fcmTokens) ? user.fcmTokens.length : 0,
-      pushSubscriptionCount: Array.isArray(user.pushSubscriptions) ? user.pushSubscriptions.length : 0,
-      lastFcmSeenAt: Array.isArray(user.fcmTokens) && user.fcmTokens.length
-        ? user.fcmTokens.map(t => t.lastSeenAt || t.createdAt || null).filter(Boolean).slice(-1)[0]
-        : null
-    });
-  } catch (err) {
-    console.log("FCM DEBUG ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "FCM debug failed" });
-  }
-});
-
-app.post("/api/fcm/test", requireAdmin, async (req, res) => {
-  try {
-    const username = normalizeUsername(req.body.username || req.body.user);
-    const title = String(req.body.title || "Shravan Chat Test");
-    const body = String(req.body.body || "Stable native notification test ✅");
-    const kind = String(req.body.kind || "message");
-
-    if (!username) return res.status(400).json({ ok: false, msg: "username required" });
-
-    const result = await sendFcmToUser(username, {
-      title,
-      body,
-      url: "/chat.html",
-      tag: `stable-test-${Date.now()}`,
-      type: kind === "call" ? "call" : "private",
-      notificationType: kind === "call" ? "call" : "message",
-      callType: kind === "call" ? "voice" : "",
-      from: req.adminUser?.name || ADMIN_NAME,
-      to: username,
-      sound: kind === "call" ? "ring" : "default"
-    });
-
-    return res.json({ ok: !!result.ok, msg: result.ok ? "Stable FCM sent" : "Stable FCM failed", result });
-  } catch (err) {
-    console.log("FCM TEST ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "FCM test failed", error: err.message });
-  }
-});
 
 app.post("/api/push/subscribe", async (req, res) => {
   try {
@@ -2001,58 +1679,6 @@ app.post("/api/push/unsubscribe", async (req, res) => {
     res.status(500).json({ ok: false, msg: "Unsubscribe failed" });
   }
 });
-
-
-app.post("/api/notification-read", async (req, res) => {
-  try {
-    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
-    let user = null;
-
-    if (token) {
-      user = await User.findOne({ authToken: token }).select("name");
-    }
-
-    const username = normalizeUsername(req.body.user || req.body.username);
-    if (!user && username) {
-      user = await User.findOne({ name: username, approvalStatus: "approved" }).select("name");
-    }
-
-    if (!user) return res.status(401).json({ ok: false, msg: "Unauthorized" });
-
-    const from = normalizeUsername(req.body.from || req.body.peer);
-    const group = String(req.body.group || req.body.groupId || "").trim();
-
-    if (group) {
-      await Message.updateMany(
-        { group, from: { $ne: user.name } },
-        { $addToSet: { seenBy: user.name } }
-      );
-
-      const gCounts = await calculateGroupUnread(user.name);
-      io.to(user.name).emit("group-unread-counts", gCounts);
-      return res.json({ ok: true, type: "group", group });
-    }
-
-    if (from) {
-      await Message.updateMany(
-        { from, to: user.name, status: { $ne: "seen" } },
-        { status: "seen" }
-      );
-
-      io.to(from).emit("messages-seen", { by: user.name });
-      const counts = await calculateUnread(user.name);
-      io.to(user.name).emit("unread-counts", counts);
-
-      return res.json({ ok: true, type: "private", from });
-    }
-
-    return res.status(400).json({ ok: false, msg: "from or group required" });
-  } catch (err) {
-    console.log("NOTIFICATION READ ERROR:", err);
-    return res.status(500).json({ ok: false, msg: "Mark read failed" });
-  }
-});
-
 
 app.post("/api/notification-reply", async (req, res) => {
   try {
@@ -4935,50 +4561,46 @@ socket.on("delete-message", async data => {
 
   socket.on("call-user", async ({ to, from, type }) => {
   try {
-    to = normalizeUsername(to);
-    from = normalizeUsername(from);
     const callType = type === "video" ? "video" : "voice";
-
-    if (!to || !from || to === from) {
-      socket.emit("call-unavailable", { to, reason: "invalid" });
-      return;
-    }
 
     if (isBusy(from)) {
       socket.emit("call-busy", { to, reason: "you_busy" });
-      socket.emit("call-unavailable", { to, reason: "you_busy" });
       return;
     }
 
     if (isBusy(to)) {
       socket.emit("call-busy", { to, reason: "user_busy" });
-      socket.emit("call-unavailable", { to, reason: "user_busy" });
       return;
     }
 
     setCall(from, to, "ringing", callType);
 
+    // caller side ringback always start avvali
     io.to(from).emit("call-ringing", { to, type: callType });
 
-    // socket online unte immediate app popup; offline/background ki FCM full-screen notification.
-    io.to(to).emit("incoming-call", { from, type: callType });
+    const online = await isUserOnline(to);
 
+    // callee app open unte direct incoming-call emit
+    if (online) {
+      io.to(to).emit("incoming-call", { from, type: callType });
+    }
+
+    // app close/recent clear/background unna push ravali
     await sendAppNotification(to, {
       title: callType === "video" ? "📹 Incoming video call" : "📞 Incoming voice call",
       body: `${from} is calling you`,
-      url: `/chat.html?user=${encodeURIComponent(from)}&call=1`,
-      tag: `incoming-call-${from}-${Date.now()}`,
+      url: `/chat.html?user=${encodeURIComponent(from)}`,
+      tag: `incoming-call-${from}`,
       icon: "/icons/icon-192.png",
       badge: "/icons/icon-192.png",
       type: "call",
       notificationType: "call",
       callType,
       requireInteraction: true,
-      sound: "ring",
-      from,
-      to
+      sound: "ring"
     });
 
+    // 25 sec lo accept kakapothe missed
     setTimeout(async () => {
       try {
         if (callState[from] && callState[from].status === "ringing") {
@@ -5001,26 +4623,11 @@ socket.on("delete-message", async data => {
           );
 
           io.to(from).emit("call-unavailable", { to, reason: "missed" });
-
-          await sendAppNotification(to, {
-            title: "Missed call",
-            body: `${from} called you`,
-            url: `/chat.html?user=${encodeURIComponent(from)}`,
-            tag: `missed-call-${from}-${Date.now()}`,
-            icon: "/icons/icon-192.png",
-            badge: "/icons/icon-192.png",
-            type: "call",
-            notificationType: "call",
-            callType,
-            sound: "default",
-            from,
-            to
-          });
         }
       } catch (err) {
         console.log("MISSED CALL TIMER ERROR:", err);
       }
-    }, 30000);
+    }, 25000);
   } catch (e) {
     console.log("call-user error", e);
     socket.emit("call-unavailable", { to, reason: "error" });
@@ -5028,18 +4635,11 @@ socket.on("delete-message", async data => {
 });
 
  socket.on("call-offer", ({ to, from, offer, type }) => {
-  to = normalizeUsername(to);
-  from = normalizeUsername(from);
-  if (!to || !from || !offer) return;
+  if (!callState[from] || callState[from].peer !== to) return;
 
-  const callType =
-    (callState[from] && callState[from].type) ||
-    (type === "video" ? "video" : "voice");
+  const callType = callState[from].type || (type === "video" ? "video" : "voice");
 
-  if (!callState[from] || callState[from].peer !== to) {
-    setCall(from, to, "ringing", callType);
-  }
-
+  // callee app close ayina join ayyaka resend cheyyadaniki store chestham
   pendingCallOffers[to] = {
     from,
     offer,
@@ -5052,21 +4652,12 @@ socket.on("delete-message", async data => {
 
   socket.on("call-answer", async ({ to, from, answer, type }) => {
   try {
-    to = normalizeUsername(to);
-    from = normalizeUsername(from);
-    if (!to || !from || !answer) return;
+    if (!callState[from] || callState[from].peer !== to) return;
 
-    const callType =
-      (callState[from] && callState[from].type) ||
-      (callState[to] && callState[to].type) ||
-      (type === "video" ? "video" : "voice");
-
-    if (!callState[from] || callState[from].peer !== to) {
-      setCall(from, to, "in_call", callType);
-    }
-
-    if (callState[from]) callState[from].status = "in_call";
+    callState[from].status = "in_call";
     if (callState[to]) callState[to].status = "in_call";
+
+    const callType = callState[from].type || (type === "video" ? "video" : "voice");
 
     delete pendingCallOffers[from];
     delete pendingCallOffers[to];
@@ -5081,45 +4672,15 @@ socket.on("delete-message", async data => {
       time: formatTime()
     });
   } catch (err) {
-    console.log("CALL ANSWER ERROR:", err);
+    console.log(err);
   }
 });
 
   socket.on("call-ice", ({ to, from, candidate, type }) => {
-    to = normalizeUsername(to);
-    from = normalizeUsername(from);
-    if (!to || !from || !candidate) return;
-    const callType =
-      (callState[from] && callState[from].type) ||
-      (type === "video" ? "video" : "voice");
+    if (!callState[from] || callState[from].peer !== to) return;
+    const callType = callState[from].type || (type === "video" ? "video" : "voice");
     io.to(to).emit("call-ice", { from, candidate, type: callType });
   });
-
-  socket.on("call-decline", async ({ to, from }) => {
-  try {
-    to = normalizeUsername(to);
-    from = normalizeUsername(from);
-    if (!to || !from) return;
-
-    io.to(to).emit("call-unavailable", { to: from, reason: "declined" });
-    io.to(to).emit("call-end", { from });
-
-    clearCall(from);
-    clearCall(to);
-    delete pendingCallOffers[from];
-    delete pendingCallOffers[to];
-
-    await Call.create({
-      from: to,
-      to: from,
-      type: "voice",
-      status: "declined",
-      time: formatTime()
-    });
-  } catch (err) {
-    console.log("CALL DECLINE ERROR:", err);
-  }
-});
 
   socket.on("call-end", async ({ to, from }) => {
   try {
