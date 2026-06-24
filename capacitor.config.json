@@ -1,5 +1,5 @@
 {
   "appId": "com.rickyy.chat",
   "appName": "RickyYChat",
-  "webDir": "www"
+  "webDir": "public"
 }

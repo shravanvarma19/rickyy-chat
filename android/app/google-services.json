@@ -1,0 +1,29 @@
+{
+  "project_info": {
+    "project_number": "727550732020",
+    "project_id": "ricky-chat-b4219",
+    "storage_bucket": "ricky-chat-b4219.firebasestorage.app"
+  },
+  "client": [
+    {
+      "client_info": {
+        "mobilesdk_app_id": "1:727550732020:android:da928f10141bb74c9da0a1",
+        "android_client_info": {
+          "package_name": "com.rickyy.chat"
+        }
+      },
+      "oauth_client": [],
+      "api_key": [
+        {
+          "current_key": "AIzaSyCCB4h6Bc-ncZPGRKxZ6yJIoDMkXn6DnVY"
+        }
+      ],
+      "services": {
+        "appinvite_service": {
+          "other_platform_oauth_client": []
+        }
+      }
+    }
+  ],
+  "configuration_version": "1"
+}

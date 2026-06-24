@@ -2,1916 +2,630 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover, interactive-widget=resizes-content">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Profile • RickyY Chat</title>
 <link rel="manifest" href="/manifest.json">
-<meta name="theme-color" content="#081018">
+<meta name="theme-color" content="#071018">
 <meta name="mobile-web-app-capable" content="yes">
-<meta name="application-name" content="RickyY Chat">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-title" content="RickyY Chat">
-<meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
-<link rel="apple-touch-icon" href="/icons/icon-192.png">
 <script src="/socket.io/socket.io.js"></script>
+
 <style>
 *{box-sizing:border-box}
 :root{
   --bg:#071018;
-  --panel:rgba(15,23,42,.78);
-  --panel-2:rgba(17,24,39,.92);
+  --card:#111a27;
+  --card2:#0d1624;
   --line:rgba(255,255,255,.08);
   --text:#f8fafc;
-  --muted:#94a3b8;
+  --muted:#9ca3af;
   --green:#10b981;
-  --cyan:#22d3ee;
+  --red:#ef4444;
+}
+html,body{
+  margin:0;
+  min-height:100vh;
+  background:#071018;
+  color:var(--text);
+  font-family:Inter,Arial,sans-serif;
 }
 body{
-  margin:0;
-  font-family:Inter,Arial,sans-serif;
   background:
-    radial-gradient(circle at top left, rgba(16,185,129,.16), transparent 24%),
-    radial-gradient(circle at bottom right, rgba(34,211,238,.12), transparent 26%),
-    linear-gradient(135deg,#071018 0%,#0b1220 45%,#111827 100%);
-  color:var(--text);
-  min-height:100vh;
+    radial-gradient(circle at top, rgba(16,185,129,.10), transparent 26%),
+    linear-gradient(180deg,#071018,#0b1220);
 }
-.topbar{
-  position:sticky;
-  top:0;
-  z-index:20;
-  height:70px;
-  display:flex;
-  align-items:center;
-  gap:14px;
-  padding:0 16px;
-  background:rgba(8,15,26,.84);
-  backdrop-filter:blur(16px);
-  border-bottom:1px solid var(--line);
+button,input,textarea,select{font-family:inherit}
+button{cursor:pointer;-webkit-tap-highlight-color:transparent}
+.hidden{display:none!important}
+
+/* MAIN PROFILE */
+.profile-page{
+  min-height:100vh;
+  padding:14px 14px 90px;
 }
 .back-btn{
-  border:none;
-  background:rgba(255,255,255,.08);
+  position:fixed;
+  top:18px;
+  left:16px;
+  z-index:10;
+  border:0;
+  background:transparent;
   color:#fff;
-  width:40px;
-  height:40px;
-  border-radius:12px;
-  font-size:20px;
-  cursor:pointer;
+  font-size:42px;
+  line-height:1;
+  width:54px;
+  height:54px;
 }
-.topbar-title{
-  font-size:20px;
-  font-weight:900;
+.profile-head{
+  max-width:520px;
+  margin:64px auto 0;
+  text-align:center;
 }
-.profile-shell{
-  max-width:980px;
+.dp-box{
+  width:170px;
+  height:170px;
   margin:0 auto;
-  padding:20px 16px 34px;
-}
-.cover-card{
   position:relative;
-  border:1px solid var(--line);
-  border-radius:28px;
-  overflow:hidden;
-  background:var(--panel);
-  box-shadow:0 24px 48px rgba(0,0,0,.28);
-  backdrop-filter:blur(18px);
 }
-.cover{
-  height:220px;
-  background:
-    linear-gradient(135deg, rgba(16,185,129,.55), rgba(34,211,238,.35)),
-    url('/default-group.png') center/cover no-repeat;
-}
-.cover-edit{
-  position:absolute;
-  top:16px;
-  right:16px;
-  border:none;
-  border-radius:14px;
-  padding:10px 14px;
-  background:rgba(15,23,42,.65);
-  color:#fff;
-  font-weight:800;
-  cursor:pointer;
-  border:1px solid rgba(255,255,255,.08);
-}
-.identity{
-  display:grid;
-  grid-template-columns:120px 1fr;
-  gap:18px;
-  padding:0 22px 22px;
-  margin-top:-54px;
-  align-items:end;
-}
-.dp-wrap{
-  position:relative;
-  width:120px;
-  height:120px;
-}
-.dp-wrap img{
-  width:100%;
-  height:100%;
-  border-radius:30px;
+.dp-box img{
+  width:170px;
+  height:170px;
+  border-radius:50%;
   object-fit:cover;
-  border:4px solid rgba(8,15,26,.88);
   background:#111827;
+  border:3px solid rgba(255,255,255,.08);
 }
-.dp-fab{
+.dp-edit{
   position:absolute;
-  right:8px;
+  right:6px;
   bottom:8px;
-  width:40px;
-  height:40px;
-  border-radius:14px;
-  border:none;
+  width:48px;
+  height:48px;
+  border-radius:50%;
+  border:3px solid #071018;
   background:linear-gradient(135deg,#10b981,#06b6d4);
   color:#fff;
-  font-size:18px;
-  cursor:pointer;
-}
-.identity-main{
-  padding-bottom:8px;
-}
-.profile-name{
-  font-size:30px;
-  font-weight:900;
-  letter-spacing:-.8px;
-  margin:0 0 8px;
-}
-.badges{
-  display:flex;
-  flex-wrap:wrap;
-  gap:8px;
-  margin-bottom:10px;
-}
-.badge-chip{
-  padding:7px 12px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:900;
-  background:rgba(255,255,255,.08);
-  border:1px solid var(--line);
-}
-.status-line{
-  color:#cbd5e1;
-  font-size:14px;
-}
-.grid{
-  display:grid;
-  grid-template-columns:1.1fr .9fr;
-  gap:18px;
-  margin-top:18px;
-}
-.card{
-  background:var(--panel-2);
-  border:1px solid var(--line);
-  border-radius:24px;
-  padding:18px;
-  box-shadow:0 20px 36px rgba(0,0,0,.18);
-}
-.card h3{
-  margin:0 0 14px;
-  font-size:18px;
-  font-weight:900;
-}
-.info-stack{
-  display:grid;
-  gap:12px;
-}
-.info-item{
-  padding:14px 16px;
-  border-radius:18px;
-  background:rgba(255,255,255,.04);
-  border:1px solid rgba(255,255,255,.06);
-}
-.info-label{
-  font-size:12px;
-  color:var(--muted);
-  margin-bottom:6px;
-  font-weight:800;
-  text-transform:uppercase;
-}
-.info-value{
-  font-size:15px;
-  line-height:1.55;
-  color:#f8fafc;
-  word-break:break-word;
-}
-.bio-input,.about-input{
-  width:100%;
-  outline:none;
-  border:1px solid rgba(255,255,255,.08);
-  background:rgba(255,255,255,.04);
-  color:#fff;
-  border-radius:18px;
-  padding:14px 15px;
-  font-size:15px;
-}
-.bio-input:disabled,
-.about-input:disabled{
-  opacity:.72;
-  cursor:not-allowed;
-}
-.about-input{
-  min-height:110px;
-  resize:vertical;
-}
-.count-row{
-  display:flex;
-  justify-content:flex-end;
-  font-size:12px;
-  color:var(--muted);
-  margin-top:8px;
-}
-.suggestion-wrap{
-  display:flex;
-  flex-wrap:wrap;
-  gap:10px;
-  margin-top:14px;
-}
-.suggestion-chip{
-  border:none;
-  background:rgba(255,255,255,.06);
-  color:#fff;
-  padding:10px 14px;
-  border-radius:999px;
-  font-size:13px;
-  cursor:pointer;
-}
-.action-row{
-  display:flex;
-  gap:12px;
-  flex-wrap:wrap;
-  margin-top:18px;
-}
-.primary-btn,.secondary-btn,.danger-btn{
-  border:none;
-  border-radius:16px;
-  padding:13px 16px;
-  font-weight:900;
-  cursor:pointer;
-}
-.primary-btn{
-  background:linear-gradient(135deg,#10b981,#059669);
-  color:#fff;
-}
-.secondary-btn{
-  background:rgba(255,255,255,.08);
-  color:#fff;
-}
-.danger-btn{
-  background:linear-gradient(135deg,#ef4444,#dc2626);
-  color:#fff;
-}
-.media-grid{
-  display:grid;
-  grid-template-columns:repeat(auto-fill,minmax(120px,1fr));
-  gap:10px;
-}
-.empty-state{
-  padding:18px;
-  border-radius:18px;
-  background:rgba(255,255,255,.04);
-  color:#cbd5e1;
-}
-.hidden-input{display:none}
-.hidden{display:none !important}
-.viewer-note{
-  margin-top:10px;
-  display:inline-flex;
-  align-items:center;
-  gap:8px;
-  padding:9px 12px;
-  border-radius:999px;
-  font-size:12px;
-  font-weight:800;
-  background:rgba(255,255,255,.08);
-  border:1px solid var(--line);
-}
-.lock-note{
-  font-size:13px;
-  color:#cbd5e1;
-  margin-top:10px;
-  line-height:1.5;
-}
-.privacy-toggle{
-  width:100%;
+  font-size:22px;
   display:flex;
   align-items:center;
-  justify-content:space-between;
-  gap:12px;
-  border:none;
-  border-radius:18px;
-  padding:16px 18px;
-  background:rgba(255,255,255,.06);
-  color:#fff;
-  font-size:18px;
-  font-weight:900;
-  cursor:pointer;
-  border:1px solid rgba(255,255,255,.08);
+  justify-content:center;
 }
-.privacy-toggle small{
-  font-size:12px;
-  color:#cbd5e1;
+.name{
+  margin:28px 0 0;
+  font-size:42px;
+  font-weight:900;
+  letter-spacing:-1px;
+}
+.about-big{
+  margin:28px 0 0;
+  font-size:28px;
   font-weight:700;
-}
-.privacy-body{
-  display:none;
-  margin-top:14px;
-}
-.privacy-body.open{
-  display:block;
-}
-.lock-pin-wrap.hidden,
-.lock-bio-wrap.hidden{
-  display:none !important;
-}
-@media (max-width: 860px){
-  .grid{grid-template-columns:1fr}
-}
-@media (max-width: 640px){
-  .cover{height:180px}
-  .identity{
-    grid-template-columns:1fr;
-    gap:14px;
-    padding:0 16px 18px;
-    margin-top:-46px
-  }
-  .dp-wrap{width:100px;height:100px}
-  .profile-name{font-size:24px}
+  line-height:1.35;
 }
 
-html,body{
-  overscroll-behavior:none;
-  -webkit-tap-highlight-color:transparent;
+/* DETAILS */
+.details{
+  max-width:650px;
+  margin:52px auto 0;
+  display:grid;
+  gap:14px;
 }
-button{
-  -webkit-tap-highlight-color:transparent;
+.info-card{
+  background:rgba(255,255,255,.045);
+  border:1px solid var(--line);
+  border-radius:22px;
+  padding:16px;
 }
-input,textarea,select{
-  font-family:inherit;
+.label{
+  color:var(--muted);
+  font-size:13px;
+  font-weight:900;
+  text-transform:uppercase;
+  letter-spacing:.6px;
+  margin-bottom:10px;
 }
-.connection-banner{
+.value-row{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  gap:12px;
+}
+.value{
+  font-size:18px;
+  line-height:1.45;
+  word-break:break-word;
+}
+.edit-btn{
+  border:0;
+  border-radius:14px;
+  padding:9px 12px;
+  background:rgba(16,185,129,.18);
+  color:#86efac;
+  font-weight:900;
+}
+.input,textarea{
+  width:100%;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  outline:none;
+  border-radius:16px;
+  padding:13px 14px;
+  font-size:16px;
+}
+textarea{min-height:92px;resize:vertical}
+.count{
+  color:var(--muted);
+  font-size:12px;
+  text-align:right;
+  margin-top:8px;
+}
+.suggestions{
+  display:flex;
+  flex-wrap:wrap;
+  gap:10px;
+  margin-top:12px;
+}
+.chip{
+  border:0;
+  border-radius:999px;
+  padding:10px 13px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-weight:800;
+}
+.actions{
+  display:grid;
+  gap:12px;
+  margin-top:6px;
+}
+.action-btn{
+  border:0;
+  border-radius:18px;
+  min-height:52px;
+  padding:13px 16px;
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  font-size:17px;
+  font-weight:900;
+  display:flex;
+  align-items:center;
+  justify-content:flex-start;
+  gap:12px;
+  border:1px solid var(--line);
+}
+.save{
+  background:linear-gradient(135deg,#10b981,#059669);
+  justify-content:center;
+}
+.logout{
+  background:rgba(239,68,68,.15);
+  color:#fecaca;
+}
+.viewer-only .owner-only{display:none!important}
+
+/* MODAL */
+.modal{
   position:fixed;
-  top:calc(10px + env(safe-area-inset-top));
+  inset:0;
+  z-index:1000;
+  display:none;
+  align-items:flex-end;
+  background:rgba(0,0,0,.45);
+}
+.modal.show{display:flex}
+.sheet{
+  width:100%;
+  max-width:560px;
+  margin:0 auto;
+  background:#0f172a;
+  border-radius:26px 26px 0 0;
+  padding:18px;
+  border:1px solid var(--line);
+  box-shadow:0 -24px 60px rgba(0,0,0,.32);
+}
+.sheet h3{margin:0 0 14px;font-size:22px}
+.sheet-actions{display:flex;gap:10px;margin-top:14px}
+.btn{
+  flex:1;
+  border:0;
+  border-radius:15px;
+  padding:13px;
+  font-weight:900;
+  color:#fff;
+}
+.btn-primary{background:#10b981}
+.btn-secondary{background:rgba(255,255,255,.08)}
+.btn-danger{background:#ef4444}
+
+/* Bottom nav */
+.mobile-bottom-nav{
+  position:fixed;
+  left:10px;
+  right:10px;
+  bottom:calc(8px + env(safe-area-inset-bottom));
+  z-index:50;
+  display:grid;
+  grid-template-columns:repeat(5,1fr);
+  gap:6px;
+  padding:8px;
+  border-radius:24px;
+  background:rgba(8,15,26,.92);
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 20px 46px rgba(0,0,0,.34);
+  backdrop-filter:blur(20px);
+}
+.mobile-bottom-nav button{
+  border:none;
+  border-radius:17px;
+  min-height:54px;
+  background:transparent;
+  color:#9fb0c0;
+  font-size:11px;
+  font-weight:900;
+  display:flex;
+  flex-direction:column;
+  align-items:center;
+  justify-content:center;
+  gap:4px;
+}
+.mobile-bottom-nav button span{font-size:19px}
+.mobile-bottom-nav button.active{
+  color:#fff;
+  background:linear-gradient(135deg, rgba(16,185,129,.30), rgba(6,182,212,.18));
+}
+
+.toast{
+  position:fixed;
   left:50%;
-  transform:translateX(-50%) translateY(-16px);
-  z-index:70000;
-  min-width:210px;
-  max-width:calc(100vw - 28px);
+  bottom:100px;
+  transform:translateX(-50%) translateY(20px);
+  background:#111827;
+  color:#fff;
+  border:1px solid var(--line);
+  border-radius:999px;
+  padding:11px 15px;
   opacity:0;
   pointer-events:none;
-  padding:10px 14px;
-  border-radius:999px;
-  color:#fff;
-  text-align:center;
-  font-size:12px;
-  font-weight:900;
-  border:1px solid rgba(255,255,255,.10);
-  box-shadow:0 18px 35px rgba(0,0,0,.26);
-  backdrop-filter:blur(14px);
-  transition:.22s ease;
+  transition:.2s;
+  z-index:2000;
+  box-shadow:0 15px 30px rgba(0,0,0,.3);
 }
-.connection-banner.show{
+.toast.show{
   opacity:1;
   transform:translateX(-50%) translateY(0);
 }
-.connection-banner.offline{background:rgba(220,38,38,.94)}
-.connection-banner.connecting{background:rgba(217,119,6,.94)}
-.connection-banner.online{background:rgba(16,185,129,.94)}
-.pull-refresh-indicator{
-  position:fixed;
-  top:calc(12px + env(safe-area-inset-top));
-  left:50%;
-  transform:translateX(-50%) translateY(-80px);
-  z-index:65000;
-  width:54px;
-  height:54px;
-  border-radius:18px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(15,23,42,.94);
-  border:1px solid rgba(255,255,255,.10);
-  box-shadow:0 18px 32px rgba(0,0,0,.24);
-  color:#a7f3d0;
-  font-size:22px;
-  transition:.22s ease;
-  pointer-events:none;
+@media(max-width:640px){
+  .profile-head{margin-top:74px}
+  .dp-box,.dp-box img{width:150px;height:150px}
+  .name{font-size:36px}
+  .about-big{font-size:24px}
+  .details{margin-top:44px}
 }
-.pull-refresh-indicator.show{
-  transform:translateX(-50%) translateY(0);
-}
-.pull-refresh-indicator.spin{
-  animation:pullSpin .85s linear infinite;
-}
-@keyframes pullSpin{
-  from{transform:translateX(-50%) translateY(0) rotate(0deg)}
-  to{transform:translateX(-50%) translateY(0) rotate(360deg)}
-}
-.profile-skeleton{
-  position:fixed;
-  inset:0;
-  z-index:60000;
-  display:none;
-  padding:calc(84px + env(safe-area-inset-top)) 16px 110px;
-  background:
-    radial-gradient(circle at top left, rgba(16,185,129,.16), transparent 24%),
-    linear-gradient(135deg,#071018 0%,#0b1220 52%,#111827 100%);
-}
-body.profile-loading .profile-skeleton{
-  display:block;
-}
-.skeleton-shell{
-  max-width:980px;
-  margin:0 auto;
-}
-.sk-cover,.sk-line,.sk-card,.sk-avatar{
-  position:relative;
-  overflow:hidden;
-  background:rgba(255,255,255,.07);
-  border:1px solid rgba(255,255,255,.07);
-}
-.sk-cover{height:210px;border-radius:28px}
-.sk-avatar{width:110px;height:110px;border-radius:30px;margin:-48px 0 18px 20px}
-.sk-line{height:18px;border-radius:999px;margin:10px 0}
-.sk-line.w60{width:60%}
-.sk-line.w35{width:35%}
-.sk-grid{display:grid;grid-template-columns:1.1fr .9fr;gap:18px}
-.sk-card{height:220px;border-radius:24px}
-.sk-cover::after,.sk-line::after,.sk-card::after,.sk-avatar::after{
-  content:"";
-  position:absolute;
-  inset:0;
-  transform:translateX(-100%);
-  background:linear-gradient(90deg, transparent, rgba(255,255,255,.14), transparent);
-  animation:skShimmer 1.2s infinite;
-}
-@keyframes skShimmer{
-  100%{transform:translateX(100%)}
-}
-.mobile-bottom-nav{
-  display:none;
-}
-.privacy-blur-overlay{
-  position:fixed;
-  inset:0;
-  z-index:80000;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  background:rgba(5,10,20,.78);
-  backdrop-filter:blur(18px);
-  color:#fff;
-  text-align:center;
-  padding:22px;
-}
-body.sensitive-blur .privacy-blur-overlay{
-  display:flex;
-}
-body.sensitive-blur .profile-shell,
-body.sensitive-blur .topbar{
-  filter:blur(12px);
-}
-.privacy-blur-card{
-  width:min(320px,92vw);
-  padding:22px;
-  border-radius:24px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.10);
-  box-shadow:0 20px 44px rgba(0,0,0,.25);
-}
-.privacy-blur-card strong{
-  display:block;
-  font-size:22px;
-  margin-bottom:8px;
-}
-@media (max-width:768px){
-  body{
-    min-height:100dvh;
-    padding-bottom:calc(78px + env(safe-area-inset-bottom));
-    user-select:none;
-    -webkit-user-select:none;
-    -webkit-touch-callout:none;
-  }
-  input,textarea,select{
-    user-select:text;
-    -webkit-user-select:text;
-  }
-  .topbar{
-    height:64px;
-    padding:calc(env(safe-area-inset-top) + 8px) 12px 8px;
-    border-radius:0;
-  }
-  .profile-shell{
-    padding:14px 12px calc(104px + env(safe-area-inset-bottom));
-  }
-  .cover-card{
-    border-radius:22px;
-  }
-  .cover-edit{
-    top:12px;
-    right:12px;
-    padding:8px 11px;
-    border-radius:12px;
-    font-size:12px;
-  }
-  .card{
-    border-radius:20px;
-    padding:15px;
-  }
-  .action-row{
-    gap:8px;
-  }
-  .primary-btn,.secondary-btn,.danger-btn{
-    flex:1 1 120px;
-    min-height:44px;
-    padding:12px 12px;
-    border-radius:14px;
-  }
-  .mobile-bottom-nav{
-    position:fixed;
-    left:10px;
-    right:10px;
-    bottom:calc(8px + env(safe-area-inset-bottom));
-    z-index:50000;
-    display:grid;
-    grid-template-columns:repeat(5,1fr);
-    gap:6px;
-    padding:8px;
-    border-radius:24px;
-    background:rgba(8,15,26,.92);
-    border:1px solid rgba(255,255,255,.08);
-    box-shadow:0 20px 46px rgba(0,0,0,.34);
-    backdrop-filter:blur(20px);
-  }
-  .mobile-bottom-nav button{
-    border:none;
-    border-radius:17px;
-    min-height:54px;
-    background:transparent;
-    color:#9fb0c0;
-    font-size:11px;
-    font-weight:900;
-    cursor:pointer;
-    display:flex;
-    flex-direction:column;
-    align-items:center;
-    justify-content:center;
-    gap:4px;
-  }
-  .mobile-bottom-nav button span{
-    font-size:19px;
-    line-height:1;
-  }
-  .mobile-bottom-nav button.active{
-    color:#fff;
-    background:linear-gradient(135deg, rgba(16,185,129,.30), rgba(6,182,212,.18));
-    border:1px solid rgba(16,185,129,.22);
-    box-shadow:inset 0 1px 0 rgba(255,255,255,.08);
-  }
-  .sk-grid{grid-template-columns:1fr}
-  .sk-cover{height:180px;border-radius:22px}
-  .sk-card{height:190px}
-}
-@media (display-mode:standalone),(display-mode:fullscreen){
-  .topbar{
-    padding-top:calc(env(safe-area-inset-top) + 8px);
-  }
-}
-
-
-/* Privacy screenshot/print guard */
-#privacyGuardOverlay{
-  position:fixed;
-  inset:0;
-  z-index:2147483647;
-  display:none;
-  align-items:center;
-  justify-content:center;
-  padding:24px;
-  background:rgba(3,7,18,.88);
-  backdrop-filter:blur(22px);
-  -webkit-backdrop-filter:blur(22px);
-  color:#fff;
-  text-align:center;
-}
-#privacyGuardOverlay .privacy-card{
-  width:min(360px,92vw);
-  padding:24px 20px;
-  border-radius:26px;
-  background:rgba(255,255,255,.08);
-  border:1px solid rgba(255,255,255,.12);
-  box-shadow:0 26px 60px rgba(0,0,0,.42);
-}
-#privacyGuardOverlay .privacy-icon{
-  width:64px;
-  height:64px;
-  border-radius:22px;
-  margin:0 auto 14px;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  font-size:30px;
-  background:linear-gradient(135deg,#10b981,#06b6d4);
-  box-shadow:0 18px 34px rgba(16,185,129,.22);
-}
-#privacyGuardOverlay .privacy-title{
-  font-size:22px;
-  font-weight:900;
-  margin-bottom:8px;
-}
-#privacyGuardOverlay .privacy-sub{
-  font-size:13px;
-  line-height:1.55;
-  color:#cbd5e1;
-}
-body.privacy-guard-active .app,
-body.privacy-guard-active .profile-shell,
-body.privacy-guard-active .topbar,
-body.privacy-guard-active #mobileBottomNav,
-body.privacy-guard-active #groupDrawer,
-body.privacy-guard-active .gallery-modal,
-body.privacy-guard-active .media-viewer,
-body.privacy-guard-active .status-viewer{
-  filter:blur(18px) brightness(.55) !important;
-  pointer-events:none !important;
-  user-select:none !important;
-  -webkit-user-select:none !important;
-}
-body.privacy-guard-active #privacyGuardOverlay{
-  display:flex !important;
-}
-body.privacy-no-select *:not(input):not(textarea){
-  user-select:none !important;
-  -webkit-user-select:none !important;
-  -webkit-touch-callout:none !important;
-}
-@media print{
-  body *{
-    visibility:hidden !important;
-  }
-  #privacyGuardOverlay,
-  #privacyGuardOverlay *{
-    visibility:visible !important;
-  }
-  #privacyGuardOverlay{
-    display:flex !important;
-    position:fixed !important;
-    inset:0 !important;
-    background:#030712 !important;
-    color:#fff !important;
-    filter:none !important;
-  }
-}
-
 </style>
 </head>
-<body class="profile-loading">
 
-<div id="privacyGuardOverlay" aria-hidden="true">
-  <div class="privacy-card">
-    <div class="privacy-icon">🔒</div>
-    <div class="privacy-title">Privacy Protected</div>
-    <div class="privacy-sub">Screenshots, printing and app previews are hidden for your private chats.</div>
-  </div>
-</div>
-
-<div id="connectionBanner" class="connection-banner"></div>
-<div id="pullRefreshIndicator" class="pull-refresh-indicator">↻</div>
-<div class="profile-skeleton" id="profileSkeleton" aria-hidden="true">
-  <div class="skeleton-shell">
-    <div class="sk-cover"></div>
-    <div class="sk-avatar"></div>
-    <div class="sk-line w35"></div>
-    <div class="sk-line w60"></div>
-    <div class="sk-grid" style="margin-top:18px;">
-      <div class="sk-card"></div>
-      <div class="sk-card"></div>
-    </div>
-  </div>
-</div>
-<div class="privacy-blur-overlay" id="privacyBlurOverlay">
-  <div class="privacy-blur-card">
-    <strong>🔒 RickyY Chat</strong>
-    <div>Private screen hidden</div>
-  </div>
-</div>
-
-<div class="topbar">
+<body>
+<div class="profile-page" id="profilePage">
   <button class="back-btn" onclick="goBack()">←</button>
-  <div class="topbar-title" id="topbarTitle">Profile</div>
-</div>
 
-<div class="profile-shell">
-  <div class="cover-card">
-    <div id="coverImageBox" class="cover"></div>
-    <button id="coverEditBtn" class="cover-edit" onclick="document.getElementById('coverInput').click()">Change Cover</button>
-
-    <div class="identity">
-      <div class="dp-wrap">
-        <img id="myDp" src="/default.png" alt="profile photo" onerror="this.src='/default.png'">
-        <button id="dpFabBtn" class="dp-fab" onclick="document.getElementById('dpInput').click()">📷</button>
-      </div>
-
-      <div class="identity-main">
-        <h1 class="profile-name" id="usernameText">User</h1>
-        <div class="badges" id="badgesWrap"></div>
-        <div class="status-line" id="presenceText">Checking presence...</div>
-        <div id="viewerNote" class="viewer-note hidden">👀 Viewing profile</div>
-      </div>
+  <div class="profile-head">
+    <div class="dp-box">
+      <img id="myDp" src="/default.png" alt="DP" onerror="this.onerror=null;this.src='/default.png'">
+      <button id="dpEditBtn" class="dp-edit owner-only" onclick="document.getElementById('dpInput').click()">📷</button>
     </div>
+
+    <h1 id="usernameText" class="name">User</h1>
+    <div id="aboutBig" class="about-big">Hey there! I am using RickyY Chat</div>
   </div>
 
-  <div class="grid">
-    <div class="card">
-      <h3 id="detailsHeading">Profile details</h3>
+  <div class="details">
+    <div class="info-card">
+      <div class="label">Phone</div>
+      <div class="value" id="phoneValue">📱 Not Added</div>
+    </div>
 
-      <div class="info-stack">
-        <div class="info-item">
-          <div class="info-label">Bio</div>
-          <input id="bioInput" class="bio-input" type="text" maxlength="120" placeholder="Write your bio...">
-          <div class="count-row"><span id="bioCount">0</span>/120</div>
-
-          <div id="bioSuggestions" class="suggestion-wrap">
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Busy')">Busy</button>
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('At work')">At work</button>
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Sleeping')">Sleeping</button>
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Available')">Available</button>
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('In a meeting')">In a meeting</button>
-            <button type="button" class="suggestion-chip" onclick="setBioSuggestion('Battery low')">Battery low</button>
-          </div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">About</div>
-          <textarea id="aboutInput" class="about-input" maxlength="250" placeholder="Write something about yourself..."></textarea>
-          <div class="count-row"><span id="aboutCount">0</span>/250</div>
-        </div>
+    <div class="info-card">
+      <div class="label">About</div>
+      <div class="value-row">
+        <div class="value" id="aboutValue">Hey there! I am using RickyY Chat</div>
+        <button class="edit-btn owner-only" onclick="openAboutEditor()">Edit</button>
       </div>
 
-      <div class="action-row">
-        <button id="saveBtn" class="primary-btn" onclick="saveProfile()">Save Profile</button>
-        <button id="changePhotoBtn" class="secondary-btn" onclick="document.getElementById('dpInput').click()">Change Photo</button>
-        <button class="danger-btn" onclick="logout()">Logout</button>
+      <div class="suggestions owner-only">
+        <button class="chip" onclick="quickAbout('Available')">Available</button>
+        <button class="chip" onclick="quickAbout('Busy')">Busy</button>
+        <button class="chip" onclick="quickAbout('At work')">At work</button>
+        <button class="chip" onclick="quickAbout('Sleeping 😴')">Sleeping 😴</button>
+        <button class="chip" onclick="quickAbout('I love rashu 🥺💘')">I love rashu 🥺💘</button>
+        <button class="chip" onclick="quickAbout('Urgent calls only ☎️')">Urgent calls only ☎️</button>
       </div>
     </div>
 
-    <div class="card">
-      <h3>Overview</h3>
-      <div class="info-stack">
-        <div class="info-item">
-          <div class="info-label">Last seen / online</div>
-          <div class="info-value" id="lastSeenValue">--</div>
-        </div>
-
-        <div class="info-item">
-          <div class="info-label">About preview</div>
-          <div class="info-value" id="aboutPreview">No about text yet</div>
-        </div>
-      </div>
+    <div class="info-card owner-only">
+      <div class="label">Bio</div>
+      <input id="bioInput" class="input" maxlength="120" placeholder="Write your bio">
+      <div class="count"><span id="bioCount">0</span>/120</div>
     </div>
-  </div>
 
-  <div class="card" id="privacyCard" style="margin-top:18px;">
-    <button type="button" class="privacy-toggle" onclick="togglePrivacyPanel()">
-      <span>Privacy & App Lock<br><small>Tap to open lock settings</small></span>
-      <span id="privacyToggleIcon">＋</span>
-    </button>
-
-    <div id="privacyBody" class="privacy-body">
-      <div class="info-stack">
-        <div class="info-item">
-          <div class="info-label">App Lock PIN</div>
-
-          <input id="newAppPin" class="bio-input" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="Set 4-digit PIN">
-          <div style="height:10px;"></div>
-
-          <input id="confirmAppPin" class="bio-input" type="password" inputmode="numeric" maxlength="4" autocomplete="new-password" placeholder="Confirm 4-digit PIN">
-          <div style="height:12px;"></div>
-
-          <div class="info-label">Auto Lock</div>
-          <select id="autoLockSeconds" class="bio-input">
-            <option value="30">30 seconds</option>
-            <option value="60">1 minute</option>
-            <option value="300" selected>5 minutes</option>
-          </select>
-
-          <div class="action-row">
-            <button class="primary-btn" onclick="saveAppLockPin()">Save PIN</button>
-            <button class="secondary-btn" onclick="registerBiometric()">Enable Fingerprint / Face ID</button>
-            <button class="secondary-btn" onclick="lockNow()">Lock Now</button>
-            <button class="danger-btn" onclick="disableAppLock()">Disable Lock</button>
-          </div>
-
-         
-        </div>
-      </div>
+    <div class="actions">
+      <button class="action-btn owner-only" onclick="document.getElementById('dpInput').click()">📷 Change DP</button>
+      <button class="action-btn owner-only save" onclick="saveProfile()">Save Profile</button>
+      <button class="action-btn" onclick="openMedia()">📂 Media</button>
+      <button class="action-btn owner-only" onclick="openSettings()">⚙️ Settings</button>
+      <button class="action-btn logout owner-only" onclick="logout()">🚪 Logout</button>
     </div>
-  </div>
-
-  <div class="card" style="margin-top:18px;">
-    <h3>Personal media gallery</h3>
-    <div id="profileMediaGrid" class="media-grid"></div>
   </div>
 </div>
 
-<input type="file" id="dpInput" class="hidden-input" accept="image/*">
-<input type="file" id="coverInput" class="hidden-input" accept="image/*">
+<input type="file" id="dpInput" hidden accept="image/*">
 
-
-<nav class="mobile-bottom-nav" id="mobileBottomNav" aria-label="App navigation">
-  <button type="button" data-tab="chats" onclick="goAppTab('chats')"><span>💬</span>Chats</button>
-  <button type="button" data-tab="groups" onclick="goAppTab('groups')"><span>👥</span>Groups</button>
-  <button type="button" data-tab="status" onclick="goAppTab('status')"><span>◎</span>Status</button>
-  <button type="button" data-tab="calls" onclick="goAppTab('calls')"><span>📞</span>Calls</button>
-  <button type="button" data-tab="profile" class="active" onclick="goAppTab('profile')"><span>👤</span>Profile</button>
+<nav class="mobile-bottom-nav">
+  <button type="button" onclick="goTab('chats')"><span>💬</span>Chats</button>
+  <button type="button" onclick="goTab('groups')"><span>👥</span>Groups</button>
+  <button type="button" onclick="goTab('status')"><span>◎</span>Status</button>
+  <button type="button" onclick="goTab('calls')"><span>📞</span>Calls</button>
+  <button type="button" class="active"><span>👤</span>Profile</button>
 </nav>
 
-<div id="appLockOverlay" style="display:none;position:fixed;inset:0;z-index:999999;background:rgba(5,10,20,.96);backdrop-filter:blur(12px);align-items:center;justify-content:center;padding:20px;">
-  <div style="width:min(380px,100%);background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);border-radius:24px;padding:22px;color:#fff;text-align:center;">
-    <div style="font-size:28px;font-weight:900;margin-bottom:8px;">🔒 App Locked</div>
-    <div id="lockSubtitle" style="font-size:14px;color:#cbd5e1;margin-bottom:16px;">Use Fingerprint / Face ID</div>
-
-    <div id="lockBioWrap" class="lock-bio-wrap">
-      <div id="appLockError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
-        <button type="button" id="bioUnlockBtn" onclick="unlockWithBiometric()" style="border:none;border-radius:14px;padding:12px 16px;background:rgba(255,255,255,.08);color:#fff;font-weight:800;cursor:pointer;">Fingerprint / Face ID</button>
-      </div>
+<div id="aboutModal" class="modal">
+  <div class="sheet">
+    <h3>Edit About</h3>
+    <textarea id="aboutInput" maxlength="250" placeholder="Write about..."></textarea>
+    <div class="count"><span id="aboutCount">0</span>/250</div>
+    <div class="suggestions">
+      <button class="chip" onclick="setAboutInput('Available')">Available</button>
+      <button class="chip" onclick="setAboutInput('Busy')">Busy</button>
+      <button class="chip" onclick="setAboutInput('At work')">At work</button>
+      <button class="chip" onclick="setAboutInput('Sleeping 😴')">Sleeping 😴</button>
+      <button class="chip" onclick="setAboutInput('I love rashu 🥺💘')">I love rashu 🥺💘</button>
     </div>
-
-    <form id="lockPinWrap" class="lock-pin-wrap hidden" onsubmit="event.preventDefault(); unlockWithPin();" style="margin:0;">
-      <input
-        id="appLockPinInput"
-        type="password"
-        inputmode="numeric"
-        maxlength="4"
-        autocomplete="new-password"
-        placeholder="Enter PIN"
-        style="width:100%;height:50px;border-radius:16px;border:1px solid rgba(255,255,255,.08);background:rgba(255,255,255,.06);color:#fff;padding:0 14px;outline:none;text-align:center;font-size:20px;letter-spacing:8px;"
-      >
-      <div id="appLockPinError" style="min-height:20px;margin-top:10px;font-size:13px;color:#fca5a5;"></div>
-      <div style="display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:16px;">
-        <button type="submit" style="border:none;border-radius:14px;padding:12px 16px;background:linear-gradient(135deg,#10b981,#059669);color:#fff;font-weight:800;cursor:pointer;">Unlock with PIN</button>
-      </div>
-    </form>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closeAboutEditor()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveAboutFromModal()">Save</button>
+    </div>
   </div>
 </div>
 
+<div id="settingsModal" class="modal">
+  <div class="sheet">
+    <h3>Settings</h3>
+    <button class="action-btn" onclick="alert('App lock settings already in chat.html/profile settings section')">🔒 App Lock</button>
+    <button class="action-btn" onclick="alert('Notifications are controlled by browser/app permissions')">🔔 Notifications</button>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closeSettings()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="mediaModal" class="modal">
+  <div class="sheet">
+    <h3>Media</h3>
+    <div style="color:#cbd5e1;padding:12px 0;">Media gallery coming soon.</div>
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closeMedia()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="toast" class="toast"></div>
+
 <script>
-const APP_LOCK_KEY = "appLockConfig";
-let biometricFailCount = 0;
+const SERVER_URL = location.protocol === "capacitor:" ? "https://rickyy-chat.onrender.com" : "";
+const APP = document.getElementById("profilePage");
+const params = new URLSearchParams(location.search);
 
-const socket = typeof io !== "undefined" ? io() : null;
+let me = localStorage.getItem("user") || "";
+let token = localStorage.getItem("authToken") || "";
+let profileUser = params.get("user") || me;
+let isOwnProfile = !profileUser || profileUser === me;
+let currentUserData = null;
 
-let profileSocket = socket;
-window.profileSocket = profileSocket;
-let profileRefreshing = false;
-let pullStartY = 0;
-let pullDistance = 0;
-let blurTimer = null;
+const socket = typeof io !== "undefined" ? io(SERVER_URL || undefined, {
+  transports:["websocket","polling"],
+  reconnection:true
+}) : null;
 
-function vibrateLight(ms = 12){
-  try{
-    if(navigator.vibrate) navigator.vibrate(ms);
-  }catch(err){}
+function api(path){
+  if(SERVER_URL && path.startsWith("/")) return SERVER_URL + path;
+  return path;
 }
-
-function setConnectionBanner(type, text, autoHide = false){
-  const banner = document.getElementById("connectionBanner");
-  if(!banner) return;
-
-  banner.className = "connection-banner show " + type;
-  banner.innerText = text;
-
-  if(autoHide){
-    clearTimeout(setConnectionBanner._t);
-    setConnectionBanner._t = setTimeout(() => {
-      banner.classList.remove("show");
-    }, 1600);
-  }
+function headersJson(){
+  const h = {"Content-Type":"application/json"};
+  if(token) h.Authorization = "Bearer " + token;
+  return h;
 }
-
-function updateNetworkBanner(){
-  if(navigator.onLine){
-    setConnectionBanner("online", "Connected", true);
-  }else{
-    setConnectionBanner("offline", "No internet connection");
-  }
+function authHeaders(){
+  const h = {};
+  if(token) h.Authorization = "Bearer " + token;
+  return h;
 }
-
-function bindProfileSocketPresence(){
-  if(!profileSocket || !me) return;
-
-  profileSocket.on("connect", () => {
-    profileSocket.emit("join", me);
-    setConnectionBanner("online", "Connected", true);
-  });
-
-  profileSocket.on("disconnect", () => {
-    if(navigator.onLine){
-      setConnectionBanner("connecting", "Connecting...");
-    }else{
-      setConnectionBanner("offline", "No internet connection");
-    }
-  });
-
-  profileSocket.io?.on?.("reconnect_attempt", () => {
-    setConnectionBanner("connecting", "Connecting...");
-  });
+function toast(msg){
+  const t = document.getElementById("toast");
+  t.textContent = msg;
+  t.classList.add("show");
+  clearTimeout(toast._t);
+  toast._t = setTimeout(()=>t.classList.remove("show"),1700);
 }
-
-function goAppTab(tab){
-  vibrateLight(10);
-  if(tab === "profile") return;
-  window.location.href = "/chat.html?tab=" + encodeURIComponent(tab);
+function safeUrl(v, fallback="/default.png"){
+  v = String(v || "").trim();
+  if(!v) return fallback;
+  if(v.includes("1777102046491-2236d5249791.png")) return fallback;
+  if(/^https?:\/\//i.test(v)) return v;
+  if(v.startsWith("/")) return api(v);
+  if(v.startsWith("uploads/")) return api("/" + v);
+  return api("/uploads/" + v.replace(/^\/+/,""));
 }
-
-function hideProfileSkeleton(){
-  document.body.classList.remove("profile-loading");
+function goBack(){
+  if(history.length > 1) history.back();
+  else location.href = "/chat.html";
 }
-
-async function refreshProfilePage(){
-  if(profileRefreshing) return;
-  profileRefreshing = true;
-
-  const ind = document.getElementById("pullRefreshIndicator");
-  if(ind){
-    ind.classList.add("show", "spin");
-  }
-
-  try{
-    await loadProfile();
-    await loadMediaGallery();
-    setConnectionBanner("online", "Profile refreshed", true);
-  }catch(err){
-    setConnectionBanner("offline", "Refresh failed", true);
-  }finally{
-    setTimeout(() => {
-      if(ind) ind.classList.remove("show", "spin");
-      profileRefreshing = false;
-    }, 450);
-  }
+function goTab(tab){
+  location.replace("/chat.html?tab=" + encodeURIComponent(tab));
 }
-
-function setupPullToRefresh(){
-  const indicator = document.getElementById("pullRefreshIndicator");
-  if(!indicator) return;
-
-  window.addEventListener("touchstart", (e) => {
-    if(window.scrollY <= 0){
-      pullStartY = e.touches[0].clientY;
-      pullDistance = 0;
-    }
-  }, { passive:true });
-
-  window.addEventListener("touchmove", (e) => {
-    if(!pullStartY || window.scrollY > 0 || profileRefreshing) return;
-
-    pullDistance = e.touches[0].clientY - pullStartY;
-
-    if(pullDistance > 58){
-      indicator.classList.add("show");
-    }else{
-      indicator.classList.remove("show");
-    }
-  }, { passive:true });
-
-  window.addEventListener("touchend", () => {
-    if(pullDistance > 72 && !profileRefreshing){
-      refreshProfilePage();
-    }else{
-      indicator.classList.remove("show");
-    }
-    pullStartY = 0;
-    pullDistance = 0;
-  }, { passive:true });
-}
-
-function showSensitiveBlur(){
-  if(isAppLockEnabled()){
-    document.body.classList.add("sensitive-blur");
-  }
-}
-
-function hideSensitiveBlur(){
-  document.body.classList.remove("sensitive-blur");
-}
-
-window.addEventListener("online", updateNetworkBanner);
-window.addEventListener("offline", updateNetworkBanner);
-
-document.addEventListener("click", (e) => {
-  if(e.target.closest("button,.suggestion-chip,.dp-fab,.cover-edit")){
-    vibrateLight(8);
-  }
-}, { passive:true });
-
-
-let me = localStorage.getItem("user");
-if(!me){
-  location.href = "/index.html";
-}
-
-const pageParams = new URLSearchParams(window.location.search);
-const requestedProfileUser = pageParams.get("user") || "";
-
-let profileUser = me || "";
-let isOwnProfile = true;
-
-let bioInput, bioCount, aboutInput, aboutCount, dpInput, coverInput, usernameText;
-
-function getAppLockConfig(){
-  try{
-    return JSON.parse(localStorage.getItem(APP_LOCK_KEY) || "{}");
-  }catch{
-    return {};
-  }
-}
-
-function saveAppLockConfig(data){
-  localStorage.setItem(APP_LOCK_KEY, JSON.stringify(data || {}));
-}
-
-async function sha256Hex(text){
-  const enc = new TextEncoder().encode(String(text || ""));
-  const hash = await crypto.subtle.digest("SHA-256", enc);
-  return [...new Uint8Array(hash)].map(b => b.toString(16).padStart(2, "0")).join("");
-}
-
-function base64urlToUint8Array(base64url){
-  const base64 = base64url.replace(/-/g, "+").replace(/_/g, "/");
-  const pad = "=".repeat((4 - (base64.length % 4)) % 4);
-  const str = atob(base64 + pad);
-  return Uint8Array.from([...str].map(ch => ch.charCodeAt(0)));
-}
-
-function uint8ArrayToBase64url(bytes){
-  const str = btoa(String.fromCharCode(...new Uint8Array(bytes)));
-  return str.replace(/\+/g, "-").replace(/\//g, "_").replace(/=+$/,"");
-}
-
-function isAppLockEnabled(){
-  const cfg = getAppLockConfig();
-  return !!cfg.enabled && !!cfg.pinHash;
-}
-
-function getAutoLockMs(){
-  const cfg = getAppLockConfig();
-  return Math.max(10, Number(cfg.autoLockSeconds || 300)) * 1000;
-}
-
-function markAppBackgroundStart(){
-  const cfg = getAppLockConfig();
-  if(!cfg.enabled || !cfg.pinHash) return;
-
-  cfg.backgroundAt = Date.now();
-  saveAppLockConfig(cfg);
-}
-
-function clearAppBackgroundStart(){
-  const cfg = getAppLockConfig();
-  if(cfg.backgroundAt || cfg.forceLock){
-    cfg.backgroundAt = 0;
-    cfg.forceLock = false;
-    saveAppLockConfig(cfg);
-  }
-}
-
-function shouldLockFromBackground(){
-  const cfg = getAppLockConfig();
-  if(!cfg.enabled || !cfg.pinHash) return false;
-  if(cfg.forceLock) return true;
-  if(!cfg.backgroundAt) return false;
-
-  return (Date.now() - Number(cfg.backgroundAt || 0)) >= getAutoLockMs();
-}
-
-function enforceAppLockIfNeeded(){
-  if(shouldLockFromBackground()){
-    showAppLock();
-  }else{
-    clearAppBackgroundStart();
-  }
-}
-
-function togglePrivacyPanel(forceOpen = null){
-  const body = document.getElementById("privacyBody");
-  const icon = document.getElementById("privacyToggleIcon");
-  if(!body || !icon) return;
-
-  const shouldOpen = forceOpen === null ? !body.classList.contains("open") : !!forceOpen;
-  body.classList.toggle("open", shouldOpen);
-  icon.innerText = shouldOpen ? "－" : "＋";
-}
-
-function revealPinFallback(message = ""){
-  const subtitle = document.getElementById("lockSubtitle");
-  const bioWrap = document.getElementById("lockBioWrap");
-  const pinWrap = document.getElementById("lockPinWrap");
-  const pinError = document.getElementById("appLockPinError");
-  const pinInput = document.getElementById("appLockPinInput");
-
-  if(subtitle) subtitle.innerText = "Enter PIN to continue";
-  if(bioWrap) bioWrap.classList.add("hidden");
-  if(pinWrap) pinWrap.classList.remove("hidden");
-  if(pinError) pinError.innerText = message || "";
-  if(pinInput){
-    pinInput.value = "";
-    setTimeout(() => pinInput.focus(), 50);
-  }
-}
-
-function setupInitialLockView(){
-  const cfg = getAppLockConfig();
-  const subtitle = document.getElementById("lockSubtitle");
-  const bioWrap = document.getElementById("lockBioWrap");
-  const pinWrap = document.getElementById("lockPinWrap");
-  const bioError = document.getElementById("appLockError");
-  const pinError = document.getElementById("appLockPinError");
-
-  if(bioError) bioError.innerText = "";
-  if(pinError) pinError.innerText = "";
-
-  biometricFailCount = 0;
-
-  const biometricAvailable = !!cfg.biometricEnabled && (cfg.mode === "biometric" || cfg.mode === "both");
-
-  if(biometricAvailable){
-    if(subtitle) subtitle.innerText = "Use Fingerprint / Face ID";
-    if(bioWrap) bioWrap.classList.remove("hidden");
-    if(pinWrap) pinWrap.classList.add("hidden");
-  }else{
-    revealPinFallback("");
-  }
-}
-
-function showAppLock(){
-  const overlay = document.getElementById("appLockOverlay");
-  if(!overlay) return;
-  if(overlay.style.display === "flex") return;
-
-  overlay.style.display = "flex";
-  setupInitialLockView();
-
-  const cfg = getAppLockConfig();
-  const biometricAvailable = !!cfg.biometricEnabled && (cfg.mode === "biometric" || cfg.mode === "both");
-
-  if(biometricAvailable){
-    setTimeout(() => {
-      unlockWithBiometric(true);
-    }, 250);
-  }
-}
-
-function hideAppLock(){
-  const overlay = document.getElementById("appLockOverlay");
-  if(!overlay) return;
-
-  overlay.style.display = "none";
-
-  const cfg = getAppLockConfig();
-  cfg.lastUnlockAt = Date.now();
-  cfg.backgroundAt = 0;
-  cfg.forceLock = false;
-  saveAppLockConfig(cfg);
-}
-
-async function unlockWithPin(){
-  const cfg = getAppLockConfig();
-  const pinInput = document.getElementById("appLockPinInput");
-  const error = document.getElementById("appLockPinError");
-  const pin = (pinInput?.value || "").trim();
-
-  if(!/^\d{4}$/.test(pin)){
-    if(error) error.innerText = "Enter vali PIN";
-    return;
-  }
-
-  const hash = await sha256Hex(pin);
-
-  if(hash !== cfg.pinHash){
-    if(error) error.innerText = "Wrong PIN";
-    return;
-  }
-
-  hideAppLock();
-}
-
-async function registerBiometric(){
-  if(!isOwnProfile){
-    alert("Only your own profile can enable biometric lock");
-    return;
-  }
-
-  const cfg = getAppLockConfig();
-  if(!cfg.pinHash){
-    alert("First save your 4-digit PIN");
-    return;
-  }
-
-  if(!window.PublicKeyCredential){
-    alert("Fingerprint / Face ID not supported on this device");
-    return;
-  }
-
-  try{
-    const token = localStorage.getItem("authToken");
-    const res = await fetch("/api/webauthn/register/options", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      }
-    });
-
-    const data = await res.json().catch(() => null);
-    if(!data || !data.ok) throw new Error((data && data.msg) || "Options failed");
-
-    const options = data.options;
-    options.challenge = base64urlToUint8Array(options.challenge);
-    options.user.id = base64urlToUint8Array(options.user.id);
-
-    const cred = await navigator.credentials.create({
-      publicKey: options
-    });
-
-    const payload = {
-      id: cred.id,
-      rawId: uint8ArrayToBase64url(cred.rawId),
-      type: cred.type,
-      response: {
-        clientDataJSON: uint8ArrayToBase64url(cred.response.clientDataJSON),
-        attestationObject: uint8ArrayToBase64url(cred.response.attestationObject)
-      }
-    };
-
-    const verifyRes = await fetch("/api/webauthn/register/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const verifyData = await verifyRes.json().catch(() => null);
-    if(!verifyData || !verifyData.ok) throw new Error((verifyData && verifyData.msg) || "Verification failed");
-
-    cfg.enabled = true;
-    cfg.biometricEnabled = true;
-    cfg.mode = "both";
-    cfg.lastUnlockAt = Date.now();
-    saveAppLockConfig(cfg);
-
-    alert("Fingerprint / Face ID enabled ✅");
-    renderBadges(["Verified"]);
-  }catch(err){
-    console.log(err);
-    alert(err.message || "Biometric setup failed");
-  }
-}
-
-async function unlockWithBiometric(autoStarted = false){
-  const error = document.getElementById("appLockError");
-
-  if(!window.PublicKeyCredential){
-    revealPinFallback("Biometric not supported. Use PIN.");
-    return;
-  }
-
-  try{
-    const token = localStorage.getItem("authToken");
-    const res = await fetch("/api/webauthn/auth/options", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      }
-    });
-
-    const data = await res.json().catch(() => null);
-    if(!data || !data.ok) throw new Error((data && data.msg) || "Options failed");
-
-    const options = data.options;
-    options.challenge = base64urlToUint8Array(options.challenge);
-    options.allowCredentials = (options.allowCredentials || []).map(item => ({
-      ...item,
-      id: base64urlToUint8Array(item.id)
-    }));
-
-    const assertion = await navigator.credentials.get({
-      publicKey: options
-    });
-
-    const payload = {
-      id: assertion.id,
-      rawId: uint8ArrayToBase64url(assertion.rawId),
-      type: assertion.type,
-      response: {
-        clientDataJSON: uint8ArrayToBase64url(assertion.response.clientDataJSON),
-        authenticatorData: uint8ArrayToBase64url(assertion.response.authenticatorData),
-        signature: uint8ArrayToBase64url(assertion.response.signature),
-        userHandle: assertion.response.userHandle
-          ? uint8ArrayToBase64url(assertion.response.userHandle)
-          : null
-      }
-    };
-
-    const verifyRes = await fetch("/api/webauthn/auth/verify", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-        Authorization: "Bearer " + token
-      },
-      body: JSON.stringify(payload)
-    });
-
-    const verifyData = await verifyRes.json().catch(() => null);
-    if(!verifyData || !verifyData.ok) throw new Error((verifyData && verifyData.msg) || "Biometric unlock failed");
-
-    biometricFailCount = 0;
-    hideAppLock();
-  }catch(err){
-    console.log(err);
-    biometricFailCount += 1;
-
-    if(biometricFailCount >= 3){
-      revealPinFallback("3 biometric attempts failed. Use PIN.");
-      return;
-    }
-
-    if(error){
-      error.innerText = `Biometric failed (${biometricFailCount}/3)`;
-    }
-
-    if(autoStarted){
-      setTimeout(() => {
-        const overlay = document.getElementById("appLockOverlay");
-        if(overlay && overlay.style.display === "flex"){
-          unlockWithBiometric(true);
-        }
-      }, 500);
-    }
-  }
-}
-
-function getAuthToken(){
-  return localStorage.getItem("authToken") || "";
-}
-
-function getJsonHeaders(){
-  const headers = { "Content-Type": "application/json" };
-  const token = getAuthToken();
-  if(token){
-    headers.Authorization = "Bearer " + token;
-  }
-  return headers;
-}
-
-function getMediaUrl(filePath, fallback = ""){
-  if(!filePath) return fallback;
-
-  let value = String(filePath).trim();
-
-  value = value.replace(/^https?:\/\/localhost:5000/i, window.location.origin);
-  value = value.replace(/^https?:\/\/127\.0\.0\.1:5000/i, window.location.origin);
-
-  if(/^https?:\/\//i.test(value)) return value;
-  if(value.startsWith("/")) return value;
-  if(value.startsWith("uploads/")) return "/" + value;
-
-  return "/uploads/" + value.replace(/^\/+/, "");
-}
-
-function setCoverImage(imagePath){
-  const safeUrl = getMediaUrl(imagePath, "/default-group.png");
-  document.getElementById("coverImageBox").style.background = `
-    linear-gradient(135deg, rgba(16,185,129,.55), rgba(34,211,238,.35)),
-    url("${safeUrl}") center/cover no-repeat
-  `;
-}
-
-function formatPresence(user){
-  if(user?.online) return "🟢 Online now";
-
-  if(user?.lastSeen){
-    const d = new Date(user.lastSeen);
-    if(!isNaN(d.getTime())){
-      return "Last seen " + d.toLocaleString();
-    }
-  }
-
-  return "Offline";
-}
-
-function renderBadges(badges){
-  const wrap = document.getElementById("badgesWrap");
-  if(!wrap) return;
-
-  const list = Array.isArray(badges) && badges.length ? [...badges] : ["Verified"];
-  const cfg = getAppLockConfig();
-
-  if(!isOwnProfile){
-    list.push("Read only");
-  } else if(cfg.biometricEnabled){
-    list.push("Biometric Lock");
-  }
-
-  wrap.innerHTML = list.map(b => `<span class="badge-chip">${b}</span>`).join("");
-}
-
-function applyProfileMode(){
-  const topbarTitle = document.getElementById("topbarTitle");
-  const viewerNote = document.getElementById("viewerNote");
-  const detailsHeading = document.getElementById("detailsHeading");
-  const coverEditBtn = document.getElementById("coverEditBtn");
-  const dpFabBtn = document.getElementById("dpFabBtn");
-  const saveBtn = document.getElementById("saveBtn");
-  const changePhotoBtn = document.getElementById("changePhotoBtn");
-  const bioSuggestions = document.getElementById("bioSuggestions");
-  const privacyCard = document.getElementById("privacyCard");
-
-  if(isOwnProfile){
-    if(topbarTitle) topbarTitle.innerText = "My Profile";
-    if(detailsHeading) detailsHeading.innerText = "Profile details";
-    if(viewerNote) viewerNote.classList.add("hidden");
-    if(coverEditBtn) coverEditBtn.classList.remove("hidden");
-    if(dpFabBtn) dpFabBtn.classList.remove("hidden");
-    if(saveBtn) saveBtn.classList.remove("hidden");
-    if(changePhotoBtn) changePhotoBtn.classList.remove("hidden");
-    if(bioSuggestions) bioSuggestions.classList.remove("hidden");
-    if(privacyCard) privacyCard.classList.remove("hidden");
-    bioInput.disabled = false;
-    aboutInput.disabled = false;
-  } else {
-    if(topbarTitle) topbarTitle.innerText = "User Profile";
-    if(detailsHeading) detailsHeading.innerText = "Profile details";
-    if(viewerNote) viewerNote.classList.remove("hidden");
-    if(coverEditBtn) coverEditBtn.classList.add("hidden");
-    if(dpFabBtn) dpFabBtn.classList.add("hidden");
-    if(saveBtn) saveBtn.classList.add("hidden");
-    if(changePhotoBtn) changePhotoBtn.classList.add("hidden");
-    if(bioSuggestions) bioSuggestions.classList.add("hidden");
-    if(privacyCard) privacyCard.classList.add("hidden");
-    bioInput.disabled = true;
-    aboutInput.disabled = true;
-  }
-}
-
-async function verifyProfileLogin(){
-  const token = getAuthToken();
-
-  if(!token){
-    localStorage.removeItem("user");
-    localStorage.removeItem("role");
-    location.href = "/index.html";
+async function verify(){
+  if(!me || !token){
+    location.href="/index.html";
     return false;
   }
-
   try{
-    const res = await fetch("/api/me", {
-      headers: {
-        Authorization: "Bearer " + token
-      }
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if(!data || !data.ok){
-      localStorage.removeItem("user");
-      localStorage.removeItem("role");
-      localStorage.removeItem("authToken");
-      location.href = "/index.html";
-      return false;
+    const r = await fetch(api("/api/me"), {headers:{Authorization:"Bearer " + token}});
+    const d = await r.json().catch(()=>null);
+    if(d && d.ok && d.user){
+      me = d.user.name;
+      localStorage.setItem("user", me);
+      profileUser = params.get("user") || me;
+      isOwnProfile = profileUser === me;
+      return true;
     }
+  }catch(e){}
+  profileUser = params.get("user") || me;
+  isOwnProfile = profileUser === me;
+  return true;
+}
+function applyMode(){
+  APP.classList.toggle("viewer-only", !isOwnProfile);
+}
+function renderUser(u){
+  currentUserData = u;
+  const name = u.name || profileUser || "User";
+  const about = u.about || u.bio || "Hey there! I am using RickyY Chat";
+  const phone = u.contact || u.phone || u.mobile || "";
 
-    me = data.user.name;
-    localStorage.setItem("user", data.user.name);
-    localStorage.setItem("role", data.user.role || "user");
+  document.getElementById("usernameText").textContent = name;
+  document.getElementById("aboutBig").textContent = about;
+  document.getElementById("aboutValue").textContent = about;
+  document.getElementById("aboutInput").value = about;
+  document.getElementById("aboutCount").textContent = about.length;
+  document.getElementById("bioInput").value = u.bio || "";
+  document.getElementById("bioCount").textContent = (u.bio || "").length;
 
-    profileUser = requestedProfileUser || me;
-    isOwnProfile = profileUser === me;
-
-    return true;
-  }catch(err){
-    console.log("PROFILE VERIFY LOGIN ERROR:", err);
-    profileUser = requestedProfileUser || me;
-    isOwnProfile = profileUser === me;
-    return true;
+  document.getElementById("phoneValue").textContent = phone ? "📱 +91 " + phone : "📱 Not Added";
+  document.getElementById("myDp").src = safeUrl(u.dp, "/default.png");
+  document.title = name + " • RickyY Chat";
+}
+async function loadProfile(){
+  try{
+    const r = await fetch(api("/profile/" + encodeURIComponent(profileUser)), {headers:authHeaders()});
+    const d = await r.json().catch(()=>null);
+    if(d && d.ok && d.user){
+      renderUser(d.user);
+      return;
+    }
+    toast("Profile load failed");
+  }catch(e){
+    console.log(e);
+    toast("Profile load failed");
   }
 }
+function openAboutEditor(){
+  document.getElementById("aboutModal").classList.add("show");
+  setTimeout(()=>document.getElementById("aboutInput").focus(),50);
+}
+function closeAboutEditor(){
+  document.getElementById("aboutModal").classList.remove("show");
+}
+function setAboutInput(t){
+  const inp = document.getElementById("aboutInput");
+  inp.value = t;
+  document.getElementById("aboutCount").textContent = t.length;
+}
+function quickAbout(t){
+  setAboutInput(t);
+  document.getElementById("aboutBig").textContent = t;
+  document.getElementById("aboutValue").textContent = t;
+  saveProfile(t);
+}
+function saveAboutFromModal(){
+  const about = document.getElementById("aboutInput").value.trim();
+  document.getElementById("aboutBig").textContent = about || "Hey there! I am using RickyY Chat";
+  document.getElementById("aboutValue").textContent = about || "Hey there! I am using RickyY Chat";
+  closeAboutEditor();
+  saveProfile(about);
+}
+async function saveProfile(aboutOverride=null){
+  if(!isOwnProfile) return;
+  const bio = document.getElementById("bioInput").value.trim();
+  const about = aboutOverride === null ? document.getElementById("aboutInput").value.trim() : aboutOverride;
+
+  try{
+    const r = await fetch(api("/update-profile"), {
+      method:"POST",
+      headers:headersJson(),
+      body:JSON.stringify({username:me,bio,about})
+    });
+    const d = await r.json().catch(()=>null);
+    if(d && d.ok){
+      toast("Profile updated ✅");
+    }else{
+      toast((d && d.msg) || "Save failed");
+    }
+  }catch(e){
+    toast("Server error");
+  }
+}
+async function uploadDp(file){
+  const fd = new FormData();
+  fd.append("dp", file);
+  fd.append("username", me);
+
+  try{
+    const r = await fetch(api("/upload-dp"), {
+      method:"POST",
+      headers:authHeaders(),
+      body:fd
+    });
+    const d = await r.json().catch(()=>null);
+    if(d && (d.status === "ok" || d.dp)){
+      document.getElementById("myDp").src = safeUrl(d.dp, "/default.png");
+      toast("DP updated ✅");
+    }else{
+      toast((d && d.msg) || "DP upload failed");
+    }
+  }catch(e){
+    toast("DP upload failed");
+  }
+}
+function openSettings(){document.getElementById("settingsModal").classList.add("show")}
+function closeSettings(){document.getElementById("settingsModal").classList.remove("show")}
+function openMedia(){document.getElementById("mediaModal").classList.add("show")}
+function closeMedia(){document.getElementById("mediaModal").classList.remove("show")}
 
 async function logout(){
-  const username = localStorage.getItem("user");
-
+  const name = me;
   localStorage.removeItem("user");
   localStorage.removeItem("role");
   localStorage.removeItem("authToken");
-
   try{
-    await fetch("/api/logout", {
+    await fetch(api("/api/logout"), {
       method:"POST",
-      headers:getJsonHeaders(),
-      body: JSON.stringify({ name: username })
+      headers:headersJson(),
+      body:JSON.stringify({name})
     });
   }catch(e){}
-
-  location.href = "/index.html";
+  location.href="/index.html";
 }
 
-async function loadProfile(){
-  try{
-    const res = await fetch("/profile/" + encodeURIComponent(profileUser), {
-      headers: getJsonHeaders()
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if(!data || !data.ok || !data.user){
-      document.getElementById("presenceText").innerText = "Failed to load profile";
-      document.getElementById("lastSeenValue").innerText = "--";
-      return;
-    }
-
-    const user = data.user;
-
-    document.getElementById("myDp").src = getMediaUrl(user.dp, "/default.png");
-    setCoverImage(user.coverImage || "/default-group.png");
-    usernameText.innerText = user.name || profileUser;
-    document.title = (user.name || profileUser) + " • RickyY Chat";
-
-    bioInput.value = user.bio || "";
-    aboutInput.value = user.about || "";
-
-    bioCount.innerText = bioInput.value.length;
-    aboutCount.innerText = aboutInput.value.length;
-
-    document.getElementById("presenceText").innerText = formatPresence(user);
-    document.getElementById("lastSeenValue").innerText = formatPresence(user);
-    document.getElementById("aboutPreview").innerText = user.about || "No about text yet";
-
-    renderBadges(user.badges || []);
-  }catch(err){
-    console.log("Profile load error", err);
-    document.getElementById("presenceText").innerText = "Failed to load profile";
-    document.getElementById("lastSeenValue").innerText = "--";
-  }
-}
-
-async function loadMediaGallery(){
-  const grid = document.getElementById("profileMediaGrid");
-  if(!grid) return;
-  grid.innerHTML = `<div class="empty-state">Media gallery coming soon</div>`;
-}
-
-function setBioSuggestion(text){
-  if(!isOwnProfile) return;
-  bioInput.value = text;
-  bioCount.innerText = bioInput.value.length;
-}
-
-async function saveProfile(){
-  if(!isOwnProfile){
-    alert("You can edit only your profile");
-    return;
-  }
-
-  const bio = bioInput.value.trim();
-  const about = aboutInput.value.trim();
-
-  try{
-    const res = await fetch("/update-profile", {
-      method:"POST",
-      headers:getJsonHeaders(),
-      body: JSON.stringify({
-        username: me,
-        bio,
-        about
-      })
-    });
-
-    const data = await res.json().catch(() => null);
-
-    if(data && data.ok){
-      document.getElementById("aboutPreview").innerText = about || "No about text yet";
-      alert("Profile updated ✅");
-    }else{
-      alert((data && data.msg) || "Profile update failed");
-    }
-  }catch(err){
-    console.log("Profile save error", err);
-    alert("Server error");
-  }
-}
-
-async function saveAppLockPin(){
-  const pin1 = document.getElementById("newAppPin").value.trim();
-  const pin2 = document.getElementById("confirmAppPin").value.trim();
-  const autoLockSeconds = Number(document.getElementById("autoLockSeconds").value || 60);
-
-  if(!/^\d{4}$/.test(pin1)){
-    alert("PIN must be 4 digits");
-    return;
-  }
-
-  if(pin1 !== pin2){
-    alert("PINs do not match");
-    return;
-  }
-
-  const oldCfg = getAppLockConfig();
-  const cfg = {
-    ...oldCfg,
-    enabled: true,
-    autoLockSeconds,
-    pinHash: await sha256Hex(pin1),
-    lastUnlockAt: Date.now(),
-    backgroundAt: 0,
-    forceLock: false,
-    mode: oldCfg.biometricEnabled ? "both" : "pin"
-  };
-
-  saveAppLockConfig(cfg);
-  togglePrivacyPanel(false);
-  alert("App lock PIN saved ✅");
-}
-
-function disableAppLock(){
-  localStorage.removeItem(APP_LOCK_KEY);
-  renderBadges(["Verified"]);
-  alert("App lock disabled");
-}
-
-function lockNow(){
-  const cfg = getAppLockConfig();
-  if(!cfg.enabled){
-    alert("First save PIN");
-    return;
-  }
-
-  cfg.forceLock = true;
-  saveAppLockConfig(cfg);
-  showAppLock();
-}
-
-async function uploadImage(endpoint, fieldName, file){
-  const formData = new FormData();
-  formData.append(fieldName, file);
-  formData.append("username", me);
-
-  const headers = {};
-  const token = getAuthToken();
-  if(token){
-    headers.Authorization = "Bearer " + token;
-  }
-
-  const res = await fetch(endpoint, {
-    method:"POST",
-    headers,
-    body: formData
-  });
-
-  return res.json().catch(() => null);
-}
-
-function goBack(){
-  if(document.referrer && document.referrer.includes("/chat.html")){
-    history.back();
-    return;
-  }
-  window.location.href = "/chat.html";
-}
-
-document.addEventListener("visibilitychange", () => {
-  if(document.hidden){
-    markAppBackgroundStart();
-    showSensitiveBlur();
-    return;
-  }
-
-  hideSensitiveBlur();
-  enforceAppLockIfNeeded();
+document.getElementById("bioInput").addEventListener("input", e=>{
+  document.getElementById("bioCount").textContent = e.target.value.length;
+});
+document.getElementById("aboutInput").addEventListener("input", e=>{
+  document.getElementById("aboutCount").textContent = e.target.value.length;
+});
+document.getElementById("dpInput").addEventListener("change", e=>{
+  const f = e.target.files && e.target.files[0];
+  if(f) uploadDp(f);
 });
 
-window.addEventListener("pagehide", () => {
-  markAppBackgroundStart();
-  showSensitiveBlur();
-});
+if(socket && me){
+  socket.on("connect", ()=>socket.emit("join", me));
+}
 
-window.addEventListener("blur", () => {
-  clearTimeout(blurTimer);
-  blurTimer = setTimeout(showSensitiveBlur, 180);
-});
-
-window.addEventListener("focus", () => {
-  clearTimeout(blurTimer);
-  hideSensitiveBlur();
-});
-
-window.addEventListener("pageshow", () => {
-  enforceAppLockIfNeeded();
-});
-
-(async function initProfile(){
-  const ok = await verifyProfileLogin();
+(async function init(){
+  const ok = await verify();
   if(!ok) return;
-
-  bioInput = document.getElementById("bioInput");
-  bioCount = document.getElementById("bioCount");
-  aboutInput = document.getElementById("aboutInput");
-  aboutCount = document.getElementById("aboutCount");
-  dpInput = document.getElementById("dpInput");
-  coverInput = document.getElementById("coverInput");
-  usernameText = document.getElementById("usernameText");
-
-  bioInput.addEventListener("input", () => {
-    bioCount.innerText = bioInput.value.length;
-  });
-
-  aboutInput.addEventListener("input", () => {
-    aboutCount.innerText = aboutInput.value.length;
-  });
-
-  applyProfileMode();
-
-  dpInput.addEventListener("change", async () => {
-    if(!isOwnProfile) return;
-
-    const file = dpInput.files[0];
-    if(!file) return;
-
-    const data = await uploadImage("/upload-dp", "dp", file);
-
-    if(data && (data.dp || data.ok)){
-      document.getElementById("myDp").src = getMediaUrl(data.dp, "/default.png");
-      alert("Profile photo updated ✅");
-    }else{
-      alert((data && data.msg) || "Profile photo update failed");
-    }
-  });
-
-  coverInput.addEventListener("change", async () => {
-    if(!isOwnProfile) return;
-
-    const file = coverInput.files[0];
-    if(!file) return;
-
-    const data = await uploadImage("/upload-cover", "cover", file);
-
-    if(data && data.ok){
-      setCoverImage(data.coverImage || "/default-group.png");
-      alert("Cover image updated ✅");
-    }else{
-      alert((data && data.msg) || "Cover image update failed");
-    }
-  });
-
-  const cfg = getAppLockConfig();
-  if(document.getElementById("autoLockSeconds") && cfg.autoLockSeconds){
-    document.getElementById("autoLockSeconds").value = String(cfg.autoLockSeconds);
-  }
-
-  bindProfileSocketPresence();
-  setupPullToRefresh();
-  updateNetworkBanner();
-
+  applyMode();
   await loadProfile();
-  await loadMediaGallery();
-
-  hideProfileSkeleton();
-  enforceAppLockIfNeeded();
-})();
-
-</script>
-<script>
-(function keepProfileOnline(){
-  const me = localStorage.getItem("user");
-  const token = localStorage.getItem("authToken");
-
-  if(!me) return;
-
-  const profileSocket = (typeof window.profileSocket !== "undefined" && window.profileSocket) || (typeof socket !== "undefined" && socket) || io({
-    transports:["websocket", "polling"],
-    reconnection:true
-  });
-
-  profileSocket.on("connect", () => {
-    profileSocket.emit("join", me);
-  });
-
-  async function pingPresence(){
-    try{
-      await fetch("/api/presence/ping", {
-        method:"POST",
-        headers:{
-          "Content-Type":"application/json",
-          "Authorization":"Bearer " + (token || "")
-        },
-        body:JSON.stringify({ name:me })
-      });
-    }catch(err){}
-  }
-
-  pingPresence();
-  setInterval(pingPresence, 10000);
-})();
-setTimeout(() => {
-  hideProfileSkeleton();
-}, 6000);
-</script>
-
-<script>
-(function privacyScreenshotGuard(){
-  const overlay = document.getElementById("privacyGuardOverlay");
-  let timer = null;
-
-  document.body.classList.add("privacy-no-select");
-
-  function showPrivacyGuard(ms = 1600){
-    if(!overlay) return;
-    clearTimeout(timer);
-    document.body.classList.add("privacy-guard-active");
-    overlay.setAttribute("aria-hidden", "false");
-
-    if(ms > 0){
-      timer = setTimeout(() => {
-        hidePrivacyGuard();
-      }, ms);
-    }
-  }
-
-  function hidePrivacyGuard(){
-    clearTimeout(timer);
-    document.body.classList.remove("privacy-guard-active");
-    if(overlay) overlay.setAttribute("aria-hidden", "true");
-  }
-
-  window.showPrivacyGuard = showPrivacyGuard;
-  window.hidePrivacyGuard = hidePrivacyGuard;
-
-  document.addEventListener("contextmenu", (e) => {
-    e.preventDefault();
-    showPrivacyGuard(1200);
-  });
-
-  document.addEventListener("keydown", async (e) => {
-    const key = String(e.key || "").toLowerCase();
-
-    if(key === "printscreen"){
-      showPrivacyGuard(2200);
-      try{
-        await navigator.clipboard.writeText("Privacy Protected - RickyY Chat");
-      }catch(err){}
-      return;
-    }
-
-    if((e.ctrlKey || e.metaKey) && (key === "p" || key === "s")){
-      e.preventDefault();
-      showPrivacyGuard(2200);
-      return;
-    }
-
-    if((e.ctrlKey || e.metaKey) && e.shiftKey && ["s","i","j","c"].includes(key)){
-      e.preventDefault();
-      showPrivacyGuard(1800);
-      return;
-    }
-  }, true);
-
-  window.addEventListener("beforeprint", () => {
-    showPrivacyGuard(0);
-  });
-
-  window.addEventListener("afterprint", () => {
-    hidePrivacyGuard();
-  });
-
-  document.addEventListener("visibilitychange", () => {
-    if(document.hidden){
-      showPrivacyGuard(0);
-    }else{
-      hidePrivacyGuard();
-    }
-  });
-
-  window.addEventListener("blur", () => {
-    showPrivacyGuard(0);
-  });
-
-  window.addEventListener("focus", () => {
-    hidePrivacyGuard();
-  });
-
-  window.addEventListener("pagehide", () => {
-    showPrivacyGuard(0);
-  });
-
-  window.addEventListener("pageshow", () => {
-    hidePrivacyGuard();
-  });
 })();
 </script>
-
 </body>
 </html>

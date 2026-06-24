@@ -4174,7 +4174,7 @@ z-index:9999;
 </div>
 </div>
 <script>
-  
+  import { PushNotifications } from '@capacitor/push-notifications';
 const APP_LOCK_KEY = "appLockConfig";
 let chatBiometricFailCount = 0;
 
@@ -4612,7 +4612,7 @@ function enforceAppLockIfNeeded(){
   let userChatBiometricFailCount = 0;
 
   const socket = io("https://rickyy-chat.onrender.com");
-
+  const SERVER_URL = "https://rickyy-chat.onrender.com";
   let me = localStorage.getItem("user");
 
   function normalizeNameSafe(name){
@@ -5228,7 +5228,7 @@ function getUserListBottomText(u){
 
     let value = String(filePath).trim();
 
-    value = value.replace(/^https?:\/\/localhost:5000/i, window.location.origin);
+    value = value.replace(/^https?:\/\/localhost:5000/i, SERVER_URL);
     value = value.replace(/^https?:\/\/127\.0\.0\.1:5000/i, window.location.origin);
 
     if (/^https?:\/\//i.test(value)) return value;
@@ -6756,7 +6756,9 @@ function getUserListBottomText(u){
       row.innerHTML = `
         <div style="display:flex;align-items:center;width:100%;gap:14px;">
           <div class="user-avatar-wrap" style="position:relative;">
-            <img src="${dp}" onerror="this.src='https://ui-avatars.com/api/?name=${encodeURIComponent(u.name)}'">
+            <img src="${dp}" 
+     onerror="this.onerror=null;this.src='/default.png';"
+     style="width:48px;height:48px;border-radius:50%;object-fit:cover;">
             ${u.online ? `<span class="user-online-dot"></span>` : ""}
             ${isLockedChat ? `<span title="Chat locked" style="position:absolute;right:-4px;bottom:-4px;background:#111827;border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:3px 6px;font-size:10px;line-height:1;color:#fff;">🔒</span>` : ""}
           </div>
@@ -7444,7 +7446,7 @@ function setUserTypingState(username, isTyping){
   }
   function goTo(page) {
   if(page === "profile") {
-    window.location.href = "profile.html";
+    openProfileModal(name);
   }
   else if(page === "chats") {
     window.location.href = "index.html";
@@ -11697,9 +11699,10 @@ socket.on("stop-typing", user => {
   }
 
   function openUserProfile(username){
-    if(!username) return;
-    window.location.href = "/profile.html?user=" + encodeURIComponent(username);
+  if(!username) return;
+  openProfileModal(username);
   }
+
 
   async function logout(){
     const username = localStorage.getItem("user");
@@ -12641,12 +12644,11 @@ window.addEventListener("load", () => {
     }
   }
   function openProfile(){
-    if(!me){
-      showToast("Login required", "warning");
-      return;
-    }
-
-    window.location.href = "/profile.html?user=" + encodeURIComponent(me);
+  if(!me){
+    showToast("Login required", "warning");
+    return;
+  }
+  openProfileModal(me);
   }
 
 function openMenu(){
@@ -13261,11 +13263,10 @@ z-index:99999;
   };
 
   window.goProfile = function(user){
-    const name = user || window.currentChat || localStorage.getItem("user") || "";
-    sessionStorage.setItem("fromChatPage", "1");
-    window.location.href = "/profile.html" + (name ? "?user=" + encodeURIComponent(name) : "");
+  const name = user || window.currentChat || localStorage.getItem("user") || "";
+  if(!name) return;
+  openProfileModal(name);
   };
-
   function setImgFallback(img){
     if(!img || img.dataset.fallbackReady === "1") return;
     img.dataset.fallbackReady = "1";
@@ -13470,6 +13471,215 @@ document.addEventListener("input", function(e){
     unlockHiddenChatsFromSearch();
   }
 });
+async function openProfileModal(username){
+  if(!username) return;
+
+  const res = await fetch("/profile/" + encodeURIComponent(username));
+  const data = await res.json();
+
+  if(!data.ok || !data.user){
+    alert("Profile load failed");
+    return;
+  }
+
+  const u = data.user;
+  const isMe = u.name === localStorage.getItem("user");
+  const dp = u.dp || "/default.png";
+  const about = u.about || u.bio || "Hey there! I am using RickyY Chat";
+  const phone = u.contact ? "+91 " + u.contact : "Not Added";
+
+  const old = document.getElementById("profileModal");
+  if(old) old.remove();
+
+  document.body.insertAdjacentHTML("beforeend", `
+    <div id="profileModal" style="position:fixed;inset:0;z-index:999999;background:#071018;color:white;overflow:auto;padding:18px;">
+      <button onclick="document.getElementById('profileModal').remove()" style="background:none;border:0;color:white;font-size:42px;">←</button>
+
+      <div style="text-align:center;margin-top:35px;">
+        <div style="position:relative;width:160px;height:160px;margin:auto;">
+          <img src="${dp}" onerror="this.onerror=null;this.src='/default.png'" style="width:160px;height:160px;border-radius:50%;object-fit:cover;">
+          ${isMe ? `<button onclick="document.getElementById('modalDpInput').click()" style="position:absolute;right:6px;bottom:8px;width:48px;height:48px;border-radius:50%;border:0;background:#10b981;color:white;font-size:22px;">📷</button>` : ""}
+        </div>
+
+        <h1 style="font-size:40px;margin:28px 0 18px;">${u.name}</h1>
+        <div style="font-size:26px;margin-bottom:35px;">${about}</div>
+      </div>
+
+      <div style="max-width:520px;margin:auto;display:grid;gap:14px;">
+        <div style="background:#111827;border-radius:18px;padding:16px;">
+          <div style="color:#94a3b8;font-size:13px;font-weight:900;">PHONE</div>
+          <div style="font-size:18px;margin-top:8px;">📱 ${phone}</div>
+        </div>
+
+        <div style="background:#111827;border-radius:18px;padding:16px;">
+          <div style="color:#94a3b8;font-size:13px;font-weight:900;">ABOUT</div>
+          <textarea id="modalAboutInput" ${isMe ? "" : "disabled"} style="width:100%;margin-top:10px;border-radius:14px;padding:12px;background:#0b1220;color:white;border:1px solid #334155;font-size:16px;">${about}</textarea>
+
+          ${isMe ? `
+          <div style="display:flex;flex-wrap:wrap;gap:8px;margin-top:12px;">
+            ${["Available","Busy","At work","Sleeping 😴","I love rashu 🥺💘"].map(x =>
+              `<button onclick="document.getElementById('modalAboutInput').value='${x}'" style="border:0;border-radius:999px;padding:9px 12px;background:#1f2937;color:white;">${x}</button>`
+            ).join("")}
+          </div>
+          <button onclick="saveModalProfile()" style="width:100%;margin-top:14px;border:0;border-radius:16px;padding:14px;background:#10b981;color:white;font-weight:900;">Save Profile</button>
+          ` : ""}
+        </div>
+
+        <button onclick="alert('Media coming soon')" style="border:0;border-radius:16px;padding:15px;background:#111827;color:white;font-size:17px;">📂 Media</button>
+        <button onclick="alert('Settings coming soon')" style="border:0;border-radius:16px;padding:15px;background:#111827;color:white;font-size:17px;">⚙️ Settings</button>
+        ${isMe ? `<button onclick="logout()" style="border:0;border-radius:16px;padding:15px;background:#7f1d1d;color:white;font-size:17px;">🚪 Logout</button>` : ""}
+      </div>
+
+      <input id="modalDpInput" type="file" accept="image/*" hidden onchange="uploadModalDp(this.files[0])">
+    </div>
+  `);
+}
+
+async function saveModalProfile(){
+  const me = localStorage.getItem("user");
+  const about = document.getElementById("modalAboutInput").value.trim();
+
+  const res = await fetch("/update-profile", {
+    method:"POST",
+    headers:{"Content-Type":"application/json"},
+    body:JSON.stringify({ username:me, bio:about, about })
+  });
+
+  const data = await res.json();
+  alert(data.ok ? "Profile updated ✅" : "Update failed");
+}
+
+async function uploadModalDp(file){
+  if(!file) return;
+
+  const me = localStorage.getItem("user");
+  const fd = new FormData();
+  fd.append("dp", file);
+  fd.append("username", me);
+
+  const res = await fetch("/upload-dp", {
+    method:"POST",
+    body:fd
+  });
+
+  const data = await res.json();
+  if(data.status === "ok"){
+    document.querySelector("#profileModal img").src = data.dp;
+    alert("DP updated ✅");
+  }else{
+    alert("DP upload failed");
+  }
+  }
+function startRingSound(){
+  try{
+    if(window.ringAudio){
+      window.ringAudio.pause();
+      window.ringAudio.currentTime = 0;
+    }
+
+    window.ringAudio = new Audio("/ringtone.mp3");
+    window.ringAudio.loop = true;
+    window.ringAudio.volume = 1;
+    window.ringAudio.play().catch(()=>{});
+  }catch(e){}
+}
+
+function stopRingSound(){
+  try{
+    if(window.ringAudio){
+      window.ringAudio.pause();
+      window.ringAudio.currentTime = 0;
+    }
+  }catch(e){}
+}
+</script>
+<div id="nativeSplash">
+  <div class="splashLogo">R</div>
+  <h2>RickyY Chat</h2>
+  <p>Connecting...</p>
+</div>
+
+<div id="offlineBanner">Connecting...</div>
+
+<style>
+#nativeSplash{
+  position:fixed;inset:0;z-index:999999;
+  background:#071018;color:white;
+  display:flex;flex-direction:column;
+  align-items:center;justify-content:center;
+}
+.splashLogo{
+  width:88px;height:88px;border-radius:26px;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  display:flex;align-items:center;justify-content:center;
+  font-size:42px;font-weight:900;
+  animation:pulse 1s infinite alternate;
+}
+#nativeSplash h2{margin:18px 0 6px;font-size:28px}
+#nativeSplash p{color:#94a3b8}
+@keyframes pulse{from{transform:scale(.95)}to{transform:scale(1.08)}}
+
+#offlineBanner{
+  position:fixed;top:12px;left:50%;
+  transform:translateX(-50%) translateY(-80px);
+  z-index:999998;
+  background:#b45309;color:white;
+  padding:10px 18px;border-radius:999px;
+  font-weight:900;transition:.25s;
+}
+#offlineBanner.show{transform:translateX(-50%) translateY(0)}
+</style>
+
+<script>
+function haptic(ms=18){
+  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+}
+
+window.addEventListener("load",()=>{
+  setTimeout(()=>{
+    const s=document.getElementById("nativeSplash");
+    if(s) s.style.display="none";
+  },1200);
+});
+
+function updateOfflineBanner(){
+  const b=document.getElementById("offlineBanner");
+  if(!b) return;
+  if(navigator.onLine){
+    b.textContent="Connected";
+    b.style.background="#059669";
+    b.classList.add("show");
+    setTimeout(()=>b.classList.remove("show"),1200);
+  }else{
+    b.textContent="Connecting...";
+    b.style.background="#b45309";
+    b.classList.add("show");
+  }
+}
+window.addEventListener("online",updateOfflineBanner);
+window.addEventListener("offline",updateOfflineBanner);
+updateOfflineBanner();
+
+let pullY=0;
+document.addEventListener("touchstart",e=>{
+  if(scrollY===0) pullY=e.touches[0].clientY;
+},{passive:true});
+
+document.addEventListener("touchend",e=>{
+  if(!pullY) return;
+  const diff=(e.changedTouches[0].clientY-pullY);
+  pullY=0;
+  if(diff>90){
+    haptic(30);
+    location.reload();
+  }
+},{passive:true});
+
+document.addEventListener("click",e=>{
+  if(e.target.closest("button,.user,.chat-item,.tab,.bottom-tab")){
+    haptic(12);
+  }
+},{passive:true});
 </script>
 </body>
 </html>

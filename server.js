@@ -36,8 +36,8 @@ const server = http.createServer(app);
 
 app.use(cors({
   origin: true,
-  methods: ["GET", "POST", "OPTIONS"],
-  credentials: false
+  methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+  credentials: true
 }));
 
 app.use(express.json());
@@ -549,10 +549,12 @@ app.get("/debug-files", (req, res) => {
 const io = new Server(server, {
   cors: {
     origin: true,
-    methods: ["GET", "POST", "OPTIONS"],
-    credentials: false
-  }
+    methods: ["GET", "POST", "PUT", "DELETE", "OPTIONS"],
+    credentials: true
+  },
+  transports: ["websocket", "polling"]
 });
+
 const userSocketIds = {};
 
 const storage = multer.diskStorage({
