@@ -4611,7 +4611,7 @@ function enforceAppLockIfNeeded(){
   let unlockedChatSessions = {};
   let userChatBiometricFailCount = 0;
 
-  const socket = io();
+  const socket = io("https://rickyy-chat.onrender.com");
 
   let me = localStorage.getItem("user");
 
