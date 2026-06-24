@@ -4174,7 +4174,6 @@ z-index:9999;
 </div>
 </div>
 <script>
-  import { PushNotifications } from '@capacitor/push-notifications';
 const APP_LOCK_KEY = "appLockConfig";
 let chatBiometricFailCount = 0;
 
@@ -13593,93 +13592,366 @@ function stopRingSound(){
   }catch(e){}
 }
 </script>
-<div id="nativeSplash">
-  <div class="splashLogo">R</div>
-  <h2>RickyY Chat</h2>
-  <p>Connecting...</p>
-</div>
-
-<div id="offlineBanner">Connecting...</div>
-
-<style>
-#nativeSplash{
-  position:fixed;inset:0;z-index:999999;
-  background:#071018;color:white;
-  display:flex;flex-direction:column;
-  align-items:center;justify-content:center;
+<!-- ================= RICKYY PHASE 1 FEATURES START ================= -->
+<style id="rickyyPhase1Styles">
+/* AMOLED Dark Mode Upgrade */
+:root{--rickyy-amoled:#000;--rickyy-panel:#070b12;--rickyy-card:#0b111b;--rickyy-line:rgba(255,255,255,.08);--rickyy-green:#10b981;--rickyy-cyan:#06b6d4;}
+html,body{background:#000!important;}
+body.rickyy-amoled, body.dark{background:#000!important;color:#fff!important;}
+body.rickyy-amoled .app, body.rickyy-amoled .sidebar, body.rickyy-amoled .chat, body.rickyy-amoled .messages, body.rickyy-amoled .input-area,
+body.rickyy-amoled .gallery-box, body.rickyy-amoled .attach-menu, body.rickyy-amoled .search-panel, body.rickyy-amoled #chatAdminMenu{
+  background:#000!important;
+  border-color:rgba(255,255,255,.08)!important;
 }
-.splashLogo{
-  width:88px;height:88px;border-radius:26px;
-  background:linear-gradient(135deg,#10b981,#06b6d4);
-  display:flex;align-items:center;justify-content:center;
-  font-size:42px;font-weight:900;
-  animation:pulse 1s infinite alternate;
+body.rickyy-amoled .sidebar-header, body.rickyy-amoled .chat-header{
+  background:linear-gradient(135deg,rgba(16,185,129,.22),rgba(6,182,212,.10))!important;
 }
-#nativeSplash h2{margin:18px 0 6px;font-size:28px}
-#nativeSplash p{color:#94a3b8}
-@keyframes pulse{from{transform:scale(.95)}to{transform:scale(1.08)}}
+body.rickyy-amoled .user, body.rickyy-amoled .other, body.rickyy-amoled .info-item{
+  background:#090f18!important;
+  border-color:rgba(255,255,255,.08)!important;
+}
+body.rickyy-amoled .me{
+  background:linear-gradient(135deg,#059669,#10b981)!important;
+}
 
-#offlineBanner{
-  position:fixed;top:12px;left:50%;
-  transform:translateX(-50%) translateY(-80px);
-  z-index:999998;
-  background:#b45309;color:white;
-  padding:10px 18px;border-radius:999px;
-  font-weight:900;transition:.25s;
+/* Splash Animation */
+#rickyySplash{
+  position:fixed;inset:0;z-index:2147483000;background:#000;color:#fff;
+  display:flex;align-items:center;justify-content:center;flex-direction:column;
+  transition:opacity .35s ease,visibility .35s ease;
 }
-#offlineBanner.show{transform:translateX(-50%) translateY(0)}
+#rickyySplash.hide{opacity:0;visibility:hidden;pointer-events:none;}
+.rickyy-splash-logo{
+  width:96px;height:96px;border-radius:30px;background:linear-gradient(135deg,#10b981,#06b6d4);
+  display:flex;align-items:center;justify-content:center;font-size:48px;font-weight:900;
+  box-shadow:0 0 45px rgba(16,185,129,.35);animation:rickyyPulse 1s ease-in-out infinite alternate;
+}
+#rickyySplash h2{margin:18px 0 6px;font-size:28px;letter-spacing:.4px;}
+#rickyySplash p{margin:0;color:#94a3b8;font-weight:800;}
+@keyframes rickyyPulse{from{transform:scale(.94);filter:brightness(.9)}to{transform:scale(1.08);filter:brightness(1.15)}}
+
+/* Document/Video Preview */
+#rickyyDocPreview,#rickyyVideoPreview{
+  position:fixed;inset:0;z-index:2147482000;background:rgba(0,0,0,.96);color:#fff;
+  display:none;flex-direction:column;
+}
+.rickyy-preview-head{
+  min-height:62px;padding:12px 14px;display:flex;align-items:center;gap:10px;
+  border-bottom:1px solid rgba(255,255,255,.08);background:#050505;
+}
+.rickyy-preview-close{border:0;background:rgba(255,255,255,.08);color:#fff;width:42px;height:42px;border-radius:14px;font-size:22px;}
+.rickyy-preview-title{font-weight:900;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;flex:1;}
+.rickyy-preview-body{flex:1;min-height:0;display:flex;align-items:center;justify-content:center;padding:12px;overflow:auto;}
+.rickyy-preview-body iframe{width:100%;height:100%;border:0;border-radius:16px;background:#fff;}
+.rickyy-preview-body video{max-width:100%;max-height:100%;border-radius:16px;background:#000;}
+.rickyy-doc-card{width:min(420px,92vw);padding:22px;border-radius:24px;background:#0b111b;border:1px solid rgba(255,255,255,.08);text-align:center;}
+.rickyy-doc-card .icon{font-size:58px;margin-bottom:12px;}
+.rickyy-doc-card a,.rickyy-doc-card button{display:inline-flex;margin:8px 4px 0;padding:12px 14px;border-radius:14px;border:0;background:#10b981;color:#fff;font-weight:900;text-decoration:none;}
+.rickyy-doc-card button{background:rgba(255,255,255,.10);}
+
+.rickyy-hd-badge{display:inline-flex;align-items:center;gap:4px;margin-left:6px;padding:3px 7px;border-radius:999px;background:rgba(16,185,129,.18);color:#a7f3d0;font-size:11px;font-weight:900;}
+.rickyy-file-preview{display:flex;gap:12px;align-items:center;min-width:220px;max-width:280px;padding:12px;border-radius:16px;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.08);}
+.rickyy-file-preview .file-icon{font-size:30px;}
+.rickyy-file-name{font-weight:900;color:#fff;word-break:break-word;font-size:13px;}
+.rickyy-file-actions{margin-top:8px;display:flex;gap:8px;flex-wrap:wrap;}
+.rickyy-file-actions button,.rickyy-file-actions a{border:0;border-radius:12px;padding:8px 10px;font-size:12px;font-weight:900;text-decoration:none;color:#fff;background:rgba(255,255,255,.10);}
+.rickyy-file-actions .open{background:#10b981;}
 </style>
 
-<script>
-function haptic(ms=18){
-  try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
-}
+<div id="rickyySplash">
+  <div class="rickyy-splash-logo">R</div>
+  <h2>RickyY Chat</h2>
+  <p>Loading chats...</p>
+</div>
 
-window.addEventListener("load",()=>{
-  setTimeout(()=>{
-    const s=document.getElementById("nativeSplash");
-    if(s) s.style.display="none";
-  },1200);
-});
+<div id="rickyyDocPreview">
+  <div class="rickyy-preview-head">
+    <button class="rickyy-preview-close" onclick="closeDocumentPreview()">←</button>
+    <div class="rickyy-preview-title" id="rickyyDocTitle">Document Preview</div>
+    <button class="rickyy-preview-close" onclick="closeDocumentPreview()">✕</button>
+  </div>
+  <div class="rickyy-preview-body" id="rickyyDocBody"></div>
+</div>
 
-function updateOfflineBanner(){
-  const b=document.getElementById("offlineBanner");
-  if(!b) return;
-  if(navigator.onLine){
-    b.textContent="Connected";
-    b.style.background="#059669";
-    b.classList.add("show");
-    setTimeout(()=>b.classList.remove("show"),1200);
-  }else{
-    b.textContent="Connecting...";
-    b.style.background="#b45309";
-    b.classList.add("show");
+<div id="rickyyVideoPreview">
+  <div class="rickyy-preview-head">
+    <button class="rickyy-preview-close" onclick="closeRickyyVideoPreview()">←</button>
+    <div class="rickyy-preview-title" id="rickyyVideoTitle">Video Preview</div>
+    <button class="rickyy-preview-close" onclick="closeRickyyVideoPreview()">✕</button>
+  </div>
+  <div class="rickyy-preview-body" id="rickyyVideoBody"></div>
+</div>
+
+<script id="rickyyPhase1Script">
+(function(){
+  "use strict";
+
+  function ready(fn){
+    if(document.readyState === "loading") document.addEventListener("DOMContentLoaded", fn);
+    else fn();
   }
-}
-window.addEventListener("online",updateOfflineBanner);
-window.addEventListener("offline",updateOfflineBanner);
-updateOfflineBanner();
 
-let pullY=0;
-document.addEventListener("touchstart",e=>{
-  if(scrollY===0) pullY=e.touches[0].clientY;
-},{passive:true});
+  window.rickyyHaptic = function(ms=16){
+    try{ if(navigator.vibrate) navigator.vibrate(ms); }catch(e){}
+  };
 
-document.addEventListener("touchend",e=>{
-  if(!pullY) return;
-  const diff=(e.changedTouches[0].clientY-pullY);
-  pullY=0;
-  if(diff>90){
-    haptic(30);
-    location.reload();
+  ready(function(){
+    document.body.classList.add("rickyy-amoled");
+    try{ localStorage.setItem("rickyyTheme", "amoled"); }catch(e){}
+
+    setTimeout(function(){
+      const s = document.getElementById("rickyySplash");
+      if(s) s.classList.add("hide");
+    }, 1200);
+
+    document.addEventListener("click", function(e){
+      if(e.target.closest("button,.user,.nav-item,.tab,.header-icons span,.attach-btn,.mic-btn,.send-btn")) window.rickyyHaptic(12);
+    }, {passive:true});
+  });
+
+  function safeText(v){
+    if(typeof escapeHtml === "function") return escapeHtml(v || "");
+    return String(v || "").replace(/[&<>'"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;","'":"&#39;",'"':"&quot;"}[c]));
   }
-},{passive:true});
 
-document.addEventListener("click",e=>{
-  if(e.target.closest("button,.user,.chat-item,.tab,.bottom-tab")){
-    haptic(12);
+  function mediaUrl(file){
+    if(typeof getMediaUrl === "function") return getMediaUrl(file || "");
+    return file || "";
   }
-},{passive:true});
+
+  function fileNameFromUrl(url){
+    try{return decodeURIComponent(String(url || "").split("/").pop().split("?")[0]) || "file";}catch(e){return "file";}
+  }
+
+  function isPdf(url){ return /\.pdf(\?|$)/i.test(url || ""); }
+  function isOffice(url){ return /\.(doc|docx|xls|xlsx|ppt|pptx)(\?|$)/i.test(url || ""); }
+
+  window.openDocumentPreview = function(src, name){
+    const url = mediaUrl(src);
+    const title = name || fileNameFromUrl(url);
+    const modal = document.getElementById("rickyyDocPreview");
+    const body = document.getElementById("rickyyDocBody");
+    const titleEl = document.getElementById("rickyyDocTitle");
+    if(!modal || !body) return window.open(url, "_blank");
+
+    document.body.classList.add("viewer-open");
+    if(titleEl) titleEl.textContent = title;
+
+    if(isPdf(url)){
+      body.innerHTML = `<iframe src="${url}"></iframe>`;
+    }else if(isOffice(url)){
+      const office = "https://view.officeapps.live.com/op/embed.aspx?src=" + encodeURIComponent(location.origin + url);
+      body.innerHTML = `<iframe src="${office}"></iframe>`;
+    }else{
+      body.innerHTML = `
+        <div class="rickyy-doc-card">
+          <div class="icon">📄</div>
+          <h2>${safeText(title)}</h2>
+          <p style="color:#94a3b8">Preview unavailable for this file type.</p>
+          <a href="${url}" target="_blank">Open</a>
+          <button onclick="downloadFile('${url}')">Download</button>
+        </div>`;
+    }
+    modal.style.display = "flex";
+    window.rickyyHaptic(18);
+  };
+
+  window.closeDocumentPreview = function(){
+    const modal = document.getElementById("rickyyDocPreview");
+    const body = document.getElementById("rickyyDocBody");
+    if(body) body.innerHTML = "";
+    if(modal) modal.style.display = "none";
+    document.body.classList.remove("viewer-open");
+  };
+
+  window.openRickyyVideoPreview = function(src){
+    const url = mediaUrl(src);
+    const modal = document.getElementById("rickyyVideoPreview");
+    const body = document.getElementById("rickyyVideoBody");
+    const title = document.getElementById("rickyyVideoTitle");
+    if(!modal || !body) return;
+    if(title) title.textContent = fileNameFromUrl(url);
+    body.innerHTML = `<video src="${url}" controls autoplay playsinline></video>`;
+    modal.style.display = "flex";
+    document.body.classList.add("viewer-open");
+    window.rickyyHaptic(18);
+  };
+
+  window.closeRickyyVideoPreview = function(){
+    const modal = document.getElementById("rickyyVideoPreview");
+    const body = document.getElementById("rickyyVideoBody");
+    if(body) body.innerHTML = "";
+    if(modal) modal.style.display = "none";
+    document.body.classList.remove("viewer-open");
+  };
+
+  const oldOpenViewer = window.openViewer;
+  window.openViewer = function(src,type){
+    if(type === "video") return window.openRickyyVideoPreview(src);
+    if(type === "doc" || type === "file") return window.openDocumentPreview(src);
+    if(typeof oldOpenViewer === "function") return oldOpenViewer(src,type);
+  };
+
+  window.buildMessageContent = function(m){
+    if(!m.file){
+      const text = m.text || "";
+      const rendered = typeof renderMentions === "function" ? renderMentions(text) : safeText(text);
+      return `<div class="msg-text" data-original-text="${safeText(text)}">${rendered}</div>`;
+    }
+
+    const url = mediaUrl(m.file);
+    const filename = fileNameFromUrl(url);
+    const hd = m.hd || m.isHd || m.quality === "hd" || m.originalSize;
+
+    if(m.fileType === "image"){
+      return `
+        <div>
+          <img class="msg-media" src="${url}" onclick="openViewer('${url}','image')" onerror="this.onerror=null;this.outerHTML='<div style=&quot;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;&quot;>Image not available</div>'">
+          <div style="margin-top:6px;display:flex;gap:8px;align-items:center;flex-wrap:wrap;">
+            ${hd ? `<span class="rickyy-hd-badge">HD</span>` : `<span class="rickyy-hd-badge">HD</span>`}
+            <button class="small-btn" onclick="downloadFile('${url}')">Download</button>
+          </div>
+        </div>`;
+    }
+
+    if(m.fileType === "video"){
+      return `
+        <div>
+          <video class="msg-media" src="${url}" onclick="openRickyyVideoPreview('${url}')" preload="metadata" controls playsinline onerror="this.onerror=null;this.outerHTML='<div style=&quot;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;&quot;>Video not available</div>'"></video>
+          <div style="margin-top:6px;display:flex;gap:8px;flex-wrap:wrap;">
+            <button class="small-btn" onclick="openRickyyVideoPreview('${url}')">Preview</button>
+            <button class="small-btn" onclick="downloadFile('${url}')">Download</button>
+          </div>
+        </div>`;
+    }
+
+    if(m.fileType === "audio"){
+      return `
+        <div>
+          <audio src="${url}" controls onerror="this.onerror=null;this.outerHTML='<div style=&quot;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.08);color:#fff;&quot;>Audio not available</div>'"></audio>
+          <div style="margin-top:6px;"><button class="small-btn" onclick="downloadFile('${url}')">Download</button></div>
+        </div>`;
+    }
+
+    return `
+      <div class="rickyy-file-preview">
+        <div class="file-icon">📄</div>
+        <div style="min-width:0;flex:1;">
+          <div class="rickyy-file-name">${safeText(filename)}</div>
+          <div class="rickyy-file-actions">
+            <button class="open" onclick="openDocumentPreview('${url}','${safeText(filename)}')">Preview</button>
+            <a href="${url}" target="_blank">Open</a>
+            <button onclick="downloadFile('${url}')">Download</button>
+          </div>
+        </div>
+      </div>`;
+  };
+
+  window.confirmUploadSend = async function(){
+    const file = window.pendingUploadFile || (typeof pendingUploadFile !== "undefined" ? pendingUploadFile : null);
+    if(!file) return;
+
+    const fileType = typeof getFileType === "function" ? getFileType(file) : "file";
+    const formData = new FormData();
+    formData.append("file", file);
+    formData.append("hd", "true");
+    formData.append("quality", "original");
+    formData.append("originalName", file.name || "file");
+    formData.append("originalSize", String(file.size || 0));
+
+    try{
+      const res = await fetch("/upload-media", { method:"POST", body: formData });
+      const data = await res.json();
+
+      if(data.status !== "ok"){
+        if(typeof showToast === "function") showToast("Upload failed", "error");
+        if(typeof closeUploadPreview === "function") closeUploadPreview();
+        return;
+      }
+
+      const payload = {
+        from: window.me || (typeof me !== "undefined" ? me : ""),
+        text: null,
+        file: data.filePath,
+        fileType,
+        hd: true,
+        quality: "original",
+        originalName: file.name || "file",
+        originalSize: file.size || 0,
+        replyTo: (typeof replyDraft !== "undefined" ? replyDraft : null) || null
+      };
+
+      if(typeof isGroupChat !== "undefined" && isGroupChat && typeof currentGroup !== "undefined" && currentGroup){
+        payload.group = currentGroup;
+        socket.emit("group-message", payload);
+      }else{
+        payload.to = typeof currentChat !== "undefined" ? currentChat : "";
+        socket.emit("private-message", payload);
+      }
+
+      if(typeof cancelReply === "function") cancelReply();
+      if(typeof closeUploadPreview === "function") closeUploadPreview();
+      if(typeof showToast === "function") showToast("HD file sent ✅", "success");
+      window.rickyyHaptic(25);
+    }catch(err){
+      console.log("PHASE1 HD UPLOAD ERROR:", err);
+      if(typeof showToast === "function") showToast("Upload error", "error");
+      if(typeof closeUploadPreview === "function") closeUploadPreview();
+    }
+  };
+
+  // Swipe Back: left edge swipe closes preview/chat/modal first
+  let sx=0, sy=0, edge=false;
+  document.addEventListener("touchstart", function(e){
+    const t=e.touches && e.touches[0]; if(!t) return;
+    sx=t.clientX; sy=t.clientY; edge=sx<34;
+  }, {passive:true});
+  document.addEventListener("touchend", function(e){
+    if(!edge) return;
+    const t=e.changedTouches && e.changedTouches[0]; if(!t) return;
+    const dx=t.clientX-sx, dy=Math.abs(t.clientY-sy);
+    if(dx>90 && dy<70){
+      window.rickyyHaptic(18);
+      const doc=document.getElementById("rickyyDocPreview");
+      const vid=document.getElementById("rickyyVideoPreview");
+      if(doc && doc.style.display==="flex") return closeDocumentPreview();
+      if(vid && vid.style.display==="flex") return closeRickyyVideoPreview();
+      if(document.getElementById("profileModal")) return document.getElementById("profileModal").remove();
+      const openModal=document.querySelector('.modal[style*="flex"], .gallery-modal[style*="flex"], .media-viewer[style*="flex"]');
+      if(openModal){ openModal.style.display="none"; return; }
+      if(document.body.classList.contains("chat-open") || (typeof currentChat !== "undefined" && currentChat)){
+        if(typeof closeChat === "function") return closeChat();
+        const back=document.querySelector(".back-btn"); if(back) return back.click();
+      }
+      if(history.length>1) history.back();
+    }
+  }, {passive:true});
+})();
 </script>
+<!-- ================= RICKYY PHASE 1 FEATURES END ================= -->
+
+
+<script id="rickyy-open-fix">
+(function(){
+  // Prevent app from staying forever on splash if any API/socket step fails
+  function forceOpenApp(){
+    try{
+      const splash=document.getElementById('appSplash') || document.getElementById('nativeSplash');
+      if(splash){
+        splash.classList.add('hide');
+        splash.style.opacity='0';
+        splash.style.pointerEvents='none';
+        setTimeout(()=>{ try{splash.remove();}catch(e){} },350);
+      }
+      document.body.classList.remove('loading','splash-open');
+    }catch(e){}
+  }
+  window.forceOpenApp = forceOpenApp;
+  window.addEventListener('load',()=>setTimeout(forceOpenApp,2800));
+  document.addEventListener('DOMContentLoaded',()=>setTimeout(forceOpenApp,3500));
+  setTimeout(forceOpenApp,5000);
+})();
+</script>
+
 </body>
 </html>
