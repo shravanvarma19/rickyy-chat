@@ -21,6 +21,16 @@ const ADMIN_NAME = "shravan";
 const MAX_FILE_SIZE = 15 * 1024 * 1024;
 
 
+process.on("unhandledRejection", err => {
+  console.log("UNHANDLED REJECTION:", err);
+});
+
+process.on("uncaughtException", err => {
+  console.log("UNCAUGHT EXCEPTION:", err);
+});
+
+
+
 const app = express();
 const server = http.createServer(app);
 
@@ -38,9 +48,6 @@ app.use(express.static(path.join(__dirname, "public")));
 
 const loginOtpStore = new Map();
 
-function generateOtp(){
-  return String(Math.floor(100000 + Math.random() * 900000));
-}
 
 function otpKey(name){
   return String(name || "").trim().toLowerCase();
@@ -249,8 +256,12 @@ function isValidPassword(password) {
   return typeof password === "string" && password.trim().length >= 4;
 }
 
-function generateOtp() {
+function generateSignupOtp() {
   return Math.floor(1000 + Math.random() * 9000).toString();
+}
+
+function generateResetOtp() {
+  return String(Math.floor(100000 + Math.random() * 900000));
 }
 
 function generateCaptchaValue() {
@@ -542,7 +553,7 @@ const io = new Server(server, {
     credentials: false
   }
 });
-
+const userSocketIds = {};
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => cb(null, uploadDir),
@@ -594,13 +605,51 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter
 });
+async function requireUser(req,res,next){
+  const token = String(req.headers.authorization || "").replace("Bearer ","");
 
+  const user = await User.findOne({authToken:token});
+
+  if(!user) return res.status(401).json({ok:false});
+
+  req.user = user;
+  next();
+}
 
 async function getUsers() {
-  return await User.find({
+  const users = await User.find({
     blocked: { $ne: true },
     approvalStatus: "approved"
+  }).lean();
+
+  const now = Date.now();
+  const staleNames = [];
+
+  const fixedUsers = users.map(user => {
+    const username = user.name;
+    const socketOnline = hasActiveSocketForUser(username);
+    const freshPing = hasFreshProfilePresence(username);
+    const realOnline = !!(socketOnline || freshPing);
+
+    if (user.online && !realOnline) {
+      staleNames.push(username);
+    }
+
+    return {
+      ...user,
+      online: realOnline,
+      lastSeen: realOnline ? user.lastSeen : (user.lastSeen || new Date(now))
+    };
   });
+
+  if (staleNames.length) {
+    User.updateMany(
+      { name: { $in: staleNames } },
+      { online: false, lastSeen: new Date() }
+    ).catch(() => {});
+  }
+
+  return fixedUsers;
 }
 function isStrongPassword(password) {
   const value = String(password || "").trim();
@@ -713,8 +762,8 @@ async function emitUsersToAll() {
 
 const presenceOfflineTimers = new Map();
 const presenceHttpPings = new Map();
-const PRESENCE_OFFLINE_GRACE_MS = 12000;
-const PRESENCE_HTTP_STALE_MS = 35000;
+const PRESENCE_OFFLINE_GRACE_MS = 3000;
+const PRESENCE_HTTP_STALE_MS = 10000;
 
 function hasActiveSocketForUser(username) {
   return !!(username && userSocketIds[username] && userSocketIds[username].size > 0);
@@ -1876,7 +1925,7 @@ setInterval(async () => {
   } catch (err) {
     console.log("PRESENCE CLEANUP ERROR:", err);
   }
-}, 20000);
+}, 5000);
 
 
 app.get("/admin/user-sessions", requireAdmin, async (req, res) => {
@@ -1893,7 +1942,7 @@ app.get("/admin/user-sessions", requireAdmin, async (req, res) => {
         name: user.name,
         dp: user.dp || "/default.png",
         role: user.role || "user",
-        online: !!user.online || socketCount > 0,
+        online: socketCount > 0 || hasFreshProfilePresence(user.name),
         socketCount,
         blocked: !!user.blocked,
         muted: !!user.muted,
@@ -2276,7 +2325,7 @@ app.post("/api/signup-request", async (req, res) => {
       return res.json({ ok: false, msg: "Contact already exists" });
     }
 
-    const otp = generateOtp();
+    const otp = generateSignupOtp();
 
     return res.json({
       ok: true,
@@ -3494,7 +3543,7 @@ app.post("/api/forgot-password/request", async (req, res) => {
       return res.json({ ok: false, msg: "This account is blocked" });
     }
 
-    const otp = generateOtp();
+    const otp = generateResetOtp();
     user.resetOtp = otp;
     user.resetOtpExpiresAt = new Date(Date.now() + 5 * 60 * 1000);
     await user.save();
@@ -3966,7 +4015,7 @@ passwordMatched = await bcrypt.compare(password, user.password);
 
 
 let sockets = {};
-let userSocketIds = {};
+
 
 
 let callState = {};
@@ -4073,7 +4122,6 @@ io.on("connection", socket => {
       console.log("JOIN ERROR:", err);
     }
   });
-
   socket.on("heartbeat", async username => {
     try {
       if (!isValidUsername(username)) return;
@@ -4715,57 +4763,64 @@ socket.on("delete-message", async data => {
   socket.on("disconnect", async () => {
     try {
       const username = sockets[socket.id];
+      if (!username) return;
 
-      if (username) {
-        if (userSocketIds[username]) {
-          userSocketIds[username].delete(socket.id);
-          if (userSocketIds[username].size === 0) {
-            delete userSocketIds[username];
-          }
-        }
+      delete sockets[socket.id];
 
-        if (callState[username]) {
-          const peer = callState[username].peer;
-          io.to(peer).emit("call-end", { from: username });
-          clearCall(username);
-          delete pendingCallOffers[username];
-          if (peer) delete pendingCallOffers[peer];
-        }
-
-        for (const [gid, call] of activeGroupCalls.entries()) {
-          if (!call?.members?.has(username)) continue;
-
-          if (call.host === username) {
-            io.to(roomNameForGroupCall(gid)).emit("group-call-ended", {
-              groupId: String(gid),
-              from: username
-            });
-            activeGroupCalls.delete(gid);
-          } else {
-            call.members.delete(username);
-            io.to(roomNameForGroupCall(gid)).emit("group-call-peer-left", {
-              groupId: String(gid),
-              user: username
-            });
-
-            if (call.members.size === 0) {
-              activeGroupCalls.delete(gid);
-            } else {
-              activeGroupCalls.set(gid, call);
-            }
-          }
-        }
-
-        delete sockets[socket.id];
-
-        if (!userSocketIds[username] || userSocketIds[username].size === 0) {
-          schedulePresenceOffline(username);
-        } else {
-          await emitUsersToAll();
+      if (userSocketIds[username]) {
+        userSocketIds[username].delete(socket.id);
+        if (userSocketIds[username].size === 0) {
+          delete userSocketIds[username];
         }
       }
+
+      if (callState[username]) {
+        const peer = callState[username].peer;
+        if (peer) io.to(peer).emit("call-end", { from: username });
+        clearCall(username);
+        delete pendingCallOffers[username];
+        if (peer) delete pendingCallOffers[peer];
+      }
+
+      for (const [gid, call] of activeGroupCalls.entries()) {
+        if (!call?.members?.has(username)) continue;
+
+        if (call.host === username) {
+          io.to(roomNameForGroupCall(gid)).emit("group-call-ended", {
+            groupId: String(gid),
+            from: username
+          });
+          activeGroupCalls.delete(gid);
+        } else {
+          call.members.delete(username);
+          io.to(roomNameForGroupCall(gid)).emit("group-call-peer-left", {
+            groupId: String(gid),
+            user: username
+          });
+
+          if (call.members.size === 0) {
+            activeGroupCalls.delete(gid);
+          } else {
+            activeGroupCalls.set(gid, call);
+          }
+        }
+      }
+
+      const stillOnline = hasActiveSocketForUser(username);
+
+      if (!stillOnline) {
+        presenceHttpPings.delete(username);
+        cancelPresenceOfflineTimer(username);
+
+        await User.findOneAndUpdate(
+          { name: username },
+          { online: false, lastSeen: new Date() }
+        );
+      }
+
+      await emitUsersToAll();
     } catch (err) {
-      console.log(err);
+      console.log("DISCONNECT PRESENCE ERROR:", err);
     }
   });
 });
@@ -4774,4 +4829,28 @@ socket.on("delete-message", async data => {
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {
   console.log(`Server running on port ${PORT}`);
+});
+app.get("/fix-missing-files", async (req, res) => {
+  try {
+    const allMessages = await Message.find({
+      file: { $exists: true, $ne: null, $ne: "" }
+    });
+
+    let fixed = 0;
+
+    for (const msg of allMessages) {
+      if (!publicUploadFileExists(msg.file)) {
+        msg.file = "";
+        msg.fileType = "";
+        msg.text = msg.text || "Media not available";
+        await msg.save();
+        fixed++;
+      }
+    }
+
+    return res.json({ ok: true, fixed });
+  } catch (err) {
+    console.log("FIX MISSING FILES ERROR:", err);
+    return res.status(500).json({ ok: false });
+  }
 });

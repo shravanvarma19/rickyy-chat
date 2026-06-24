@@ -60,7 +60,43 @@ body{
   align-items:center;
   gap:12px;
 }
+.bottom-nav {
+  position: fixed;
+  bottom: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  width: 90%;
+  background: rgba(15, 23, 42, 0.9);
+  backdrop-filter: blur(15px);
+  border-radius: 20px;
+  display: flex;
+  justify-content: space-around;
+  padding: 10px 0;
+  box-shadow: 0 10px 30px rgba(0,0,0,0.5);
+  z-index: 1000;
+}
 
+.nav-item {
+  text-align: center;
+  color: #94a3b8;
+  font-size: 14px;
+  cursor: pointer;
+  transition: 0.3s;
+}
+
+.nav-item span {
+  display: block;
+  font-size: 12px;
+}
+
+.nav-item:hover {
+  color: white;
+  transform: scale(1.1);
+}
+
+.nav-item.active {
+  color: #22c55e;
+}
 .approval-user-top img{
   width:52px;
   height:52px;
@@ -225,6 +261,9 @@ body{
 
 .approval-reject-btn{
   background:linear-gradient(135deg,#ef4444,#dc2626);
+}
+.tab-hidden{
+  display:none !important;
 }
 .sidebar{
   width:30%;
@@ -696,7 +735,10 @@ body{
   margin-bottom:5px;
   letter-spacing:.2px;
 }
-
+body.chat-open .bottom-nav,
+body.chat-open #mobileBottomNav{
+  display:none !important;
+}
 .input-area{
   flex:0 0 auto;
   display:flex;
@@ -1323,7 +1365,6 @@ body:not(.dark) .date-separator{
   overflow:hidden;
   text-overflow:ellipsis;
 }
-
 .user-actions{
   display:flex;
   align-items:center;
@@ -1579,7 +1620,14 @@ body:not(.dark) .date-separator{
   z-index:999;
   overflow:hidden;
 }
+#groupFab,
+#speakerFab{
+  display:none !important;
+}
 
+.tab-hidden{
+  display:none !important;
+}
 .search-panel-top{
   display:flex;
   gap:10px;
@@ -3846,6 +3894,16 @@ body.dark .history-loader{
   object-fit:contain !important;
 }
 
+
+/* RickyY final navigation fixes */
+.bottom-nav{
+  display:flex;
+}
+body.chat-open .bottom-nav,
+body.mobile-chat-open .bottom-nav{
+  display:none !important;
+}
+
 </style>
 </head>
 
@@ -3887,7 +3945,7 @@ body.dark .history-loader{
 <div id="statusStrip" style="display:flex;gap:10px;overflow:auto;margin-top:10px;padding-bottom:5px;"></div>
 </div>
 <div class="search-box">
-<input id="userSearch" onkeyup="filterUsers()" placeholder="Search users..." type="text"/>
+<input id="userSearch" onkeyup="filterUsers()" placeholder="Search users..." type="text" autocomplete="off" autocorrect="off" autocapitalize="off" spellcheck="false" value=""/>
 </div>
 <div id="users"></div>
 </div>
@@ -6674,7 +6732,7 @@ function getUserListBottomText(u){
   });
 
   function openCallHistoryPage(){
-    window.location.href = "/call-history.html";
+    goCalls();
   }
   function renderUsers(){
     const div = document.getElementById("users");
@@ -6829,12 +6887,19 @@ function getUserListBottomText(u){
       mutedNow ? "warning" : "success"
     );
   }
-
   function openChat(name){
+    if(!name) return;
+
+    clearChatSearchBox();
+    hideBottomTabs();
+    document.body.classList.add("chat-open");
+
     closePhase3QuickActions();
     closeAttachMenu();
+
     if(isUserChatLocked(name) && !unlockedChatSessions[String(name)]){
       requestLockedChatOpen(name);
+      showBottomTabs();
       return;
     }
 
@@ -6868,9 +6933,7 @@ function getUserListBottomText(u){
     document.getElementById("chatName").onclick = () => openUserProfile(name);
     document.getElementById("chatDp").onclick = () => openUserProfile(name);
 
-    document.getElementById("typing").innerText = u
-      ? getVisiblePresenceText(u)
-      : "";
+    document.getElementById("typing").innerText = u ? getVisiblePresenceText(u) : "";
 
     document.getElementById("messages").innerHTML = "";
     currentHistory = [];
@@ -6894,8 +6957,8 @@ function getUserListBottomText(u){
     updateCurrentChatMuteText();
     applyAppSettings();
     updateFloatingButtonsVisibility();
+    hideBottomTabs();
   }
-
 
 function updateUserPreviewOnly(username){
   const previewEl = document.querySelector(`[data-preview-for="${CSS.escape(username)}"]`);
@@ -6930,8 +6993,16 @@ function setUserTypingState(username, isTyping){
     closePhase3QuickActions();
     pendingLockedChat = null;
     document.body.classList.remove("mobile-chat-open");
-    document.querySelector(".sidebar").style.display = "flex";
-    document.querySelector(".back-btn").style.display = "none";
+    document.body.classList.remove("chat-open");
+
+    const sidebar = document.querySelector(".sidebar");
+    if(sidebar) sidebar.style.display = "flex";
+
+    const backBtn = document.querySelector(".back-btn");
+    if(backBtn) backBtn.style.display = "none";
+
+    showBottomTabs();
+    clearChatSearchBox();
 
     currentChat = null;
     currentGroup = null;
@@ -7371,7 +7442,23 @@ function setUserTypingState(username, isTyping){
       </div>
     `;
   }
-
+  function goTo(page) {
+  if(page === "profile") {
+    window.location.href = "profile.html";
+  }
+  else if(page === "chats") {
+    window.location.href = "index.html";
+  }
+  else if(page === "groups") {
+    window.location.href = "groups.html";
+  }
+  else if(page === "status") {
+    window.location.href = "status.html";
+  }
+  else if(page === "calls") {
+    window.location.href = "calls.html";
+  }
+}
   function showMessage(m, index, scrollToBottom = true){
     const box = document.getElementById("messages");
   if(!box) return;
@@ -9018,7 +9105,40 @@ socket.on("stop-typing", user => {
       `;
     }).join("");
   }
+  function switchTab(tab, el){
 
+  document.querySelectorAll('.nav-item')
+    .forEach(i => i.classList.remove('active'));
+  if(el) el.classList.add('active');
+
+  const users = document.getElementById("users");
+  const status = document.getElementById("statusStrip");
+  const drawer = document.getElementById("groupDrawer");
+
+  // RESET STATE
+  if(users) users.classList.remove("tab-hidden");
+  if(status) status.classList.remove("tab-hidden");
+  if(drawer) drawer.style.left = "-320px";
+
+  if(tab === "chats"){
+    // default
+  }
+
+  if(tab === "groups"){
+    if(users) users.classList.add("tab-hidden");
+    if(status) status.classList.add("tab-hidden");
+    if(drawer) drawer.style.left = "14px";
+  }
+
+  if(tab === "status"){
+    if(users) users.classList.add("tab-hidden");
+    if(status) status.classList.remove("tab-hidden");
+  }
+
+  if(tab === "calls"){
+    alert("📞 Calls next update");
+  }
+}
   function openPrivacyControlsModal(){
     renderPrivacyControls();
     const modal = document.getElementById("privacyControlsModal");
@@ -10530,7 +10650,24 @@ socket.on("stop-typing", user => {
 
   async function getLocalStream(mode){
     const wantVideo = (mode === "video");
+
+    if(!navigator.mediaDevices || !navigator.mediaDevices.getUserMedia){
+      throw new Error("Camera/Microphone not supported in this browser");
+    }
+
+    if(!pc){
+      await createPeerIfNeeded();
+    }
+
+    if(!pc){
+      throw new Error("Peer connection not ready");
+    }
+
     localStream = await navigator.mediaDevices.getUserMedia({ audio:true, video: wantVideo });
+
+    if(!localStream){
+      throw new Error("Local media stream not available");
+    }
 
     if(wantVideo){
       const lv = document.getElementById("localVideo");
@@ -10544,7 +10681,11 @@ socket.on("stop-typing", user => {
       videoEls(false, false);
     }
 
-    localStream.getTracks().forEach(t => pc.addTrack(t, localStream));
+    localStream.getTracks().forEach(track => {
+      if(pc && typeof pc.addTrack === "function"){
+        pc.addTrack(track, localStream);
+      }
+    });
   }
 
 
@@ -10908,7 +11049,7 @@ socket.on("stop-typing", user => {
 
   socket.on("incoming-call", async ({ from, type })=>{
     if(callPeer && callPeer !== from) return;
-
+    startRingSound();
     callPeer = from;
     callMode = (type === "video") ? "video" : "voice";
     inCall = false;
@@ -10984,6 +11125,8 @@ socket.on("stop-typing", user => {
     });
 
     startRingtone();
+    startRingSound();
+    stopRingSound();
   });
 
 
@@ -12559,9 +12702,7 @@ function openMenu(){
 </div>
 </div>
 <audio autoplay="" id="remoteAudio" playsinline=""></audio>
-<div id="soundUnlock" onclick="tryUnlockSounds()" style="display:none;position:fixed;bottom:20px;left:20px;z-index:30000;background:#075e54;color:#fff;padding:10px 14px;border-radius:12px;cursor:pointer;font-weight:700;box-shadow:0 4px 16px rgba(0,0,0,0.2);">
-🔊
-</div>
+
 <audio id="msgSound" preload="auto" src="/sounds/message.mp3"></audio>
 <audio id="ringSound" loop="" preload="auto" src="/sounds/ring.mp3"></audio>
 <audio id="ringingSound" loop="" preload="auto" src="/sounds/ringing.mp3"></audio>
@@ -13069,6 +13210,266 @@ z-index:99999;
     </div>
   </div>
 </div>
+<div class="bottom-nav">
+  <div class="nav-item active" onclick="switchTab('chats',this)">💬<span>Chats</span></div>
+  <div class="nav-item" onclick="switchTab('groups',this)">👥<span>Groups</span></div>
+  <div class="nav-item" onclick="switchTab('status',this)">🟢<span>Status</span></div>
+  <div class="nav-item" onclick="goCalls()">
+  <div>📞</div>
+  <span>Calls</span>
+</div>
+</div>
+<script>
+(function(){
+  function qs(sel){ return document.querySelector(sel); }
 
+  window.clearChatSearchBox = function(){
+    const s = document.getElementById("userSearch");
+    if(!s) return;
+    s.value = "";
+    s.defaultValue = "";
+    s.removeAttribute("value");
+    s.placeholder = "Search chats...";
+    s.setAttribute("autocomplete", "off");
+    s.setAttribute("autocorrect", "off");
+    s.setAttribute("autocapitalize", "off");
+    s.setAttribute("spellcheck", "false");
+  };
+
+  window.showBottomTabs = function(){
+    document.body.classList.remove("chat-open");
+    const nav = qs(".bottom-nav");
+    if(nav){
+      nav.style.display = "flex";
+      nav.style.visibility = "visible";
+      nav.style.opacity = "1";
+      nav.style.pointerEvents = "auto";
+    }
+  };
+
+  window.hideBottomTabs = function(){
+    document.body.classList.add("chat-open");
+    const nav = qs(".bottom-nav");
+    if(nav){
+      nav.style.display = "none";
+    }
+  };
+
+  window.goCalls = function(){
+    sessionStorage.setItem("fromChatPage", "1");
+    window.location.href = "/call-history.html";
+  };
+
+  window.goProfile = function(user){
+    const name = user || window.currentChat || localStorage.getItem("user") || "";
+    sessionStorage.setItem("fromChatPage", "1");
+    window.location.href = "/profile.html" + (name ? "?user=" + encodeURIComponent(name) : "");
+  };
+
+  function setImgFallback(img){
+    if(!img || img.dataset.fallbackReady === "1") return;
+    img.dataset.fallbackReady = "1";
+    img.addEventListener("error", function(){
+      const old = String(this.getAttribute("src") || "");
+      if(old.endsWith("/default.png") || old.endsWith("/default-group.png")) return;
+      this.onerror = null;
+      this.src = this.closest(".group-row") || this.classList.contains("status-media") ? "/default-group.png" : "/default.png";
+    });
+  }
+
+  function bootFixes(){
+    clearChatSearchBox();
+    if(!document.body.classList.contains("mobile-chat-open")){
+      showBottomTabs();
+    }
+    document.querySelectorAll("img").forEach(setImgFallback);
+    const active = document.querySelector(".nav-item.active");
+    if(!active){
+      const first = document.querySelector(".bottom-nav .nav-item");
+      if(first) first.classList.add("active");
+    }
+  }
+
+  document.addEventListener("error", function(e){
+    const el = e.target;
+    if(!el || el.tagName !== "IMG") return;
+    const old = String(el.getAttribute("src") || "");
+    if(old.endsWith("/default.png") || old.endsWith("/default-group.png")) return;
+    el.onerror = null;
+    el.src = el.closest(".group-row") || el.classList.contains("status-media") ? "/default-group.png" : "/default.png";
+  }, true);
+
+  const observer = new MutationObserver(() => {
+    document.querySelectorAll("img").forEach(setImgFallback);
+  });
+
+  window.addEventListener("DOMContentLoaded", () => {
+    bootFixes();
+    try{ observer.observe(document.body, { childList:true, subtree:true }); }catch(e){}
+  });
+  window.addEventListener("load", bootFixes);
+  window.addEventListener("pageshow", bootFixes);
+  setTimeout(bootFixes, 100);
+  setTimeout(bootFixes, 500);
+  setTimeout(bootFixes, 1200);
+})();
+</script>
+<script>
+const SECRET_CODE = "2410";
+
+function getHiddenChats(){
+  return JSON.parse(localStorage.getItem("hiddenChats") || "[]");
+}
+
+function saveHiddenChats(list){
+  localStorage.setItem("hiddenChats", JSON.stringify(list));
+}
+
+function isSecretUnlocked(){
+  return sessionStorage.getItem("secretUnlocked") === "yes";
+}
+
+function hideCurrentChatSecret(){
+  if(!currentChat) return alert("First chat open cheyyi");
+
+  const list = getHiddenChats();
+  if(!list.includes(currentChat)){
+    list.push(currentChat);
+    saveHiddenChats(list);
+  }
+
+  alert("Chat hidden 🔒");
+  safeBackToList?.();
+  loadUsers?.();
+}
+
+function checkSecretSearch(){
+  const s = document.getElementById("userSearch");
+  if(!s) return;
+
+  const value = s.value.trim();
+
+  if(value === SECRET_CODE){
+    sessionStorage.setItem("secretUnlocked", "yes");
+    s.value = "";
+    alert("Secret chats unlocked 🔓");
+    loadUsers?.();
+  }
+
+  if(value === "/lock" && currentChat){
+    s.value = "";
+    hideCurrentChatSecret();
+  }
+}
+
+document.addEventListener("input", function(e){
+  if(e.target && e.target.id === "userSearch"){
+    checkSecretSearch();
+  }
+});
+</script>
+<script>
+const SECRET_UNLOCK_CODE = "2410";
+
+function getHiddenChats(){
+  return JSON.parse(localStorage.getItem("hiddenChats") || "[]");
+}
+
+function saveHiddenChats(list){
+  localStorage.setItem("hiddenChats", JSON.stringify(list));
+}
+
+function getLockedPins(){
+  return JSON.parse(localStorage.getItem("lockedChatPins") || "{}");
+}
+
+function saveLockedPins(obj){
+  localStorage.setItem("lockedChatPins", JSON.stringify(obj));
+}
+
+function lockCurrentOpenedChat(){
+  if(!currentChat){
+    alert("First user chat open cheyyi");
+    return;
+  }
+
+  const pin = prompt("Set secret PIN for this chat 🔒");
+
+  if(!pin || pin.length < 4){
+    alert("PIN minimum 4 digits undali");
+    return;
+  }
+
+  const hidden = getHiddenChats();
+  if(!hidden.includes(currentChat)){
+    hidden.push(currentChat);
+    saveHiddenChats(hidden);
+  }
+
+  const pins = getLockedPins();
+  pins[currentChat] = pin;
+  saveLockedPins(pins);
+
+  alert(currentChat + " chat locked & hidden 🔒");
+
+  if(typeof safeBackToList === "function"){
+    safeBackToList();
+  } else {
+    document.body.classList.remove("chat-open");
+    document.querySelector(".chat")?.classList.add("tab-hidden");
+    document.querySelector(".sidebar")?.classList.remove("tab-hidden");
+  }
+
+  if(typeof loadUsers === "function") loadUsers();
+  if(typeof renderUsers === "function") renderUsers();
+}
+
+function unlockHiddenChatsFromSearch(){
+  const pin = prompt("Enter secret PIN 🔐");
+  const pins = getLockedPins();
+
+  const ok = Object.values(pins).includes(pin);
+
+  if(!ok){
+    alert("Wrong PIN ❌");
+    return;
+  }
+
+  sessionStorage.setItem("secretUnlocked","yes");
+  alert("Hidden chats unlocked 🔓");
+
+  if(typeof loadUsers === "function") loadUsers();
+  if(typeof renderUsers === "function") renderUsers();
+}
+
+function isSecretUnlocked(){
+  return sessionStorage.getItem("secretUnlocked") === "yes";
+}
+
+document.addEventListener("input", function(e){
+  const el = e.target;
+  if(!el) return;
+
+  const isSearch =
+    el.id === "chatSearchInput" ||
+    el.id === "messageSearch" ||
+    el.id === "searchInput" ||
+    el.placeholder?.toLowerCase().includes("search");
+
+  if(!isSearch) return;
+
+  const value = el.value.trim();
+
+  if(value === "/lock"){
+    el.value = "";
+    lockCurrentOpenedChat();
+  }
+
+  if(value === SECRET_UNLOCK_CODE){
+    el.value = "";
+    unlockHiddenChatsFromSearch();
+  }
+});
+</script>
 </body>
 </html>
