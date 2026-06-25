@@ -4,13 +4,17 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>Profile • RickyY Chat</title>
+
 <link rel="manifest" href="/manifest.json">
 <meta name="theme-color" content="#071018">
 <meta name="mobile-web-app-capable" content="yes">
+
+<!-- IMPORTANT: src script must be closed. Do not put JS inside this tag. -->
 <script src="/socket.io/socket.io.js"></script>
 
 <style>
 *{box-sizing:border-box}
+
 :root{
   --bg:#071018;
   --card:#111a27;
@@ -21,6 +25,7 @@
   --green:#10b981;
   --red:#ef4444;
 }
+
 html,body{
   margin:0;
   min-height:100vh;
@@ -28,11 +33,13 @@ html,body{
   color:var(--text);
   font-family:Inter,Arial,sans-serif;
 }
+
 body{
   background:
     radial-gradient(circle at top, rgba(16,185,129,.10), transparent 26%),
     linear-gradient(180deg,#071018,#0b1220);
 }
+
 button,input,textarea,select{font-family:inherit}
 button{cursor:pointer;-webkit-tap-highlight-color:transparent}
 .hidden{display:none!important}
@@ -42,6 +49,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   min-height:100vh;
   padding:14px 14px 90px;
 }
+
 .back-btn{
   position:fixed;
   top:18px;
@@ -55,17 +63,20 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   width:54px;
   height:54px;
 }
+
 .profile-head{
   max-width:520px;
   margin:64px auto 0;
   text-align:center;
 }
+
 .dp-box{
   width:170px;
   height:170px;
   margin:0 auto;
   position:relative;
 }
+
 .dp-box img{
   width:170px;
   height:170px;
@@ -74,6 +85,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   background:#111827;
   border:3px solid rgba(255,255,255,.08);
 }
+
 .dp-edit{
   position:absolute;
   right:6px;
@@ -89,12 +101,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   align-items:center;
   justify-content:center;
 }
+
 .name{
   margin:28px 0 0;
   font-size:42px;
   font-weight:900;
   letter-spacing:-1px;
 }
+
 .about-big{
   margin:28px 0 0;
   font-size:28px;
@@ -109,12 +123,14 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   display:grid;
   gap:14px;
 }
+
 .info-card{
   background:rgba(255,255,255,.045);
   border:1px solid var(--line);
   border-radius:22px;
   padding:16px;
 }
+
 .label{
   color:var(--muted);
   font-size:13px;
@@ -123,17 +139,20 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   letter-spacing:.6px;
   margin-bottom:10px;
 }
+
 .value-row{
   display:flex;
   justify-content:space-between;
   align-items:center;
   gap:12px;
 }
+
 .value{
   font-size:18px;
   line-height:1.45;
   word-break:break-word;
 }
+
 .edit-btn{
   border:0;
   border-radius:14px;
@@ -142,6 +161,7 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   color:#86efac;
   font-weight:900;
 }
+
 .input,textarea{
   width:100%;
   border:1px solid rgba(255,255,255,.10);
@@ -152,19 +172,23 @@ button{cursor:pointer;-webkit-tap-highlight-color:transparent}
   padding:13px 14px;
   font-size:16px;
 }
+
 textarea{min-height:92px;resize:vertical}
+
 .count{
   color:var(--muted);
   font-size:12px;
   text-align:right;
   margin-top:8px;
 }
+
 .suggestions{
   display:flex;
   flex-wrap:wrap;
   gap:10px;
   margin-top:12px;
 }
+
 .chip{
   border:0;
   border-radius:999px;
@@ -173,11 +197,13 @@ textarea{min-height:92px;resize:vertical}
   color:#fff;
   font-weight:800;
 }
+
 .actions{
   display:grid;
   gap:12px;
   margin-top:6px;
 }
+
 .action-btn{
   border:0;
   border-radius:18px;
@@ -193,38 +219,50 @@ textarea{min-height:92px;resize:vertical}
   gap:12px;
   border:1px solid var(--line);
 }
+
 .save{
   background:linear-gradient(135deg,#10b981,#059669);
   justify-content:center;
 }
+
 .logout{
   background:rgba(239,68,68,.15);
   color:#fecaca;
 }
+
 .viewer-only .owner-only{display:none!important}
 
 /* MODAL */
 .modal{
   position:fixed;
   inset:0;
-  z-index:1000;
+  z-index:999999;
   display:none;
   align-items:flex-end;
-  background:rgba(0,0,0,.45);
+  justify-content:center;
+  background:rgba(0,0,0,.55);
 }
-.modal.show{display:flex}
+
+.modal.show{
+  display:flex !important;
+}
+
 .sheet{
   width:100%;
   max-width:560px;
   margin:0 auto;
   background:#0f172a;
+  color:#fff;
   border-radius:26px 26px 0 0;
   padding:18px;
-  border:1px solid var(--line);
-  box-shadow:0 -24px 60px rgba(0,0,0,.32);
+  max-height:90vh;
+  overflow:auto;
 }
+
 .sheet h3{margin:0 0 14px;font-size:22px}
+
 .sheet-actions{display:flex;gap:10px;margin-top:14px}
+
 .btn{
   flex:1;
   border:0;
@@ -233,9 +271,172 @@ textarea{min-height:92px;resize:vertical}
   font-weight:900;
   color:#fff;
 }
+
 .btn-primary{background:#10b981}
 .btn-secondary{background:rgba(255,255,255,.08)}
 .btn-danger{background:#ef4444}
+
+/* Settings */
+.setting-row{
+  border:1px solid rgba(255,255,255,.09);
+  background:rgba(255,255,255,.055);
+  border-radius:18px;
+  padding:14px;
+  margin:12px 0;
+}
+
+.setting-row-top{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+}
+
+.setting-title{
+  font-size:16px;
+  font-weight:900;
+}
+
+.setting-sub{
+  color:#94a3b8;
+  font-size:12px;
+  margin-top:5px;
+  line-height:1.4;
+}
+
+.pin-actions{
+  display:flex;
+  gap:10px;
+  margin-top:12px;
+}
+
+.pin-actions .btn{padding:11px}
+
+.switch input{display:none!important}
+
+.switch span{
+  width:52px;
+  height:30px;
+  border-radius:999px;
+  background:#374151;
+  display:block;
+  position:relative;
+}
+
+.switch span:before{
+  content:"";
+  width:24px;
+  height:24px;
+  border-radius:50%;
+  background:white;
+  position:absolute;
+  left:3px;
+  top:3px;
+  transition:.2s;
+}
+
+.switch input:checked + span{background:#10b981}
+
+.switch input:checked + span:before{transform:translateX(22px)}
+
+body.amoled{
+  background:#000!important;
+}
+
+body.amoled .profile-page,
+body.amoled .modal,
+body.amoled .sheet,
+body.amoled .info-card,
+body.amoled .action-btn,
+body.amoled .mobile-bottom-nav,
+body.amoled .pin-lock-screen{
+  background:#000!important;
+}
+
+/* PIN Lock */
+.pin-lock-screen{
+  position:fixed;
+  inset:0;
+  z-index:1000000;
+  display:none;
+  background:radial-gradient(circle at top, rgba(16,185,129,.18), transparent 26%), #071018;
+  color:#fff;
+  align-items:center;
+  justify-content:center;
+  padding:24px;
+}
+
+.pin-lock-screen.show{display:flex!important}
+
+.pin-card{
+  width:100%;
+  max-width:360px;
+  text-align:center;
+}
+
+.pin-logo{
+  width:78px;
+  height:78px;
+  border-radius:24px;
+  margin:0 auto 18px;
+  background:linear-gradient(135deg,#10b981,#06b6d4);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  font-size:34px;
+  font-weight:900;
+  box-shadow:0 20px 45px rgba(16,185,129,.22);
+}
+
+.pin-dots{
+  display:flex;
+  justify-content:center;
+  gap:12px;
+  margin:22px 0;
+}
+
+.pin-dot{
+  width:14px;
+  height:14px;
+  border-radius:50%;
+  border:2px solid #64748b;
+}
+
+.pin-dot.fill{
+  background:#10b981;
+  border-color:#10b981;
+}
+
+.pin-pad{
+  display:grid;
+  grid-template-columns:repeat(3,1fr);
+  gap:12px;
+}
+
+.pin-key{
+  height:62px;
+  border-radius:20px;
+  border:1px solid rgba(255,255,255,.08);
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-size:22px;
+  font-weight:900;
+}
+
+.pin-error{
+  color:#fca5a5;
+  min-height:22px;
+  font-size:13px;
+  margin-bottom:12px;
+}
+
+.shake{animation:shake .25s linear}
+
+@keyframes shake{
+  0%,100%{transform:translateX(0)}
+  25%{transform:translateX(-8px)}
+  75%{transform:translateX(8px)}
+}
 
 /* Bottom nav */
 .mobile-bottom-nav{
@@ -254,6 +455,7 @@ textarea{min-height:92px;resize:vertical}
   box-shadow:0 20px 46px rgba(0,0,0,.34);
   backdrop-filter:blur(20px);
 }
+
 .mobile-bottom-nav button{
   border:none;
   border-radius:17px;
@@ -268,7 +470,9 @@ textarea{min-height:92px;resize:vertical}
   justify-content:center;
   gap:4px;
 }
+
 .mobile-bottom-nav button span{font-size:19px}
+
 .mobile-bottom-nav button.active{
   color:#fff;
   background:linear-gradient(135deg, rgba(16,185,129,.30), rgba(6,182,212,.18));
@@ -287,13 +491,34 @@ textarea{min-height:92px;resize:vertical}
   opacity:0;
   pointer-events:none;
   transition:.2s;
-  z-index:2000;
+  z-index:2000000;
   box-shadow:0 15px 30px rgba(0,0,0,.3);
 }
+
 .toast.show{
   opacity:1;
   transform:translateX(-50%) translateY(0);
 }
+
+/* Guaranteed settings button fix */
+#settingsBtn{
+  pointer-events:auto!important;
+  position:relative!important;
+  z-index:100;
+}
+
+#settingsModal{
+  z-index:1500000!important;
+}
+
+#settingsModal.show{
+  display:flex!important;
+}
+
+#settingsModal .sheet{
+  pointer-events:auto!important;
+}
+
 @media(max-width:640px){
   .profile-head{margin-top:74px}
   .dp-box,.dp-box img{width:150px;height:150px}
@@ -305,13 +530,14 @@ textarea{min-height:92px;resize:vertical}
 </head>
 
 <body>
+
 <div class="profile-page" id="profilePage">
-  <button class="back-btn" onclick="goBack()">←</button>
+  <button class="back-btn" type="button" onclick="goBack()">←</button>
 
   <div class="profile-head">
     <div class="dp-box">
       <img id="myDp" src="/default.png" alt="DP" onerror="this.onerror=null;this.src='/default.png'">
-      <button id="dpEditBtn" class="dp-edit owner-only" onclick="document.getElementById('dpInput').click()">📷</button>
+      <button id="dpEditBtn" type="button" class="dp-edit owner-only" onclick="document.getElementById('dpInput').click()">📷</button>
     </div>
 
     <h1 id="usernameText" class="name">User</h1>
@@ -328,16 +554,16 @@ textarea{min-height:92px;resize:vertical}
       <div class="label">About</div>
       <div class="value-row">
         <div class="value" id="aboutValue">Hey there! I am using RickyY Chat</div>
-        <button class="edit-btn owner-only" onclick="openAboutEditor()">Edit</button>
+        <button type="button" class="edit-btn owner-only" onclick="openAboutEditor()">Edit</button>
       </div>
 
       <div class="suggestions owner-only">
-        <button class="chip" onclick="quickAbout('Available')">Available</button>
-        <button class="chip" onclick="quickAbout('Busy')">Busy</button>
-        <button class="chip" onclick="quickAbout('At work')">At work</button>
-        <button class="chip" onclick="quickAbout('Sleeping 😴')">Sleeping 😴</button>
-        <button class="chip" onclick="quickAbout('I love rashu 🥺💘')">I love rashu 🥺💘</button>
-        <button class="chip" onclick="quickAbout('Urgent calls only ☎️')">Urgent calls only ☎️</button>
+        <button type="button" class="chip" onclick="quickAbout('Available')">Available</button>
+        <button type="button" class="chip" onclick="quickAbout('Busy')">Busy</button>
+        <button type="button" class="chip" onclick="quickAbout('At work')">At work</button>
+        <button type="button" class="chip" onclick="quickAbout('Sleeping 😴')">Sleeping 😴</button>
+        <button type="button" class="chip" onclick="quickAbout('I love rashu 🥺💘')">I love rashu 🥺💘</button>
+        <button type="button" class="chip" onclick="quickAbout('Urgent calls only ☎️')">Urgent calls only ☎️</button>
       </div>
     </div>
 
@@ -348,11 +574,10 @@ textarea{min-height:92px;resize:vertical}
     </div>
 
     <div class="actions">
-      <button class="action-btn owner-only" onclick="document.getElementById('dpInput').click()">📷 Change DP</button>
-      <button class="action-btn owner-only save" onclick="saveProfile()">Save Profile</button>
-      <button class="action-btn" onclick="openMedia()">📂 Media</button>
-      <button class="action-btn owner-only" onclick="openSettings()">⚙️ Settings</button>
-      <button class="action-btn logout owner-only" onclick="logout()">🚪 Logout</button>
+      <button type="button" class="action-btn owner-only" onclick="document.getElementById('dpInput').click()">📷 Change DP</button>
+      <button type="button" class="action-btn owner-only save" onclick="saveProfile()">Save Profile</button>
+      <button type="button" class="action-btn" onclick="openMedia()">📂 Media</button>
+      <button type="button" class="action-btn logout owner-only" onclick="logout()">🚪 Logout</button>
     </div>
   </div>
 </div>
@@ -372,16 +597,18 @@ textarea{min-height:92px;resize:vertical}
     <h3>Edit About</h3>
     <textarea id="aboutInput" maxlength="250" placeholder="Write about..."></textarea>
     <div class="count"><span id="aboutCount">0</span>/250</div>
+
     <div class="suggestions">
-      <button class="chip" onclick="setAboutInput('Available')">Available</button>
-      <button class="chip" onclick="setAboutInput('Busy')">Busy</button>
-      <button class="chip" onclick="setAboutInput('At work')">At work</button>
-      <button class="chip" onclick="setAboutInput('Sleeping 😴')">Sleeping 😴</button>
-      <button class="chip" onclick="setAboutInput('I love rashu 🥺💘')">I love rashu 🥺💘</button>
+      <button type="button" class="chip" onclick="setAboutInput('Available')">Available</button>
+      <button type="button" class="chip" onclick="setAboutInput('Busy')">Busy</button>
+      <button type="button" class="chip" onclick="setAboutInput('At work')">At work</button>
+      <button type="button" class="chip" onclick="setAboutInput('Sleeping 😴')">Sleeping 😴</button>
+      <button type="button" class="chip" onclick="setAboutInput('I love rashu 🥺💘')">I love rashu 🥺💘</button>
     </div>
+
     <div class="sheet-actions">
-      <button class="btn btn-secondary" onclick="closeAboutEditor()">Cancel</button>
-      <button class="btn btn-primary" onclick="saveAboutFromModal()">Save</button>
+      <button type="button" class="btn btn-secondary" onclick="closeAboutEditor()">Cancel</button>
+      <button type="button" class="btn btn-primary" onclick="saveAboutFromModal()">Save</button>
     </div>
   </div>
 </div>
@@ -389,10 +616,33 @@ textarea{min-height:92px;resize:vertical}
 <div id="settingsModal" class="modal">
   <div class="sheet">
     <h3>Settings</h3>
-    <button class="action-btn" onclick="alert('App lock settings already in chat.html/profile settings section')">🔒 App Lock</button>
-    <button class="action-btn" onclick="alert('Notifications are controlled by browser/app permissions')">🔔 Notifications</button>
+
+    <div class="setting-row">
+      <div class="setting-row-top">
+        <div>
+          <div class="setting-title">🌑 AMOLED Dark Mode</div>
+          <div class="setting-sub">Pure black premium theme for battery saving and native app feel.</div>
+        </div>
+        <label class="switch">
+          <input type="checkbox" id="amoledToggle">
+          <span></span>
+        </label>
+      </div>
+    </div>
+
+    <div class="setting-row">
+      <div class="setting-title">🔒 App Lock PIN</div>
+      <div class="setting-sub">Set 4 digit PIN.</div>
+      <input id="pinInput" class="input" type="password" maxlength="4" inputmode="numeric" pattern="[0-9]*" placeholder="Enter 4 digit PIN" style="margin-top:12px;">
+      <div class="pin-actions">
+        <button type="button" class="btn btn-primary" onclick="savePin()">Save</button>
+        <button type="button" class="btn btn-danger" onclick="removePin()">Remove</button>
+      </div>
+      <div id="pinStatus" style="margin-top:10px;color:#86efac;font-size:12px;font-weight:800;"></div>
+    </div>
+
     <div class="sheet-actions">
-      <button class="btn btn-secondary" onclick="closeSettings()">Close</button>
+      <button id="settingsCloseBtn" type="button" class="btn btn-secondary" onclick="forceCloseSettings(event)">Close</button>
     </div>
   </div>
 </div>
@@ -402,7 +652,39 @@ textarea{min-height:92px;resize:vertical}
     <h3>Media</h3>
     <div style="color:#cbd5e1;padding:12px 0;">Media gallery coming soon.</div>
     <div class="sheet-actions">
-      <button class="btn btn-secondary" onclick="closeMedia()">Close</button>
+      <button type="button" class="btn btn-secondary" onclick="closeMedia()">Close</button>
+    </div>
+  </div>
+</div>
+
+<div id="pinLockScreen" class="pin-lock-screen">
+  <div class="pin-card" id="pinCard">
+    <div class="pin-logo">R</div>
+    <h2 style="margin:0;">RickyY Chat Locked</h2>
+    <p style="color:#94a3b8;margin:8px 0 0;">Enter your 4 digit PIN</p>
+
+    <div class="pin-dots" id="pinDots">
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+      <div class="pin-dot"></div>
+    </div>
+
+    <div class="pin-error" id="pinError"></div>
+
+    <div class="pin-pad">
+      <button type="button" class="pin-key" onclick="pressLockPin('1')">1</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('2')">2</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('3')">3</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('4')">4</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('5')">5</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('6')">6</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('7')">7</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('8')">8</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('9')">9</button>
+      <button type="button" class="pin-key" onclick="clearLockPin()">⌫</button>
+      <button type="button" class="pin-key" onclick="pressLockPin('0')">0</button>
+      <button type="button" class="pin-key" onclick="logout()">Exit</button>
     </div>
   </div>
 </div>
@@ -413,12 +695,14 @@ textarea{min-height:92px;resize:vertical}
 const SERVER_URL = location.protocol === "capacitor:" ? "https://rickyy-chat.onrender.com" : "";
 const APP = document.getElementById("profilePage");
 const params = new URLSearchParams(location.search);
+const shouldOpenSettings = params.get("openSettings") === "1";
 
 let me = localStorage.getItem("user") || "";
 let token = localStorage.getItem("authToken") || "";
 let profileUser = params.get("user") || me;
 let isOwnProfile = !profileUser || profileUser === me;
 let currentUserData = null;
+let lockPinBuffer = "";
 
 const socket = typeof io !== "undefined" ? io(SERVER_URL || undefined, {
   transports:["websocket","polling"],
@@ -429,23 +713,28 @@ function api(path){
   if(SERVER_URL && path.startsWith("/")) return SERVER_URL + path;
   return path;
 }
+
 function headersJson(){
   const h = {"Content-Type":"application/json"};
   if(token) h.Authorization = "Bearer " + token;
   return h;
 }
+
 function authHeaders(){
   const h = {};
   if(token) h.Authorization = "Bearer " + token;
   return h;
 }
+
 function toast(msg){
   const t = document.getElementById("toast");
+  if(!t) return;
   t.textContent = msg;
   t.classList.add("show");
   clearTimeout(toast._t);
   toast._t = setTimeout(()=>t.classList.remove("show"),1700);
 }
+
 function safeUrl(v, fallback="/default.png"){
   v = String(v || "").trim();
   if(!v) return fallback;
@@ -455,21 +744,28 @@ function safeUrl(v, fallback="/default.png"){
   if(v.startsWith("uploads/")) return api("/" + v);
   return api("/uploads/" + v.replace(/^\/+/,""));
 }
+
 function goBack(){
   if(history.length > 1) history.back();
   else location.href = "/chat.html";
 }
+
 function goTab(tab){
   location.replace("/chat.html?tab=" + encodeURIComponent(tab));
 }
+
 async function verify(){
   if(!me || !token){
     location.href="/index.html";
     return false;
   }
+
   try{
-    const r = await fetch(api("/api/me"), {headers:{Authorization:"Bearer " + token}});
+    const r = await fetch(api("/api/me"), {
+      headers:{Authorization:"Bearer " + token}
+    });
     const d = await r.json().catch(()=>null);
+
     if(d && d.ok && d.user){
       me = d.user.name;
       localStorage.setItem("user", me);
@@ -478,74 +774,99 @@ async function verify(){
       return true;
     }
   }catch(e){}
+
   profileUser = params.get("user") || me;
   isOwnProfile = profileUser === me;
   return true;
 }
+
 function applyMode(){
-  APP.classList.toggle("viewer-only", !isOwnProfile);
+  if(APP) APP.classList.toggle("viewer-only", !isOwnProfile);
 }
+
 function renderUser(u){
-  currentUserData = u;
-  const name = u.name || profileUser || "User";
-  const about = u.about || u.bio || "Hey there! I am using RickyY Chat";
-  const phone = u.contact || u.phone || u.mobile || "";
+  currentUserData = u || {};
+  const name = currentUserData.name || profileUser || "User";
+  const about = currentUserData.about || currentUserData.bio || "Hey there! I am using RickyY Chat";
+  const phone = currentUserData.contact || currentUserData.phone || currentUserData.mobile || "";
 
   document.getElementById("usernameText").textContent = name;
   document.getElementById("aboutBig").textContent = about;
   document.getElementById("aboutValue").textContent = about;
   document.getElementById("aboutInput").value = about;
   document.getElementById("aboutCount").textContent = about.length;
-  document.getElementById("bioInput").value = u.bio || "";
-  document.getElementById("bioCount").textContent = (u.bio || "").length;
+  document.getElementById("bioInput").value = currentUserData.bio || "";
+  document.getElementById("bioCount").textContent = (currentUserData.bio || "").length;
 
   document.getElementById("phoneValue").textContent = phone ? "📱 +91 " + phone : "📱 Not Added";
-  document.getElementById("myDp").src = safeUrl(u.dp, "/default.png");
+  document.getElementById("myDp").src = safeUrl(currentUserData.dp, "/default.png");
   document.title = name + " • RickyY Chat";
 }
+
 async function loadProfile(){
   try{
-    const r = await fetch(api("/profile/" + encodeURIComponent(profileUser)), {headers:authHeaders()});
+    const r = await fetch(api("/profile/" + encodeURIComponent(profileUser)), {
+      headers:authHeaders()
+    });
     const d = await r.json().catch(()=>null);
+
     if(d && d.ok && d.user){
       renderUser(d.user);
       return;
     }
+
     toast("Profile load failed");
   }catch(e){
     console.log(e);
     toast("Profile load failed");
   }
 }
+
+/* ABOUT MODAL */
 function openAboutEditor(){
-  document.getElementById("aboutModal").classList.add("show");
-  setTimeout(()=>document.getElementById("aboutInput").focus(),50);
+  const modal = document.getElementById("aboutModal");
+  if(modal) modal.classList.add("show");
+  setTimeout(()=>{
+    const inp = document.getElementById("aboutInput");
+    if(inp) inp.focus();
+  },50);
 }
+
 function closeAboutEditor(){
-  document.getElementById("aboutModal").classList.remove("show");
+  const modal = document.getElementById("aboutModal");
+  if(modal) modal.classList.remove("show");
 }
+
 function setAboutInput(t){
   const inp = document.getElementById("aboutInput");
+  if(!inp) return;
   inp.value = t;
   document.getElementById("aboutCount").textContent = t.length;
 }
+
 function quickAbout(t){
   setAboutInput(t);
   document.getElementById("aboutBig").textContent = t;
   document.getElementById("aboutValue").textContent = t;
   saveProfile(t);
 }
+
 function saveAboutFromModal(){
   const about = document.getElementById("aboutInput").value.trim();
-  document.getElementById("aboutBig").textContent = about || "Hey there! I am using RickyY Chat";
-  document.getElementById("aboutValue").textContent = about || "Hey there! I am using RickyY Chat";
+  const finalAbout = about || "Hey there! I am using RickyY Chat";
+  document.getElementById("aboutBig").textContent = finalAbout;
+  document.getElementById("aboutValue").textContent = finalAbout;
   closeAboutEditor();
   saveProfile(about);
 }
+
 async function saveProfile(aboutOverride=null){
   if(!isOwnProfile) return;
+
   const bio = document.getElementById("bioInput").value.trim();
-  const about = aboutOverride === null ? document.getElementById("aboutInput").value.trim() : aboutOverride;
+  const about = aboutOverride === null
+    ? document.getElementById("aboutInput").value.trim()
+    : aboutOverride;
 
   try{
     const r = await fetch(api("/update-profile"), {
@@ -553,7 +874,9 @@ async function saveProfile(aboutOverride=null){
       headers:headersJson(),
       body:JSON.stringify({username:me,bio,about})
     });
+
     const d = await r.json().catch(()=>null);
+
     if(d && d.ok){
       toast("Profile updated ✅");
     }else{
@@ -563,6 +886,8 @@ async function saveProfile(aboutOverride=null){
     toast("Server error");
   }
 }
+
+/* DP UPLOAD */
 async function uploadDp(file){
   const fd = new FormData();
   fd.append("dp", file);
@@ -574,7 +899,9 @@ async function uploadDp(file){
       headers:authHeaders(),
       body:fd
     });
+
     const d = await r.json().catch(()=>null);
+
     if(d && (d.status === "ok" || d.dp)){
       document.getElementById("myDp").src = safeUrl(d.dp, "/default.png");
       toast("DP updated ✅");
@@ -585,16 +912,190 @@ async function uploadDp(file){
     toast("DP upload failed");
   }
 }
-function openSettings(){document.getElementById("settingsModal").classList.add("show")}
-function closeSettings(){document.getElementById("settingsModal").classList.remove("show")}
-function openMedia(){document.getElementById("mediaModal").classList.add("show")}
-function closeMedia(){document.getElementById("mediaModal").classList.remove("show")}
 
+/* SETTINGS MODAL - GUARANTEED FIX */
+function forceOpenSettings(e){
+  if(e){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const modal = document.getElementById("settingsModal");
+  if(!modal){
+    alert("settingsModal missing");
+    return false;
+  }
+
+  hidePinLock();
+  applyAmoled();
+  updatePinStatus();
+
+  modal.classList.add("show");
+  modal.style.display = "flex";
+
+  return false;
+}
+
+function forceCloseSettings(e){
+  if(e){
+    e.preventDefault();
+    e.stopPropagation();
+  }
+
+  const modal = document.getElementById("settingsModal");
+  if(modal){
+    modal.classList.remove("show");
+    modal.style.display = "none";
+  }
+
+  return false;
+}
+
+window.openSettings = forceOpenSettings;
+window.closeSettings = forceCloseSettings;
+
+function toggleAmoled(on){
+  localStorage.setItem("amoledMode", on ? "1" : "0");
+  document.body.classList.toggle("amoled", !!on);
+
+  const t = document.getElementById("amoledToggle");
+  if(t) t.checked = !!on;
+}
+
+function applyAmoled(){
+  const enabled = localStorage.getItem("amoledMode") === "1";
+  document.body.classList.toggle("amoled", enabled);
+
+  const t = document.getElementById("amoledToggle");
+  if(t) t.checked = enabled;
+}
+
+function updatePinStatus(){
+  const s = document.getElementById("pinStatus");
+  if(!s) return;
+  if(localStorage.getItem("appPinEnabled") === "1" && localStorage.getItem("appPin")){
+    s.textContent = "App Lock: ON ✅";
+  }else{
+    s.textContent = "App Lock: OFF";
+  }
+}
+
+/* PIN LOCK */
+function savePin(){
+  const pinEl = document.getElementById("pinInput");
+  const pin = (pinEl ? pinEl.value : "").trim();
+
+  if(!/^\d{4}$/.test(pin)){
+    toast("4 digit PIN enter cheyyi");
+    return;
+  }
+
+  localStorage.setItem("appPin", pin);
+  localStorage.setItem("appPinEnabled","1");
+
+  if(pinEl) pinEl.value = "";
+
+  updatePinStatus();
+  toast("PIN Saved ✅");
+}
+
+function removePin(){
+  localStorage.removeItem("appPin");
+  localStorage.removeItem("appPinEnabled");
+  lockPinBuffer = "";
+  hidePinLock();
+  updatePinStatus();
+  toast("PIN Removed ✅");
+}
+
+function showPinLock(){
+  if(shouldOpenSettings) return;
+  if(localStorage.getItem("appPinEnabled") !== "1") return;
+  if(!localStorage.getItem("appPin")) return;
+
+  lockPinBuffer = "";
+  updatePinDots();
+
+  const lock = document.getElementById("pinLockScreen");
+  if(lock) lock.classList.add("show");
+}
+
+function hidePinLock(){
+  const lock = document.getElementById("pinLockScreen");
+  if(lock) lock.classList.remove("show");
+}
+
+function pressLockPin(n){
+  if(lockPinBuffer.length >= 4) return;
+
+  lockPinBuffer += String(n);
+  updatePinDots();
+
+  if(lockPinBuffer.length === 4){
+    setTimeout(checkLockPin,120);
+  }
+}
+
+function clearLockPin(){
+  lockPinBuffer = lockPinBuffer.slice(0,-1);
+  updatePinDots();
+}
+
+function updatePinDots(){
+  const dots = document.querySelectorAll("#pinDots .pin-dot");
+
+  dots.forEach((d,i)=>{
+    d.classList.toggle("fill", i < lockPinBuffer.length);
+  });
+
+  const err = document.getElementById("pinError");
+  if(err) err.textContent = "";
+}
+
+function checkLockPin(){
+  const saved = localStorage.getItem("appPin");
+
+  if(lockPinBuffer === saved){
+    hidePinLock();
+    lockPinBuffer = "";
+    updatePinDots();
+    return;
+  }
+
+  const card = document.getElementById("pinCard");
+  const err = document.getElementById("pinError");
+
+  if(err) err.textContent = "Wrong PIN";
+
+  if(card){
+    card.classList.remove("shake");
+    void card.offsetWidth;
+    card.classList.add("shake");
+  }
+
+  lockPinBuffer = "";
+  setTimeout(updatePinDots,250);
+}
+
+/* MEDIA */
+function openMedia(){
+  const modal = document.getElementById("mediaModal");
+  if(modal) modal.classList.add("show");
+}
+
+function closeMedia(){
+  const modal = document.getElementById("mediaModal");
+  if(modal) modal.classList.remove("show");
+}
+
+/* LOGOUT */
 async function logout(){
   const name = me;
+
   localStorage.removeItem("user");
   localStorage.removeItem("role");
   localStorage.removeItem("authToken");
+
   try{
     await fetch(api("/api/logout"), {
       method:"POST",
@@ -602,30 +1103,90 @@ async function logout(){
       body:JSON.stringify({name})
     });
   }catch(e){}
+
   location.href="/index.html";
 }
 
-document.getElementById("bioInput").addEventListener("input", e=>{
-  document.getElementById("bioCount").textContent = e.target.value.length;
-});
-document.getElementById("aboutInput").addEventListener("input", e=>{
-  document.getElementById("aboutCount").textContent = e.target.value.length;
-});
-document.getElementById("dpInput").addEventListener("change", e=>{
-  const f = e.target.files && e.target.files[0];
-  if(f) uploadDp(f);
+/* DOM READY */
+document.addEventListener("DOMContentLoaded", function(){
+  const bioInput = document.getElementById("bioInput");
+  const aboutInput = document.getElementById("aboutInput");
+  const dpInput = document.getElementById("dpInput");
+  const settingsCloseBtn = document.getElementById("settingsCloseBtn");
+  const settingsModal = document.getElementById("settingsModal");
+  const amoledToggle = document.getElementById("amoledToggle");
+  const pinInput = document.getElementById("pinInput");
+
+  if(bioInput){
+    bioInput.addEventListener("input", e=>{
+      document.getElementById("bioCount").textContent = e.target.value.length;
+    });
+  }
+
+  if(aboutInput){
+    aboutInput.addEventListener("input", e=>{
+      document.getElementById("aboutCount").textContent = e.target.value.length;
+    });
+  }
+
+  if(dpInput){
+    dpInput.addEventListener("change", e=>{
+      const f = e.target.files && e.target.files[0];
+      if(f) uploadDp(f);
+    });
+  }
+
+
+  if(settingsCloseBtn){
+    settingsCloseBtn.addEventListener("click", forceCloseSettings);
+  }
+
+  if(settingsModal){
+    settingsModal.addEventListener("click", function(e){
+      if(e.target === settingsModal){
+        forceCloseSettings(e);
+      }
+    });
+  }
+
+  if(amoledToggle){
+    amoledToggle.addEventListener("change", function(){
+      toggleAmoled(this.checked);
+    });
+  }
+
+  if(pinInput){
+    pinInput.addEventListener("input", function(){
+      this.value = this.value.replace(/\D/g, "").slice(0,4);
+    });
+  }
+
+  applyAmoled();
+  updatePinStatus();
 });
 
+/* SOCKET */
 if(socket && me){
   socket.on("connect", ()=>socket.emit("join", me));
 }
 
+/* INIT */
 (async function init(){
+  applyAmoled();
+
   const ok = await verify();
   if(!ok) return;
+
   applyMode();
   await loadProfile();
+
+  if(shouldOpenSettings){
+    setTimeout(forceOpenSettings,350);
+  }else{
+    setTimeout(showPinLock,450);
+  }
 })();
 </script>
+
 </body>
 </html>

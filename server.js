@@ -43,7 +43,31 @@ app.use(cors({
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use(express.static("public"));
-app.use("/uploads", express.static(path.join(__dirname, "public", "uploads")));
+const uploadsPath = path.join(__dirname, "public", "uploads");
+const defaultImagePath = path.join(__dirname, "public", "default.png");
+
+app.use("/uploads", express.static(uploadsPath));
+
+app.use("/uploads", (req, res) => {
+  const ext = path.extname(req.path).toLowerCase();
+
+  // Images
+  if ([".png", ".jpg", ".jpeg", ".webp", ".gif"].includes(ext)) {
+    return res.sendFile(defaultImagePath);
+  }
+
+  // Audio & Video
+  if ([".webm", ".mp4", ".mov", ".mp3", ".wav", ".ogg", ".m4a"].includes(ext)) {
+    return res.status(204).end();
+  }
+
+  // Documents
+  if ([".pdf", ".doc", ".docx", ".xls", ".xlsx", ".ppt", ".pptx", ".txt"].includes(ext)) {
+    return res.status(204).end();
+  }
+
+  return res.status(404).end();
+});
 app.use(express.static(path.join(__dirname, "public")));
 
 const loginOtpStore = new Map();

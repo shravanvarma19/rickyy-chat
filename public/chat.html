@@ -3930,8 +3930,6 @@ body.mobile-chat-open .bottom-nav{
 <div class="logo">RickyY Chat</div>
 <div class="header-buttons">
 <button id="adminBtn" onclick="openAdminPanel()" style="display:none;">🛡️</button>
-<button onclick="enableNotifications()">🔔</button>
-<button onclick="openProfile()">👤</button>
 <button onclick="openMenu()">⋮</button>
 </div>
 </div>
@@ -4029,6 +4027,7 @@ body.mobile-chat-open .bottom-nav{
 <button class="mic-btn" id="micBtn" title="Hold to record">🎤</button>
 <button class="schedule-btn" onclick="openScheduleMessageModal()" title="Schedule message">⏰</button>
 <button class="send-btn" onclick="send()">Send</button>
+
 </div>
 </div>
 </div>
@@ -7289,7 +7288,19 @@ function setUserTypingState(username, isTyping){
 
     document.getElementById("uploadPreviewModal").style.display = "flex";
   }
+  let onceViewMode = null; // "photo" or "video"
 
+function sendOncePhoto(){
+  onceViewMode = "photo";
+  document.getElementById("fileInput").accept = "image/*";
+  document.getElementById("fileInput").click();
+}
+
+function sendOnceVideo(){
+  onceViewMode = "video";
+  document.getElementById("fileInput").accept = "video/*";
+  document.getElementById("fileInput").click();
+}
   async function confirmUploadSend(){
     const file = pendingUploadFile;
     if(!file) return;
@@ -12651,17 +12662,74 @@ window.addEventListener("load", () => {
   }
 
 function openMenu(){
-  if (typeof openSettingsModal === "function") {
-    openSettingsModal();
+  let old = document.getElementById("mainMenuPopup");
+  if(old){
+    old.remove();
     return;
   }
 
-  if (typeof toggleGroupDrawer === "function") {
-    toggleGroupDrawer();
-    return;
-  }
+  const menu = document.createElement("div");
+  menu.id = "mainMenuPopup";
+  menu.innerHTML = `
+    <button onclick="openProfile(); closeMainMenu()">👤 Profile</button>
+    <button onclick="openSettingsFromMenu()">⚙️ Settings</button>
+    <button onclick="enableNotifications(); closeMainMenu()">🔔 Notifications</button>
+    <button onclick="logout()">🚪 Logout</button>
+  `;
 
-  console.log("openMenu fallback not found");
+  menu.style.cssText = `
+    position:fixed;
+    top:72px;
+    right:18px;
+    z-index:999999;
+    width:210px;
+    padding:8px;
+    border-radius:18px;
+    background:#0f172a;
+    border:1px solid rgba(255,255,255,.10);
+    box-shadow:0 20px 45px rgba(0,0,0,.45);
+    display:flex;
+    flex-direction:column;
+    gap:6px;
+  `;
+
+  menu.querySelectorAll("button").forEach(btn=>{
+    btn.style.cssText = `
+      border:0;
+      background:rgba(255,255,255,.06);
+      color:white;
+      padding:13px 14px;
+      border-radius:14px;
+      text-align:left;
+      font-weight:800;
+      font-size:15px;
+      cursor:pointer;
+    `;
+  });
+
+  document.body.appendChild(menu);
+
+  setTimeout(()=>{
+    document.addEventListener("click", closeMenuOutside);
+  },0);
+}
+
+function closeMainMenu(){
+  const menu = document.getElementById("mainMenuPopup");
+  if(menu) menu.remove();
+  document.removeEventListener("click", closeMenuOutside);
+}
+
+function closeMenuOutside(e){
+  const menu = document.getElementById("mainMenuPopup");
+  if(menu && !menu.contains(e.target)){
+    closeMainMenu();
+  }
+}
+
+function openSettingsFromMenu(){
+  closeMainMenu();
+  window.location.href = "/profile.html?openSettings=1";
 }
 </script>
 <div id="callModal" style="display:none;position:fixed;inset:0;z-index:20000;background:#000;color:#fff;align-items:center;justify-content:center;flex-direction:column;">
