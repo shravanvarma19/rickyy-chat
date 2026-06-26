@@ -1,5 +1,8 @@
 {
   "appId": "com.rickyy.chat",
-  "appName": "RickyYChat",
-  "webDir": "public"
+  "appName": "RickyY Chat",
+  "webDir": "public",
+  "server": {
+    "cleartext": true
+  }
 }

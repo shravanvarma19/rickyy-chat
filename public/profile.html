@@ -768,7 +768,9 @@ async function verify(){
 
     if(d && d.ok && d.user){
       me = d.user.name;
+      currentUserData = d.user;   // ✅ add
       localStorage.setItem("user", me);
+      localStorage.setItem("contact", d.user.contact || d.user.phone || d.user.mobile || ""); // ✅ add
       profileUser = params.get("user") || me;
       isOwnProfile = profileUser === me;
       return true;
@@ -788,6 +790,7 @@ function renderUser(u){
   currentUserData = u || {};
   const name = currentUserData.name || profileUser || "User";
   const about = currentUserData.about || currentUserData.bio || "Hey there! I am using RickyY Chat";
+  console.log("currentUserData =", currentUserData);
   const phone = currentUserData.contact || currentUserData.phone || currentUserData.mobile || "";
 
   document.getElementById("usernameText").textContent = name;

@@ -298,6 +298,10 @@ function isImageFile(file) {
 
 const userSchema = new mongoose.Schema({
   name: { type: String, unique: true },
+  phone: {
+  type: String,
+  default: ""
+  },
   contact: { type: String, default: "", unique: true, sparse: true },
   password: { type: String, default: "" },
   pin: { type: String, default: "" },
@@ -2291,10 +2295,13 @@ app.get("/api/me", async (req, res) => {
     return res.json({
       ok: true,
       user: {
-        name: user.name,
-        dp: user.dp,
-        role: user.role || "user",
-        approvalStatus: user.approvalStatus || "approved"
+      name: user.name,
+      contact: user.contact || "",
+      phone: user.phone || user.contact || "",
+      mobile: user.mobile || "",
+      dp: user.dp,
+      role: user.role || "user",
+      approvalStatus: user.approvalStatus || "approved"
       }
     });
   } catch (err) {
@@ -2405,6 +2412,7 @@ app.post("/api/verify-signup-otp", async (req, res) => {
     const user = new User({
       name,
       contact,
+      phone: contact,
       password: hashedPassword,
       pin: "",
       online: false,
@@ -2538,7 +2546,7 @@ app.get("/profile/:username", async (req, res) => {
     }
 
     const user = await User.findOne({ name: username }).select(
-      "name dp role bio about online lastSeen"
+      "name contact phone dp role bio about online lastSeen"
     );
 
     if (!user) {
