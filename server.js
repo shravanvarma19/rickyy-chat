@@ -82,30 +82,7 @@ if (!fs.existsSync(uploadDir)) {
 }
 
 
-if (!process.env.MONGODB_URI) {
-  console.log("MongoDB Error: MONGODB_URI is missing in .env file");
-} else {
-  mongoose.connect(process.env.MONGODB_URI, {
-    serverSelectionTimeoutMS: 30000
-  })
-    .then(() => console.log("MongoDB Connected"))
-    .catch(err => console.log("MongoDB Error:", err));
-}
-if (
-  process.env.VAPID_PUBLIC_KEY &&
-  process.env.VAPID_PRIVATE_KEY &&
-  process.env.VAPID_SUBJECT
-) {
-  webpush.setVapidDetails(
-    process.env.VAPID_SUBJECT,
-    process.env.VAPID_PUBLIC_KEY,
-    process.env.VAPID_PRIVATE_KEY
-  );
-} else {
-  console.log("WEB PUSH WARNING: VAPID keys missing");
-}
-
-
+// MongoDB connection is started at the bottom after all routes/socket handlers are registered.
 
 function formatTime(date = new Date()) {
   let hours = date.getHours();
@@ -310,10 +287,26 @@ const userSchema = new mongoose.Schema({
   lastSeen: { type: Date, default: null },
   dp: { type: String, default: "/default.png" },
   coverImage: { type: String, default: "" },
+
+  // Phase 3 Animated Profile Border
+  profileBorder: { type: String, default: "none" },
+  profileBorderUnlocked: { type: Boolean, default: true },
   role: { type: String, default: "user" },
   approvalStatus: { type: String, default: "pending" },
   blocked: { type: Boolean, default: false },
   muted: { type: Boolean, default: false },
+
+  privacy: {
+    lastSeen: { type: String, default: "everyone" },
+    online: { type: String, default: "everyone" },
+    typing: { type: String, default: "everyone" },
+    readReceipts: { type: Boolean, default: true },
+    profilePhoto: { type: String, default: "everyone" },
+    about: { type: String, default: "everyone" },
+    calls: { type: String, default: "everyone" },
+    groups: { type: String, default: "everyone" }
+  },
+
   bio: { type: String, default: "" },
   about: { type: String, default: "" },
   loginAttempts: { type: Number, default: 0 },
@@ -408,7 +401,9 @@ const messageSchema = new mongoose.Schema({
   deleted: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
   deletedBy: { type: String, default: null },
-
+  onceView: { type: Boolean, default: false },
+  onceViewOpenedBy: { type: [String], default: [] },
+  onceViewOpenedAt: { type: Date, default: null },
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -574,6 +569,625 @@ app.get("/debug-files", (req, res) => {
 });
 
 
+
+// ===== Privacy Controls APIs =====
+app.get("/api/privacy", async (req, res) => {
+  try{
+    const token = String(req.headers.authorization || "").replace("Bearer ","").trim();
+    const username = normalizeUsername(req.query.user || req.query.username || req.body?.user || "");
+
+    let user = null;
+    if(token){
+      user = await User.findOne({ authToken: token }).select("name privacy");
+    }
+    if(!user && username){
+      user = await User.findOne({ name: username }).select("name privacy");
+    }
+
+    if(!user){
+      return res.status(401).json({ ok:false, msg:"Unauthorized" });
+    }
+
+    return res.json({ ok:true, privacy: mergePrivacySettings(user.privacy || {}) });
+  }catch(err){
+    console.log("GET PRIVACY ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Privacy load failed" });
+  }
+});
+
+app.post("/api/privacy", async (req, res) => {
+  try{
+    const token = String(req.headers.authorization || "").replace("Bearer ","").trim();
+    const username = normalizeUsername(req.body.user || req.body.username || "");
+    const incoming = req.body.privacy || req.body || {};
+
+    let user = null;
+    if(token){
+      user = await User.findOne({ authToken: token });
+    }
+    if(!user && username){
+      user = await User.findOne({ name: username });
+    }
+
+    if(!user){
+      return res.status(401).json({ ok:false, msg:"Unauthorized" });
+    }
+
+    user.privacy = mergePrivacySettings(incoming);
+    await user.save();
+
+    io.to(user.name).emit("privacy-updated", { privacy: user.privacy });
+    await emitUsersToAll().catch(()=>{});
+
+    return res.json({ ok:true, msg:"Privacy updated", privacy:user.privacy });
+  }catch(err){
+    console.log("SAVE PRIVACY ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Privacy save failed" });
+  }
+});
+
+
+// ===== Phase 2 Device Management APIs =====
+app.get("/api/devices", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const username = normalizeUsername(req.query.user || "");
+
+    let user = null;
+    if (token) {
+      user = await User.findOne({ authToken: token });
+    }
+    if (!user && username) {
+      user = await User.findOne({ name: username });
+    }
+
+    if (!user) {
+      return res.status(401).json({ ok:false, msg:"Unauthorized" });
+    }
+
+    await touchSessionByToken(user.authToken || token).catch(() => {});
+    const freshUser = await User.findById(user._id);
+    return res.json({
+      ok:true,
+      currentTokenPreview: tokenPreview(token || freshUser.authToken || ""),
+      devices: serializeSessionsForUser(freshUser)
+    });
+  } catch (err) {
+    console.log("GET DEVICES ERROR:", err);
+    return res.status(500).json({ ok:false, devices:[] });
+  }
+});
+
+app.post("/api/device/logout-session", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const sessionId = String(req.body.sessionId || "").trim();
+
+    if (!token || !sessionId) {
+      return res.status(400).json({ ok:false, msg:"Token and session required" });
+    }
+
+    const user = await User.findOne({ authToken: token });
+    if (!user) return res.status(401).json({ ok:false, msg:"Unauthorized" });
+
+    const currentPreview = tokenPreview(token);
+    let logoutCurrent = false;
+    let found = false;
+
+    user.activeSessions = (Array.isArray(user.activeSessions) ? user.activeSessions : []).map(s => {
+      if (String(s.sessionId || "") === sessionId) {
+        found = true;
+        if (s.tokenPreview === currentPreview) logoutCurrent = true;
+        s.active = false;
+        s.forceLoggedOut = true;
+        s.loggedOutAt = new Date();
+      }
+      return s;
+    });
+
+    if (!found) return res.status(404).json({ ok:false, msg:"Device not found" });
+
+    if (logoutCurrent) {
+      user.authToken = null;
+      user.online = false;
+      user.lastSeen = new Date();
+    }
+
+    await user.save();
+
+    if (logoutCurrent) {
+      io.to(user.name).emit("force-logout", {
+        msg:"This device was logged out.",
+        reason:"device_logout",
+        at:new Date()
+      });
+    }
+
+    return res.json({ ok:true, msg: logoutCurrent ? "Current device logged out" : "Device removed", logoutCurrent });
+  } catch (err) {
+    console.log("LOGOUT DEVICE ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Device logout failed" });
+  }
+});
+
+app.post("/api/device/logout-all", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+
+    if (!token) return res.status(401).json({ ok:false, msg:"No token" });
+
+    const user = await User.findOne({ authToken: token });
+    if (!user) return res.status(401).json({ ok:false, msg:"Unauthorized" });
+
+    user.authToken = null;
+    user.online = false;
+    user.lastSeen = new Date();
+    user.activeSessions = (Array.isArray(user.activeSessions) ? user.activeSessions : []).map(s => {
+      s.active = false;
+      s.forceLoggedOut = true;
+      s.loggedOutAt = new Date();
+      return s;
+    });
+
+    await user.save();
+
+    io.to(user.name).emit("force-logout", {
+      msg:"Logged out from all devices.",
+      reason:"logout_all_devices",
+      at:new Date()
+    });
+
+    return res.json({ ok:true, msg:"Logged out from all devices" });
+  } catch (err) {
+    console.log("LOGOUT ALL DEVICES ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Logout all failed" });
+  }
+});
+
+app.post("/api/device/rename", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const sessionId = String(req.body.sessionId || "").trim();
+    const deviceName = sanitizeText(req.body.deviceName || "", 60);
+
+    if (!token || !sessionId || !deviceName) {
+      return res.status(400).json({ ok:false, msg:"Device name required" });
+    }
+
+    const user = await User.findOne({ authToken: token });
+    if (!user) return res.status(401).json({ ok:false, msg:"Unauthorized" });
+
+    let found = false;
+    user.activeSessions = (Array.isArray(user.activeSessions) ? user.activeSessions : []).map(s => {
+      if (String(s.sessionId || "") === sessionId) {
+        found = true;
+        s.deviceName = deviceName;
+      }
+      return s;
+    });
+
+    if (!found) return res.status(404).json({ ok:false, msg:"Device not found" });
+
+    await user.save();
+    return res.json({ ok:true, msg:"Device renamed" });
+  } catch (err) {
+    console.log("RENAME DEVICE ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Rename failed" });
+  }
+});
+
+
+// ===== Phase 3 Animated Profile Border APIs =====
+app.get("/api/profile-border", async (req, res) => {
+  try{
+    const token = String(req.headers.authorization || "").replace("Bearer ","").trim();
+    const username = normalizeUsername(req.query.user || "");
+
+    let user = null;
+    if(token) user = await User.findOne({ authToken: token }).select("name profileBorder profileBorderUnlocked role");
+    if(!user && username) user = await User.findOne({ name: username }).select("name profileBorder profileBorderUnlocked role");
+
+    if(!user) return res.status(401).json({ ok:false, msg:"Unauthorized" });
+
+    return res.json({
+      ok:true,
+      border: normalizeProfileBorder(user.profileBorder),
+      unlocked: user.profileBorderUnlocked !== false || user.role === "admin" || user.name === ADMIN_NAME,
+      allowed: allowedProfileBorders()
+    });
+  }catch(err){
+    console.log("GET PROFILE BORDER ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Profile border load failed" });
+  }
+});
+
+app.post("/api/profile-border", async (req, res) => {
+  try{
+    const token = String(req.headers.authorization || "").replace("Bearer ","").trim();
+    const username = normalizeUsername(req.body.user || req.body.username || "");
+    const border = normalizeProfileBorder(req.body.border);
+
+    let user = null;
+    if(token) user = await User.findOne({ authToken: token });
+    if(!user && username) user = await User.findOne({ name: username });
+
+    if(!user) return res.status(401).json({ ok:false, msg:"Unauthorized" });
+
+    const unlocked = user.profileBorderUnlocked !== false || user.role === "admin" || user.name === ADMIN_NAME;
+    if(!unlocked && border !== "none"){
+      return res.status(403).json({ ok:false, msg:"Profile border is locked for your account" });
+    }
+
+    user.profileBorder = border;
+    await user.save();
+
+    io.emit("profile-border-updated", {
+      user:user.name,
+      border:user.profileBorder
+    });
+
+    await emitUsersToAll().catch(()=>{});
+
+    return res.json({ ok:true, msg:"Profile border updated", border:user.profileBorder });
+  }catch(err){
+    console.log("SAVE PROFILE BORDER ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Profile border save failed" });
+  }
+});
+
+app.post("/admin/profile-border-unlock", async (req, res) => {
+  try{
+    const admin = normalizeUsername(req.body.admin || req.body.by || "");
+    const target = normalizeUsername(req.body.user || req.body.target || "");
+    const unlocked = req.body.unlocked !== false;
+
+    if(!(await isRealAdmin(admin))){
+      return res.status(403).json({ ok:false, msg:"Admin only" });
+    }
+
+    const user = await User.findOne({ name: target });
+    if(!user) return res.status(404).json({ ok:false, msg:"User not found" });
+
+    user.profileBorderUnlocked = unlocked;
+    if(!unlocked) user.profileBorder = "none";
+    await user.save();
+
+    io.to(user.name).emit("profile-border-access-updated", {
+      unlocked,
+      border:user.profileBorder
+    });
+
+    await logActivity("profile_border_access", admin, user.name, unlocked ? "Unlocked animated border" : "Locked animated border").catch(()=>{});
+    await emitUsersToAll().catch(()=>{});
+
+    return res.json({ ok:true, msg: unlocked ? "Border unlocked" : "Border locked" });
+  }catch(err){
+    console.log("ADMIN PROFILE BORDER UNLOCK ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Border access update failed" });
+  }
+});
+
+
+// ===== Phase 5 Powerful Admin Dashboard with Live Analytics =====
+app.get("/admin/live-dashboard", requireAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+    const dayStart = new Date(now);
+    dayStart.setHours(0,0,0,0);
+
+    const hourAgo = new Date(Date.now() - 60 * 60 * 1000);
+    const sevenDaysAgo = new Date(Date.now() - 7 * 24 * 60 * 60 * 1000);
+
+    const [
+      totalUsers,
+      approvedUsers,
+      pendingUsers,
+      blockedUsers,
+      mutedUsers,
+      onlineUsersDb,
+      todayMessages,
+      hourMessages,
+      totalMessages,
+      photosToday,
+      videosToday,
+      filesToday,
+      statusesToday,
+      groupsCount,
+      openReports,
+      resolvedReports,
+      todayCalls,
+      totalCalls
+    ] = await Promise.all([
+      User.countDocuments({}),
+      User.countDocuments({ approvalStatus:"approved", blocked:{ $ne:true } }),
+      User.countDocuments({ approvalStatus:"pending" }),
+      User.countDocuments({ blocked:true }),
+      User.countDocuments({ muted:true }),
+      User.countDocuments({ online:true, blocked:{ $ne:true }, approvalStatus:"approved" }),
+      Message.countDocuments({ createdAt:{ $gte:dayStart } }),
+      Message.countDocuments({ createdAt:{ $gte:hourAgo } }),
+      Message.countDocuments({}),
+      Message.countDocuments({ createdAt:{ $gte:dayStart }, fileType:"image" }),
+      Message.countDocuments({ createdAt:{ $gte:dayStart }, fileType:"video" }),
+      Message.countDocuments({ createdAt:{ $gte:dayStart }, file:{ $nin:[null,""] }, fileType:{ $nin:["image","video","audio"] } }),
+      Status.countDocuments({ createdAt:{ $gte:dayStart } }).catch(()=>0),
+      Group.countDocuments({}).catch(()=>0),
+      Report.countDocuments({ status:"open" }).catch(()=>0),
+      Report.countDocuments({ status:{ $in:["resolved","rejected"] } }).catch(()=>0),
+      Call.countDocuments({ time:{ $exists:true } }).catch(()=>0),
+      Call.countDocuments({}).catch(()=>0)
+    ]);
+
+    const socketOnlineUsers = Object.keys(userSocketIds || {}).filter(name => hasActiveSocketForUser(name)).length;
+
+    const messagesByDayAgg = await Message.aggregate([
+      { $match:{ createdAt:{ $gte:sevenDaysAgo } } },
+      {
+        $group:{
+          _id:{ $dateToString:{ format:"%Y-%m-%d", date:"$createdAt" } },
+          count:{ $sum:1 }
+        }
+      },
+      { $sort:{ _id:1 } }
+    ]).catch(()=>[]);
+
+    const messagesByHourAgg = await Message.aggregate([
+      { $match:{ createdAt:{ $gte:dayStart } } },
+      {
+        $group:{
+          _id:{ $hour:"$createdAt" },
+          count:{ $sum:1 }
+        }
+      },
+      { $sort:{ _id:1 } }
+    ]).catch(()=>[]);
+
+    const recentUsers = await User.find({})
+      .select("name dp role online lastSeen approvalStatus blocked muted createdAt profileBorder")
+      .sort({ online:-1, lastSeen:-1, _id:-1 })
+      .limit(20)
+      .lean();
+
+    const recentReports = await Report.find({})
+      .sort({ createdAt:-1 })
+      .limit(12)
+      .lean()
+      .catch(()=>[]);
+
+    const recentActivity = await ActivityLog.find({})
+      .sort({ createdAt:-1 })
+      .limit(25)
+      .lean()
+      .catch(()=>[]);
+
+    const topChatters = await Message.aggregate([
+      { $match:{ createdAt:{ $gte:dayStart }, from:{ $nin:[null,""] } } },
+      { $group:{ _id:"$from", count:{ $sum:1 } } },
+      { $sort:{ count:-1 } },
+      { $limit:10 }
+    ]).catch(()=>[]);
+
+    return res.json({
+      ok:true,
+      at:new Date(),
+      stats:{
+        totalUsers,
+        approvedUsers,
+        pendingUsers,
+        blockedUsers,
+        mutedUsers,
+        onlineUsers: Math.max(onlineUsersDb, socketOnlineUsers),
+        socketOnlineUsers,
+        todayMessages,
+        hourMessages,
+        totalMessages,
+        photosToday,
+        videosToday,
+        filesToday,
+        statusesToday,
+        groupsCount,
+        openReports,
+        resolvedReports,
+        todayCalls,
+        totalCalls
+      },
+      charts:{
+        messagesByDay: messagesByDayAgg.map(x => ({ label:x._id, count:x.count })),
+        messagesByHour: messagesByHourAgg.map(x => ({ label:String(x._id).padStart(2,"0")+":00", count:x.count }))
+      },
+      recentUsers,
+      recentReports,
+      recentActivity,
+      topChatters: topChatters.map(x => ({ name:x._id, count:x.count }))
+    });
+  } catch (err) {
+    console.log("LIVE DASHBOARD ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Live dashboard failed" });
+  }
+});
+
+app.post("/admin/dashboard/maintenance", requireAdmin, async (req, res) => {
+  try {
+    const enabled = !!req.body.enabled;
+    global.rickyyMaintenanceMode = enabled;
+    io.emit("maintenance-mode", {
+      enabled,
+      by:req.adminUser.name,
+      at:new Date()
+    });
+    await logActivity("maintenance_mode", req.adminUser.name, "all_users", enabled ? "Maintenance enabled" : "Maintenance disabled").catch(()=>{});
+    return res.json({ ok:true, enabled });
+  } catch (err) {
+    console.log("MAINTENANCE MODE ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Maintenance update failed" });
+  }
+});
+
+app.get("/admin/dashboard/export-logs", requireAdmin, async (req, res) => {
+  try {
+    const logs = await ActivityLog.find({}).sort({ createdAt:-1 }).limit(500).lean();
+    const lines = logs.map(l => `[${new Date(l.createdAt).toLocaleString()}] ${l.type} | ${l.actor} -> ${l.target} | ${l.text}`);
+    res.setHeader("Content-Type", "text/plain; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="rickyy-activity-logs-${Date.now()}.txt"`);
+    return res.send(lines.join("\n"));
+  } catch (err) {
+    console.log("EXPORT LOGS ERROR:", err);
+    return res.status(500).send("Export logs failed");
+  }
+});
+
+app.post("/admin/dashboard/clear-cache", requireAdmin, async (req, res) => {
+  try {
+    presenceHttpPings.clear();
+    for (const [, timer] of presenceOfflineTimers.entries()) clearTimeout(timer);
+    presenceOfflineTimers.clear();
+    await emitUsersToAll().catch(()=>{});
+    await logActivity("clear_cache", req.adminUser.name, "server", "Cleared presence cache").catch(()=>{});
+    return res.json({ ok:true, msg:"Cache cleared" });
+  } catch (err) {
+    console.log("CLEAR CACHE ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Clear cache failed" });
+  }
+});
+
+
+// ===== Admin Backup All Data =====
+app.get("/admin/backup-all-data", requireAdmin, async (req, res) => {
+  try {
+    const now = new Date();
+
+    const [
+      users,
+      groups,
+      messages,
+      calls,
+      statuses,
+      polls,
+      reports,
+      activityLogs
+    ] = await Promise.all([
+      User.find({}).lean(),
+      Group.find({}).lean(),
+      Message.find({}).sort({ createdAt: 1 }).lean(),
+      Call.find({}).lean(),
+      Status.find({}).lean(),
+      Poll.find({}).lean().catch(() => []),
+      Report.find({}).lean().catch(() => []),
+      ActivityLog.find({}).sort({ createdAt: -1 }).limit(5000).lean().catch(() => [])
+    ]);
+
+    const safeUsers = users.map(u => {
+      const copy = { ...u };
+      delete copy.password;
+      delete copy.pin;
+      delete copy.otp;
+      delete copy.resetOtp;
+      delete copy.authToken;
+      delete copy.webauthnChallenge;
+      return copy;
+    });
+
+    const backup = {
+      ok: true,
+      app: "RickyY Chat",
+      backupType: "admin_all_data",
+      exportedBy: req.adminUser.name,
+      exportedAt: now,
+      counts: {
+        users: safeUsers.length,
+        groups: groups.length,
+        messages: messages.length,
+        calls: calls.length,
+        statuses: statuses.length,
+        polls: polls.length,
+        reports: reports.length,
+        activityLogs: activityLogs.length
+      },
+      data: {
+        users: safeUsers,
+        groups,
+        messages,
+        calls,
+        statuses,
+        polls,
+        reports,
+        activityLogs
+      }
+    };
+
+    await logActivity("admin_backup_all_data", req.adminUser.name, "database", "Admin downloaded full data backup", backup.counts).catch(() => {});
+
+    res.setHeader("Content-Type", "application/json; charset=utf-8");
+    res.setHeader("Content-Disposition", `attachment; filename="rickyy-full-backup-${Date.now()}.json"`);
+    return res.send(JSON.stringify(backup, null, 2));
+  } catch (err) {
+    console.log("ADMIN BACKUP ALL DATA ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Backup failed" });
+  }
+});
+
+app.get("/admin/backup-summary", requireAdmin, async (req, res) => {
+  try {
+    const [
+      users,
+      groups,
+      messages,
+      calls,
+      statuses,
+      reports,
+      activityLogs
+    ] = await Promise.all([
+      User.countDocuments({}),
+      Group.countDocuments({}).catch(() => 0),
+      Message.countDocuments({}).catch(() => 0),
+      Call.countDocuments({}).catch(() => 0),
+      Status.countDocuments({}).catch(() => 0),
+      Report.countDocuments({}).catch(() => 0),
+      ActivityLog.countDocuments({}).catch(() => 0)
+    ]);
+
+    return res.json({
+      ok:true,
+      counts:{ users, groups, messages, calls, statuses, reports, activityLogs }
+    });
+  } catch (err) {
+    console.log("BACKUP SUMMARY ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Summary failed" });
+  }
+});
+
+
+// ===== Strict Admin UI Verification =====
+app.get("/api/is-admin", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const username = normalizeUsername(req.query.user || req.headers["x-user-name"] || "");
+
+    let user = null;
+
+    if (token) {
+      user = await User.findOne({ authToken: token }).select("name role approvalStatus blocked");
+    }
+
+    if (!user && username) {
+      user = await User.findOne({ name: username }).select("name role approvalStatus blocked");
+    }
+
+    const isAdmin = !!(
+      user &&
+      user.name === ADMIN_NAME &&
+      user.role === "admin" &&
+      user.approvalStatus === "approved" &&
+      !user.blocked
+    );
+
+    return res.json({ ok:true, isAdmin });
+  } catch (err) {
+    console.log("IS ADMIN CHECK ERROR:", err);
+    return res.json({ ok:true, isAdmin:false });
+  }
+});
+
 const io = new Server(server, {
   cors: {
     origin: true,
@@ -646,7 +1260,7 @@ async function requireUser(req,res,next){
   next();
 }
 
-async function getUsers() {
+async function getUsers(viewerName = "") {
   const users = await User.find({
     blocked: { $ne: true },
     approvalStatus: "approved"
@@ -679,7 +1293,7 @@ async function getUsers() {
     ).catch(() => {});
   }
 
-  return fixedUsers;
+  return fixedUsers.map(u => applyPrivacyToUser(u, viewerName));
 }
 function isStrongPassword(password) {
   const value = String(password || "").trim();
@@ -936,13 +1550,131 @@ function isAllowedExt(filename, allowedExts = []) {
   const ext = path.extname(filename || "").toLowerCase();
   return allowedExts.includes(ext);
 }
+
+
+function allowedProfileBorders(){
+  return ["none","green","rainbow","fire","neon","gold","diamond","heart"];
+}
+
+function normalizeProfileBorder(value){
+  value = String(value || "none").trim().toLowerCase();
+  return allowedProfileBorders().includes(value) ? value : "none";
+}
+
+function defaultPrivacySettings(){
+  return {
+    lastSeen:"everyone",
+    online:"everyone",
+    typing:"everyone",
+    readReceipts:true,
+    profilePhoto:"everyone",
+    about:"everyone",
+    calls:"everyone",
+    groups:"everyone"
+  };
+}
+
+function mergePrivacySettings(p = {}){
+  const d = defaultPrivacySettings();
+  const out = { ...d, ...(p || {}) };
+
+  ["lastSeen","online","typing","profilePhoto","about","calls","groups"].forEach(k => {
+    if(!["everyone","contacts","nobody"].includes(String(out[k] || ""))){
+      out[k] = d[k];
+    }
+  });
+
+  out.readReceipts = out.readReceipts !== false;
+  return out;
+}
+
+function privacyAllows(ownerUser, viewerName, key){
+  if(!ownerUser) return true;
+  const p = mergePrivacySettings(ownerUser.privacy || {});
+  const value = p[key];
+
+  if(ownerUser.name === viewerName || ownerUser.role === "admin" || viewerName === ADMIN_NAME) return true;
+  if(value === "everyone") return true;
+  if(value === "nobody") return false;
+
+  // Contacts option: in this app approved known users are treated as contacts.
+  if(value === "contacts") return !!viewerName;
+
+  return true;
+}
+
+function applyPrivacyToUser(user, viewerName = ""){
+  if(!user) return user;
+  const plain = typeof user.toObject === "function" ? user.toObject() : { ...user };
+  plain.privacy = mergePrivacySettings(plain.privacy || {});
+
+  const isSelfOrAdmin = plain.name === viewerName || viewerName === ADMIN_NAME || plain.role === "admin";
+  if(isSelfOrAdmin) return plain;
+
+  if(!privacyAllows(plain, viewerName, "online")){
+    plain.online = false;
+  }
+
+  if(!privacyAllows(plain, viewerName, "lastSeen")){
+    plain.lastSeen = null;
+  }
+
+  if(!privacyAllows(plain, viewerName, "profilePhoto")){
+    plain.dp = "/default.png";
+  }
+
+  if(!privacyAllows(plain, viewerName, "about")){
+    plain.about = "";
+    plain.bio = "";
+  }
+
+  return plain;
+}
+
+function canEmitTypingForUser(ownerUser, viewerName = ""){
+  return privacyAllows(ownerUser, viewerName, "typing");
+}
+
+function canSendReadReceipt(ownerUser){
+  const p = mergePrivacySettings(ownerUser?.privacy || {});
+  return p.readReceipts !== false;
+}
+
 function safeNotificationBody(msg) {
+  if (msg?.onceView && msg?.fileType === "image") return "📷 Once View Photo";
+  if (msg?.onceView && msg?.fileType === "video") return "🎥 Once View Video";
   if (msg?.text) return String(msg.text).slice(0, 120);
   if (msg?.fileType === "image") return "📷 Photo";
   if (msg?.fileType === "video") return "🎥 Video";
   if (msg?.fileType === "audio") return "🎤 Voice message";
   if (msg?.fileType === "doc" || msg?.fileType === "file") return "📄 Document";
   return "New message";
+}
+
+function isAdminUserName(name){
+  return String(name || "").trim().toLowerCase() === ADMIN_NAME.toLowerCase();
+}
+
+function hideOnceViewFileForUser(msg, viewer){
+  if(!msg) return msg;
+
+  const obj = typeof msg.toObject === "function" ? msg.toObject() : { ...msg };
+
+  if(obj.onceView && !isAdminUserName(viewer)){
+    const opened = Array.isArray(obj.onceViewOpenedBy)
+      && obj.onceViewOpenedBy.includes(viewer);
+
+    if(opened || obj.from === viewer){
+      obj.file = "";
+      obj.onceViewExpired = true;
+    }
+  }
+
+  return obj;
+}
+
+function hideOnceViewListForUser(messages, viewer){
+  return (messages || []).map(m => hideOnceViewFileForUser(m, viewer));
 }
 
 async function sendPushToUser(username, payload) {
@@ -1057,6 +1789,76 @@ app.post("/upload-media", (req, res) => {
     }
   });
 });
+
+app.get("/api/once-view/:id", async (req, res) => {
+  try {
+    const messageId = String(req.params.id || "").trim();
+    const viewer = normalizeUsername(req.query.viewer || req.headers["x-viewer-user"]);
+
+    if (!messageId || !viewer) {
+      return res.status(400).json({ ok:false, msg:"Invalid request" });
+    }
+
+    const msg = await Message.findById(messageId);
+
+    if (!msg || !msg.onceView || !msg.file) {
+      return res.status(404).json({ ok:false, msg:"Once view media not found" });
+    }
+
+    const isPrivateMember = !msg.group && (msg.from === viewer || msg.to === viewer);
+
+    let isGroupMember = false;
+    if (msg.group) {
+      const group = await Group.findById(msg.group);
+      isGroupMember = !!group && (group.members || []).includes(viewer);
+    }
+
+    if (!isPrivateMember && !isGroupMember && !isAdminUserName(viewer)) {
+      return res.status(403).json({ ok:false, msg:"Not allowed" });
+    }
+
+    const isAdmin = isAdminUserName(viewer);
+
+    if (!isAdmin && msg.from === viewer) {
+      return res.status(403).json({
+        ok:false,
+        msg:"Sender cannot open once view media"
+      });
+    }
+
+    if (!isAdmin && (msg.onceViewOpenedBy || []).includes(viewer)) {
+      return res.status(410).json({
+        ok:false,
+        msg:"Already viewed"
+      });
+    }
+
+    if (!isAdmin) {
+      msg.onceViewOpenedBy = Array.from(new Set([...(msg.onceViewOpenedBy || []), viewer]));
+      msg.onceViewOpenedAt = new Date();
+      await msg.save();
+
+      if (msg.group) {
+        io.to(roomNameForGroup(msg.group)).emit("message-updated", hideOnceViewFileForUser(msg, viewer));
+      } else {
+        io.to(msg.from).emit("message-updated", hideOnceViewFileForUser(msg, msg.from));
+        io.to(msg.to).emit("message-updated", hideOnceViewFileForUser(msg, msg.to));
+      }
+    }
+
+    return res.json({
+      ok:true,
+      file: msg.file,
+      fileType: msg.fileType,
+      openedAt: msg.onceViewOpenedAt
+    });
+
+  } catch (err) {
+    console.log("ONCE VIEW OPEN ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Once view open failed" });
+  }
+});
+
 app.post("/chat/clear", async (req, res) => {
   try {
     const { type, me: user, peer, groupId } = req.body;
@@ -1861,6 +2663,9 @@ app.post("/api/notification-reply", async (req, res) => {
       text,
       file: null,
       fileType: null,
+      onceView: data.onceView === true || data.onceView === "true",
+      onceViewOpenedBy: [],
+      onceViewOpenedAt: null,
       replyTo: null,
       mentions: [],
       status: receiverOnline ? "delivered" : "sent",
@@ -1935,29 +2740,7 @@ app.post("/api/presence/ping", async (req, res) => {
   }
 });
 
-setInterval(async () => {
-  try {
-    const now = Date.now();
-
-    for (const [username, lastPing] of presenceHttpPings.entries()) {
-      if (hasActiveSocketForUser(username)) continue;
-
-      if ((now - Number(lastPing || 0)) > PRESENCE_HTTP_STALE_MS) {
-        presenceHttpPings.delete(username);
-        await User.updateOne(
-          { name: username },
-          { online: false, lastSeen: new Date() }
-        );
-      }
-    }
-
-    await emitUsersToAll();
-  } catch (err) {
-    console.log("PRESENCE CLEANUP ERROR:", err);
-  }
-}, 5000);
-
-
+// Presence cleanup starts after MongoDB connection.
 app.get("/admin/user-sessions", requireAdmin, async (req, res) => {
   try {
     const users = await User.find({
@@ -2276,7 +3059,7 @@ app.get("/api/me", async (req, res) => {
       return res.status(401).json({ ok: false, msg: "No token" });
     }
 
-    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked");
+    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked privacy bio about");
 
     if (!user) {
       return res.status(401).json({ ok: false, msg: "Invalid token" });
@@ -2553,7 +3336,8 @@ app.get("/profile/:username", async (req, res) => {
       return res.status(404).json({ ok: false, msg: "User not found" });
     }
 
-    return res.json({ ok: true, user });
+    const viewer = normalizeUsername(req.query.viewer || req.headers["x-viewer-user"] || "");
+    return res.json({ ok: true, user: applyPrivacyToUser(user, viewer) });
   } catch (err) {
     console.log(err);
     res.status(500).json({ ok: false, msg: "Failed to fetch profile" });
@@ -4085,7 +4869,29 @@ function extractMentionNames(text = "") {
   )];
 }
 
+
+// Privacy-aware typing events
+function installPrivacyTypingHandlers(socket){
+  socket.on("typing-private", async data => {
+    try{
+      const from = normalizeUsername(data?.from);
+      const to = normalizeUsername(data?.to);
+      if(!from || !to) return;
+      const sender = await User.findOne({ name: from }).select("name role privacy");
+      if(!sender || !canEmitTypingForUser(sender, to)) return;
+      io.to(to).emit("typing", { from, to });
+    }catch(e){}
+  });
+
+  socket.on("stop-typing-private", data => {
+    const from = normalizeUsername(data?.from);
+    const to = normalizeUsername(data?.to);
+    if(from && to) io.to(to).emit("stop-typing", { from, to });
+  });
+}
+
 io.on("connection", socket => {
+  installPrivacyTypingHandlers(socket);
   socket.on("join", async username => {
     try {
       if (!isValidUsername(username)) return;
@@ -4273,20 +5079,22 @@ socket.on("delete-message", async data => {
     }
   });
 
-  socket.on("load-history", async data => {
+    socket.on("load-history", async data => {
     try {
+      const viewer = normalizeUsername(data.from);
+
       const msgs = await Message.find({
         $or: [
           { from: data.from, to: data.to },
           { from: data.to, to: data.from }
         ]
-      }).sort({ createdAt: -1 }).limit(50);
+        }).sort({ createdAt: -1 }).limit(50);
 
-      socket.emit("history", msgs.reverse());
-    } catch (err) {
-      console.log(err);
-    }
-  });
+        socket.emit("history", hideOnceViewListForUser(msgs.reverse(), viewer));
+      } catch (err) {
+        console.log(err);
+      }
+    });
 
   socket.on("load-group-history", async groupId => {
     try {
@@ -4858,12 +5666,6 @@ socket.on("delete-message", async data => {
     }
   });
 });
-
-
-const PORT = process.env.PORT || 5000;
-server.listen(PORT, "0.0.0.0", () => {
-  console.log(`Server running on port ${PORT}`);
-});
 app.get("/fix-missing-files", async (req, res) => {
   try {
     const allMessages = await Message.find({
@@ -4888,3 +5690,67 @@ app.get("/fix-missing-files", async (req, res) => {
     return res.status(500).json({ ok: false });
   }
 });
+
+// ===== SAFE STARTUP FIX =====
+const PORT = process.env.PORT || 5000;
+let presenceCleanupTimer = null;
+let serverStarted = false;
+
+function startPresenceCleanupAfterDb() {
+  if (presenceCleanupTimer) return;
+
+  presenceCleanupTimer = setInterval(async () => {
+    if (mongoose.connection.readyState !== 1) return;
+
+    try {
+      const now = Date.now();
+
+      for (const [username, lastPing] of presenceHttpPings.entries()) {
+        if (hasActiveSocketForUser(username)) continue;
+
+        if ((now - Number(lastPing || 0)) > PRESENCE_HTTP_STALE_MS) {
+          presenceHttpPings.delete(username);
+
+          await User.updateOne(
+            { name: username },
+            { online: false, lastSeen: new Date() }
+          );
+        }
+      }
+
+      await emitUsersToAll();
+    } catch (err) {
+      console.log("PRESENCE CLEANUP ERROR:", err);
+    }
+  }, 5000);
+}
+
+async function startServer() {
+  try {
+    if (!process.env.MONGODB_URI) {
+      console.log("MongoDB Error: MONGODB_URI is missing in .env file");
+      process.exit(1);
+    }
+
+    await mongoose.connect(process.env.MONGODB_URI, {
+      serverSelectionTimeoutMS: 30000
+    });
+
+    console.log("MongoDB Connected");
+
+    startPresenceCleanupAfterDb();
+
+    if (!serverStarted) {
+      serverStarted = true;
+      server.listen(PORT, () => {
+        console.log(`Server running on port ${PORT}`);
+      });
+    }
+  } catch (err) {
+    console.log("MongoDB Error:", err);
+    process.exit(1);
+  }
+}
+
+startServer();
+

@@ -526,6 +526,168 @@ body.amoled .pin-lock-screen{
   .about-big{font-size:24px}
   .details{margin-top:44px}
 }
+
+/* Privacy Controls */
+.privacy-grid{
+  display:grid;
+  gap:12px;
+}
+.privacy-select{
+  width:100%;
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  outline:none;
+  border-radius:16px;
+  padding:12px;
+  font-weight:800;
+}
+.privacy-note{
+  color:#94a3b8;
+  font-size:12px;
+  line-height:1.45;
+  margin-top:6px;
+}
+
+
+/* Device Management */
+.device-card{
+  background:rgba(255,255,255,.055);
+  border:1px solid rgba(255,255,255,.09);
+  border-radius:18px;
+  padding:14px;
+  margin:10px 0;
+}
+.device-top{
+  display:flex;
+  justify-content:space-between;
+  gap:10px;
+  align-items:flex-start;
+}
+.device-name{
+  font-size:16px;
+  font-weight:900;
+}
+.device-meta{
+  color:#94a3b8;
+  font-size:12px;
+  line-height:1.5;
+  margin-top:5px;
+}
+.device-badge{
+  display:inline-flex;
+  padding:4px 8px;
+  border-radius:999px;
+  background:rgba(16,185,129,.18);
+  color:#86efac;
+  font-size:11px;
+  font-weight:900;
+}
+.device-actions{
+  display:flex;
+  gap:8px;
+  flex-wrap:wrap;
+  margin-top:12px;
+}
+.device-actions button{
+  border:0;
+  border-radius:12px;
+  padding:9px 11px;
+  color:#fff;
+  font-weight:900;
+  background:rgba(255,255,255,.08);
+}
+.device-actions .danger{
+  background:rgba(239,68,68,.20);
+  color:#fecaca;
+}
+
+
+/* Phase 3 Animated Profile Border */
+.dp-box.border-green img,
+.profile-border-green{
+  border-color:#10b981 !important;
+  box-shadow:0 0 0 4px rgba(16,185,129,.20), 0 0 28px rgba(16,185,129,.65) !important;
+}
+
+.dp-box.border-rainbow{
+  padding:5px;
+  border-radius:50%;
+  background:conic-gradient(#ef4444,#f59e0b,#22c55e,#06b6d4,#6366f1,#ec4899,#ef4444);
+  animation:rbSpin 2.8s linear infinite;
+}
+.dp-box.border-rainbow img{border:4px solid #071018!important}
+
+.dp-box.border-fire{
+  padding:5px;
+  border-radius:50%;
+  background:conic-gradient(#ffedd5,#fb923c,#ef4444,#7f1d1d,#fb923c,#ffedd5);
+  animation:firePulse 1.15s ease-in-out infinite;
+}
+.dp-box.border-fire img{border:4px solid #071018!important}
+
+.dp-box.border-neon img{
+  border-color:#a855f7!important;
+  animation:neonPulse 1.4s ease-in-out infinite;
+}
+
+.dp-box.border-gold img{
+  border-color:#fbbf24!important;
+  box-shadow:0 0 0 4px rgba(251,191,36,.22), 0 0 34px rgba(251,191,36,.75)!important;
+}
+
+.dp-box.border-diamond{
+  padding:5px;
+  border-radius:50%;
+  background:linear-gradient(135deg,#e0f2fe,#38bdf8,#a78bfa,#f0abfc,#e0f2fe);
+  animation:diamondGlow 1.8s ease-in-out infinite;
+}
+.dp-box.border-diamond img{border:4px solid #071018!important}
+
+.dp-box.border-heart img{
+  border-color:#fb7185!important;
+  animation:heartBeat 1.25s ease-in-out infinite;
+}
+
+.border-preview-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.border-option{
+  border:1px solid rgba(255,255,255,.10);
+  background:rgba(255,255,255,.06);
+  color:#fff;
+  border-radius:18px;
+  padding:12px;
+  font-weight:900;
+}
+.border-option.active{
+  outline:2px solid #10b981;
+  background:rgba(16,185,129,.16);
+}
+
+@keyframes rbSpin{to{transform:rotate(360deg)}}
+@keyframes firePulse{0%,100%{filter:drop-shadow(0 0 8px #fb923c)}50%{filter:drop-shadow(0 0 28px #ef4444)}}
+@keyframes neonPulse{0%,100%{box-shadow:0 0 14px #a855f7,0 0 24px #06b6d4}50%{box-shadow:0 0 30px #ec4899,0 0 45px #22d3ee}}
+@keyframes diamondGlow{0%,100%{filter:brightness(1)}50%{filter:brightness(1.35)}}
+@keyframes heartBeat{0%,100%{transform:scale(1);box-shadow:0 0 18px rgba(251,113,133,.4)}35%{transform:scale(1.045);box-shadow:0 0 34px rgba(251,113,133,.8)}}
+
+
+/* Phase 5 Live Dashboard shortcut */
+.live-dashboard-shortcut{
+  background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(59,130,246,.12))!important;
+}
+
+
+/* Hide admin controls unless server verifies admin */
+.admin-only-ui{display:none!important}
+body.admin-verified .admin-only-ui{display:flex!important}
+body:not(.admin-verified) #profileLiveDashboardBtn,
+body:not(.admin-verified) #profileAdminBackupBtn{
+  display:none!important;
+}
+
 </style>
 </head>
 
@@ -574,6 +736,9 @@ body.amoled .pin-lock-screen{
     </div>
 
     <div class="actions">
+      <button class="action-btn owner-only" onclick="openPrivacyModal()">🔐 Privacy Controls</button>
+      <button class="action-btn owner-only" onclick="openDeviceModal()">📱 Device Management</button>
+      <button class="action-btn owner-only" onclick="openProfileBorderModal()">✨ Animated Profile Border</button>
       <button type="button" class="action-btn owner-only" onclick="document.getElementById('dpInput').click()">📷 Change DP</button>
       <button type="button" class="action-btn owner-only save" onclick="saveProfile()">Save Profile</button>
       <button type="button" class="action-btn" onclick="openMedia()">📂 Media</button>
@@ -808,7 +973,7 @@ function renderUser(u){
 
 async function loadProfile(){
   try{
-    const r = await fetch(api("/profile/" + encodeURIComponent(profileUser)), {
+    const r = await fetch(api("/profile/" + encodeURIComponent(profileUser) + "?viewer=" + encodeURIComponent(me || localStorage.getItem("user") || "")), {
       headers:authHeaders()
     });
     const d = await r.json().catch(()=>null);
@@ -1188,6 +1353,607 @@ if(socket && me){
   }else{
     setTimeout(showPinLock,450);
   }
+})();
+</script>
+
+
+<div id="privacyModal" class="modal">
+  <div class="sheet">
+    <h3>🔐 Privacy Controls</h3>
+
+    <div class="privacy-grid">
+      <div class="setting-row">
+        <div class="setting-title">🟢 Online Status</div>
+        <div class="setting-sub">Who can see you online?</div>
+        <select id="privacyOnline" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">🕒 Last Seen</div>
+        <div class="setting-sub">Who can see your last seen?</div>
+        <select id="privacyLastSeen" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">⌨️ Typing Indicator</div>
+        <div class="setting-sub">Who can see when you are typing?</div>
+        <select id="privacyTyping" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-row-top">
+          <div>
+            <div class="setting-title">👀 Read Receipts</div>
+            <div class="setting-sub">Blue ticks / seen receipts</div>
+          </div>
+          <label class="switch">
+            <input id="privacyReadReceipts" type="checkbox">
+            <span></span>
+          </label>
+        </div>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">🖼️ Profile Photo</div>
+        <select id="privacyProfilePhoto" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">📝 About / Bio</div>
+        <select id="privacyAbout" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">📞 Calls</div>
+        <select id="privacyCalls" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+
+      <div class="setting-row">
+        <div class="setting-title">👥 Add to Groups</div>
+        <select id="privacyGroups" class="privacy-select">
+          <option value="everyone">Everyone</option>
+          <option value="contacts">Contacts</option>
+          <option value="nobody">Nobody</option>
+        </select>
+      </div>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closePrivacyModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="savePrivacySettings()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<script id="privacy-controls-js">
+function privacyToken(){
+  return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+}
+
+function privacyUser(){
+  return localStorage.getItem("user") || "";
+}
+
+function setPrivacyForm(p){
+  p = p || {};
+  const def = {
+    online:"everyone",
+    lastSeen:"everyone",
+    typing:"everyone",
+    readReceipts:true,
+    profilePhoto:"everyone",
+    about:"everyone",
+    calls:"everyone",
+    groups:"everyone"
+  };
+
+  p = Object.assign(def, p);
+
+  document.getElementById("privacyOnline").value = p.online;
+  document.getElementById("privacyLastSeen").value = p.lastSeen;
+  document.getElementById("privacyTyping").value = p.typing;
+  document.getElementById("privacyReadReceipts").checked = p.readReceipts !== false;
+  document.getElementById("privacyProfilePhoto").value = p.profilePhoto;
+  document.getElementById("privacyAbout").value = p.about;
+  document.getElementById("privacyCalls").value = p.calls;
+  document.getElementById("privacyGroups").value = p.groups;
+}
+
+function getPrivacyForm(){
+  return {
+    online:document.getElementById("privacyOnline").value,
+    lastSeen:document.getElementById("privacyLastSeen").value,
+    typing:document.getElementById("privacyTyping").value,
+    readReceipts:document.getElementById("privacyReadReceipts").checked,
+    profilePhoto:document.getElementById("privacyProfilePhoto").value,
+    about:document.getElementById("privacyAbout").value,
+    calls:document.getElementById("privacyCalls").value,
+    groups:document.getElementById("privacyGroups").value
+  };
+}
+
+async function openPrivacyModal(){
+  const modal = document.getElementById("privacyModal");
+  if(modal) modal.classList.add("show");
+
+  try{
+    const headers = {};
+    const token = privacyToken();
+    if(token) headers.Authorization = "Bearer " + token;
+
+    const res = await fetch("/api/privacy?user=" + encodeURIComponent(privacyUser()), { headers });
+    const data = await res.json().catch(()=>null);
+    if(data && data.ok){
+      setPrivacyForm(data.privacy);
+    }else{
+      setPrivacyForm();
+    }
+  }catch(e){
+    setPrivacyForm();
+  }
+}
+
+function closePrivacyModal(){
+  const modal = document.getElementById("privacyModal");
+  if(modal) modal.classList.remove("show");
+}
+
+async function savePrivacySettings(){
+  const privacy = getPrivacyForm();
+  try{
+    const headers = {"Content-Type":"application/json"};
+    const token = privacyToken();
+    if(token) headers.Authorization = "Bearer " + token;
+
+    const res = await fetch("/api/privacy", {
+      method:"POST",
+      headers,
+      body:JSON.stringify({
+        user:privacyUser(),
+        privacy
+      })
+    });
+    const data = await res.json().catch(()=>null);
+
+    if(data && data.ok){
+      alert("Privacy saved ✅");
+      closePrivacyModal();
+    }else{
+      alert((data && data.msg) || "Privacy save failed");
+    }
+  }catch(e){
+    alert("Privacy save failed");
+  }
+}
+</script>
+
+
+<div id="deviceModal" class="modal">
+  <div class="sheet">
+    <h3>📱 Device Management</h3>
+    <div class="privacy-note">
+      Manage logged-in devices. You can remove a device or logout from all devices.
+    </div>
+
+    <div style="margin:12px 0;display:flex;gap:10px;">
+      <button class="btn btn-secondary" onclick="loadDevices()">Refresh</button>
+      <button class="btn btn-danger" onclick="logoutAllDevices()">Logout All</button>
+    </div>
+
+    <div id="devicesList"></div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closeDeviceModal()">Close</button>
+    </div>
+  </div>
+</div>
+
+
+<script id="device-management-js">
+function deviceToken(){
+  return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+}
+
+function deviceUser(){
+  return localStorage.getItem("user") || "";
+}
+
+function deviceDate(v){
+  if(!v) return "Unknown";
+  try{return new Date(v).toLocaleString();}catch(e){return "Unknown";}
+}
+
+function safeDeviceText(v){
+  return String(v || "").replace(/[&<>"']/g, s => ({
+    "&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"
+  }[s]));
+}
+
+function openDeviceModal(){
+  const modal = document.getElementById("deviceModal");
+  if(modal) modal.classList.add("show");
+  loadDevices();
+}
+
+function closeDeviceModal(){
+  const modal = document.getElementById("deviceModal");
+  if(modal) modal.classList.remove("show");
+}
+
+async function loadDevices(){
+  const box = document.getElementById("devicesList");
+  if(box) box.innerHTML = `<div class="device-card">Loading devices...</div>`;
+
+  try{
+    const headers = {};
+    const token = deviceToken();
+    if(token) headers.Authorization = "Bearer " + token;
+
+    const res = await fetch("/api/devices?user=" + encodeURIComponent(deviceUser()), { headers });
+    const data = await res.json().catch(()=>null);
+
+    if(!data || !data.ok){
+      box.innerHTML = `<div class="device-card">${safeDeviceText((data && data.msg) || "Failed to load devices")}</div>`;
+      return;
+    }
+
+    const devices = data.devices || [];
+    if(!devices.length){
+      box.innerHTML = `<div class="device-card">No devices found</div>`;
+      return;
+    }
+
+    box.innerHTML = devices.map(d => `
+      <div class="device-card">
+        <div class="device-top">
+          <div>
+            <div class="device-name">${safeDeviceText(d.deviceName || "Unknown Device")}</div>
+            <div class="device-meta">
+              ${safeDeviceText(d.browserName || "")} ${d.osName ? "• " + safeDeviceText(d.osName) : ""}<br>
+              IP: ${safeDeviceText(d.ip || "unknown")}<br>
+              Login: ${deviceDate(d.loginAt)}<br>
+              Last Active: ${deviceDate(d.lastActiveAt)}
+            </div>
+          </div>
+          ${d.current ? `<span class="device-badge">Current</span>` : (d.active ? `<span class="device-badge">Active</span>` : "")}
+        </div>
+        <div class="device-actions">
+          <button onclick="renameDevice('${safeDeviceText(d.sessionId)}','${safeDeviceText(d.deviceName || "Device")}')">Rename</button>
+          <button class="danger" onclick="logoutDevice('${safeDeviceText(d.sessionId)}', ${d.current ? "true" : "false"})">
+            ${d.current ? "Logout Current" : "Remove Device"}
+          </button>
+        </div>
+      </div>
+    `).join("");
+  }catch(e){
+    console.log(e);
+    box.innerHTML = `<div class="device-card">Device load error</div>`;
+  }
+}
+
+async function devicePost(url, body){
+  const headers = {"Content-Type":"application/json"};
+  const token = deviceToken();
+  if(token) headers.Authorization = "Bearer " + token;
+
+  const res = await fetch(url, {
+    method:"POST",
+    headers,
+    body:JSON.stringify(body || {})
+  });
+  return await res.json().catch(()=>null);
+}
+
+async function renameDevice(sessionId, oldName){
+  const name = prompt("Device name", oldName || "My Device");
+  if(!name) return;
+
+  const data = await devicePost("/api/device/rename", { sessionId, deviceName:name });
+  if(data && data.ok){
+    alert("Device renamed ✅");
+    loadDevices();
+  }else{
+    alert((data && data.msg) || "Rename failed");
+  }
+}
+
+async function logoutDevice(sessionId, current){
+  const ok = confirm(current ? "Logout this current device?" : "Remove this device?");
+  if(!ok) return;
+
+  const data = await devicePost("/api/device/logout-session", { sessionId });
+  if(data && data.ok){
+    alert(data.msg || "Done");
+    if(data.logoutCurrent || current){
+      localStorage.removeItem("token");
+      localStorage.removeItem("authToken");
+      setTimeout(()=>location.href="/index.html", 500);
+      return;
+    }
+    loadDevices();
+  }else{
+    alert((data && data.msg) || "Device logout failed");
+  }
+}
+
+async function logoutAllDevices(){
+  const ok = confirm("Logout from all devices?");
+  if(!ok) return;
+
+  const data = await devicePost("/api/device/logout-all", {});
+  if(data && data.ok){
+    alert("Logged out from all devices ✅");
+    localStorage.removeItem("token");
+    localStorage.removeItem("authToken");
+    setTimeout(()=>location.href="/index.html", 700);
+  }else{
+    alert((data && data.msg) || "Logout all failed");
+  }
+}
+</script>
+
+
+<div id="profileBorderModal" class="modal">
+  <div class="sheet">
+    <h3>✨ Animated Profile Border</h3>
+    <div class="privacy-note">Choose a premium animated border for your profile photo.</div>
+
+    <div class="border-preview-grid" style="margin-top:14px;">
+      <button class="border-option" data-border="none" onclick="selectProfileBorder('none')">None</button>
+      <button class="border-option" data-border="green" onclick="selectProfileBorder('green')">💚 Green Glow</button>
+      <button class="border-option" data-border="rainbow" onclick="selectProfileBorder('rainbow')">🌈 Rainbow</button>
+      <button class="border-option" data-border="fire" onclick="selectProfileBorder('fire')">🔥 Fire</button>
+      <button class="border-option" data-border="neon" onclick="selectProfileBorder('neon')">🟣 Neon</button>
+      <button class="border-option" data-border="gold" onclick="selectProfileBorder('gold')">👑 Gold</button>
+      <button class="border-option" data-border="diamond" onclick="selectProfileBorder('diamond')">💎 Diamond</button>
+      <button class="border-option" data-border="heart" onclick="selectProfileBorder('heart')">❤️ Heart Pulse</button>
+    </div>
+
+    <div class="sheet-actions">
+      <button class="btn btn-secondary" onclick="closeProfileBorderModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProfileBorder()">Save</button>
+    </div>
+  </div>
+</div>
+
+
+<script id="profile-border-js">
+let selectedProfileBorder = "none";
+
+function borderToken(){
+  return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+}
+
+function borderUser(){
+  return localStorage.getItem("user") || "";
+}
+
+function applyProfileBorder(border){
+  border = border || "none";
+  const box = document.querySelector(".dp-box");
+  if(!box) return;
+  box.classList.remove("border-green","border-rainbow","border-fire","border-neon","border-gold","border-diamond","border-heart");
+  if(border !== "none"){
+    box.classList.add("border-" + border);
+  }
+}
+
+function markBorderActive(border){
+  document.querySelectorAll(".border-option").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.border === border);
+  });
+}
+
+function selectProfileBorder(border){
+  selectedProfileBorder = border || "none";
+  markBorderActive(selectedProfileBorder);
+  applyProfileBorder(selectedProfileBorder);
+}
+
+async function openProfileBorderModal(){
+  const modal = document.getElementById("profileBorderModal");
+  if(modal) modal.classList.add("show");
+
+  try{
+    const headers = {};
+    const token = borderToken();
+    if(token) headers.Authorization = "Bearer " + token;
+
+    const res = await fetch("/api/profile-border?user=" + encodeURIComponent(borderUser()), { headers });
+    const data = await res.json().catch(()=>null);
+    selectedProfileBorder = (data && data.border) || "none";
+  }catch(e){
+    selectedProfileBorder = "none";
+  }
+
+  markBorderActive(selectedProfileBorder);
+  applyProfileBorder(selectedProfileBorder);
+}
+
+function closeProfileBorderModal(){
+  const modal = document.getElementById("profileBorderModal");
+  if(modal) modal.classList.remove("show");
+  if(window.currentUserData && currentUserData.profileBorder){
+    applyProfileBorder(currentUserData.profileBorder);
+  }
+}
+
+async function saveProfileBorder(){
+  try{
+    const headers = {"Content-Type":"application/json"};
+    const token = borderToken();
+    if(token) headers.Authorization = "Bearer " + token;
+
+    const res = await fetch("/api/profile-border", {
+      method:"POST",
+      headers,
+      body:JSON.stringify({
+        user:borderUser(),
+        border:selectedProfileBorder
+      })
+    });
+
+    const data = await res.json().catch(()=>null);
+    if(data && data.ok){
+      alert("Profile border saved ✅");
+      if(window.currentUserData) currentUserData.profileBorder = data.border;
+      applyProfileBorder(data.border);
+      closeProfileBorderModal();
+    }else{
+      alert((data && data.msg) || "Border save failed");
+    }
+  }catch(e){
+    alert("Border save failed");
+  }
+}
+
+window.addEventListener("load", () => {
+  setTimeout(() => {
+    if(window.currentUserData && currentUserData.profileBorder){
+      applyProfileBorder(currentUserData.profileBorder);
+    }
+  }, 800);
+});
+</script>
+
+
+<script id="profile-live-dashboard-shortcut-js">
+function addLiveDashboardShortcut(){
+  const user = localStorage.getItem("user") || "";
+  const role = localStorage.getItem("role") || "";
+  if(user !== "shravan" && role !== "admin") return;
+  const actions = document.querySelector(".actions");
+  if(!actions || document.getElementById("profileLiveDashboardBtn")) return;
+  const btn = document.createElement("button");
+  btn.id = "profileLiveDashboardBtn";
+  btn.className = "action-btn live-dashboard-shortcut owner-only";
+  btn.innerHTML = "📊 Live Admin Dashboard";
+  btn.onclick = () => location.href = "/chat.html?dashboard=live";
+  actions.insertBefore(btn, actions.firstChild);
+}
+window.addEventListener("load", () => setTimeout(addLiveDashboardShortcut, 700));
+</script>
+
+
+<script id="profile-admin-backup-shortcut-js">
+function addAdminBackupShortcut(){
+  const user = localStorage.getItem("user") || "";
+  const role = localStorage.getItem("role") || "";
+  if(user !== "shravan" && role !== "admin") return;
+  const actions = document.querySelector(".actions");
+  if(!actions || document.getElementById("profileAdminBackupBtn")) return;
+  const btn = document.createElement("button");
+  btn.id = "profileAdminBackupBtn";
+  btn.className = "action-btn owner-only";
+  btn.innerHTML = "☁️ Admin Backup All Data";
+  btn.onclick = () => location.href = "/chat.html?backup=all";
+  actions.insertBefore(btn, actions.firstChild);
+}
+window.addEventListener("load", () => setTimeout(addAdminBackupShortcut, 900));
+</script>
+
+
+<script id="strict-profile-admin-ui-guard-js">
+(function(){
+  const adminKeywords = [
+    "admin","dashboard","backup all data","live admin","moderation","reports",
+    "strike","lock user","unlock user","broadcast"
+  ];
+
+  function getAuthToken(){
+    return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
+  }
+
+  function getUserName(){
+    return localStorage.getItem("user") || "";
+  }
+
+  function markPossibleAdminControls(){
+    ["profileLiveDashboardBtn","profileAdminBackupBtn"].forEach(id => {
+      const el = document.getElementById(id);
+      if(el) el.classList.add("admin-only-ui");
+    });
+
+    document.querySelectorAll("button, a").forEach(el => {
+      const txt = (el.innerText || el.textContent || "").trim().toLowerCase();
+      if(!txt) return;
+      if(adminKeywords.some(k => txt.includes(k))){
+        el.classList.add("admin-only-ui");
+      }
+    });
+  }
+
+  function hideAdminControls(){
+    document.body.classList.remove("admin-verified");
+    markPossibleAdminControls();
+  }
+
+  function showAdminControls(){
+    document.body.classList.add("admin-verified");
+    markPossibleAdminControls();
+  }
+
+  async function verifyProfileAdminUI(){
+    try{
+      hideAdminControls();
+
+      const headers = {};
+      const token = getAuthToken();
+      if(token) headers.Authorization = "Bearer " + token;
+
+      const res = await fetch("/api/is-admin?user=" + encodeURIComponent(getUserName()), { headers });
+      const data = await res.json().catch(()=>null);
+
+      if(data && data.ok && data.isAdmin){
+        localStorage.setItem("role","admin");
+        showAdminControls();
+      }else{
+        localStorage.setItem("role","user");
+        hideAdminControls();
+      }
+    }catch(e){
+      hideAdminControls();
+    }
+  }
+
+  window.verifyProfileAdminUI = verifyProfileAdminUI;
+
+  document.addEventListener("DOMContentLoaded", () => {
+    hideAdminControls();
+    verifyProfileAdminUI();
+  });
+
+  window.addEventListener("load", () => {
+    hideAdminControls();
+    verifyProfileAdminUI();
+    setTimeout(verifyProfileAdminUI, 1200);
+    setTimeout(verifyProfileAdminUI, 3000);
+  });
 })();
 </script>
 
