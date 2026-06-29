@@ -1,4 +1,4 @@
-const CACHE_NAME = "rickyy-chat-cache-v22";
+const CACHE_NAME = "rickyy-chat-cache-v25-final-notification";
 
 const APP_SHELL = [
   "/",
@@ -126,9 +126,11 @@ async function openOrFocusUrl(targetUrl = "/chat.html", data = {}) {
           type: "OPEN_CHAT_FROM_NOTIFICATION",
           url: finalUrl,
           from: data.from || "",
+          user: data.from || "",
           group: data.group || data.groupId || "",
           groupId: data.group || data.groupId || "",
-          replyMode: true
+          replyMode: true,
+          quickReply: true
         });
 
         if ("navigate" in client) {
@@ -187,14 +189,10 @@ self.addEventListener("push", event => {
         { action: "open", title: "Open" },
         { action: "dismiss", title: "Dismiss" }
       ]
-    : data.canReply
-      ? [
-          { action: "reply", title: "Reply", type: "text", placeholder: "Type a reply" },
-          { action: "open", title: "Open" }
-        ]
-      : [
-          { action: "open", title: "Open" }
-        ];
+    : [
+        { action: "reply", title: "Reply", type: "text", placeholder: "Type a reply" },
+        { action: "open", title: "Open" }
+      ];
 
   const groupId = String(data.group || data.groupId || "").trim();
   const from = String(data.from || "").trim();
