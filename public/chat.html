@@ -1263,6 +1263,11 @@ body:not(.dark) .date-separator{
   background:#f5f5f5;
 }
 
+/* Admin-only chat menu items: normal users should never see these */
+.chat-admin-only{
+  display:none !important;
+}
+
 .reaction-menu{
   position:fixed;
   background:rgba(17,24,39,.98);
@@ -3989,11 +3994,11 @@ body.mobile-chat-open .bottom-nav{
 <button onclick="openChatWallpaperModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">
   🖼️ Change Wallpaper
 </button>
-<button id="blockBtn" onclick="blockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🚫 Block</button>
-<button id="unblockBtn" onclick="unblockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">✅ Unblock</button>
-<button id="muteBtn" onclick="muteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🔇 Mute</button>
-<button id="unmuteBtn" onclick="unmuteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">🔊 Unmute</button>
-<button onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📂 Blocked Users</button>
+<button id="blockBtn" class="chat-admin-only" onclick="blockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🚫 Block</button>
+<button id="unblockBtn" class="chat-admin-only" onclick="unblockCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">✅ Unblock</button>
+<button id="muteBtn" class="chat-admin-only" onclick="muteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🔇 Mute</button>
+<button id="unmuteBtn" class="chat-admin-only" onclick="unmuteCurrentUser()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;display:none;">🔊 Unmute</button>
+<button id="blockedUsersMenuBtn" class="chat-admin-only" onclick="openBlockedUsersModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📂 Blocked Users</button>
 <button onclick="openCallHistoryPage()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">📞 Call History</button>
 <button id="hideChatBtn" onclick="toggleHideCurrentChat()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🙈 Hide Chat</button>
 <button onclick="openPrivacyControlsModal()" style="width:100%;padding:12px;border:none;background:white;text-align:left;cursor:pointer;">🛡 Privacy Controls</button>
@@ -12029,6 +12034,10 @@ socket.on("stop-typing", user => {
   }
 
   async function blockCurrentUser(){
+    if(!isAppAdmin()){
+      showToast("Admin only", "warning");
+      return;
+    }
     if(!currentChat) return;
 
     const admin = localStorage.getItem("user");
@@ -12044,6 +12053,10 @@ socket.on("stop-typing", user => {
   }
 
   async function unblockCurrentUser(){
+    if(!isAppAdmin()){
+      showToast("Admin only", "warning");
+      return;
+    }
     if(!currentChat) return;
 
     const admin = localStorage.getItem("user");
@@ -12059,6 +12072,10 @@ socket.on("stop-typing", user => {
   }
 
   async function muteCurrentUser(){
+    if(!isAppAdmin()){
+      showToast("Admin only", "warning");
+      return;
+    }
     if(!currentChat) return;
 
     const admin = localStorage.getItem("user");
@@ -12074,6 +12091,10 @@ socket.on("stop-typing", user => {
   }
 
   async function unmuteCurrentUser(){
+    if(!isAppAdmin()){
+      showToast("Admin only", "warning");
+      return;
+    }
     if(!currentChat) return;
 
     const admin = localStorage.getItem("user");
@@ -12088,6 +12109,12 @@ socket.on("stop-typing", user => {
     document.getElementById("chatAdminMenu").style.display = "none";
   }
 
+
+  function setChatAdminBtn(btn, value){
+    if(!btn) return;
+    btn.style.setProperty("display", value, "important");
+  }
+
   function toggleChatMenu(){
     const menu = document.getElementById("chatAdminMenu");
     const meUser = localStorage.getItem("user");
@@ -12097,39 +12124,44 @@ socket.on("stop-typing", user => {
       return;
     }
 
-    const isAdminUser = meUser === "shravan";
+    const isAdminUser = isAppAdmin();
 
     const blockBtn = document.getElementById("blockBtn");
     const unblockBtn = document.getElementById("unblockBtn");
     const muteBtn = document.getElementById("muteBtn");
     const unmuteBtn = document.getElementById("unmuteBtn");
+    const blockedUsersMenuBtn = document.getElementById("blockedUsersMenuBtn");
     const hideChatBtn = document.getElementById("hideChatBtn");
     updatePhase3MenuButtons();
 
+    if(blockedUsersMenuBtn){
+      blockedUsersMenuBtn.style.setProperty("display", isAdminUser ? "block" : "none", "important");
+    }
+
     if(isGroupChat || currentGroup){
-      if(blockBtn) blockBtn.style.display = "none";
-      if(unblockBtn) unblockBtn.style.display = "none";
-      if(muteBtn) muteBtn.style.display = "none";
-      if(unmuteBtn) unmuteBtn.style.display = "none";
+      setChatAdminBtn(blockBtn, "none");
+      setChatAdminBtn(unblockBtn, "none");
+      setChatAdminBtn(muteBtn, "none");
+      setChatAdminBtn(unmuteBtn, "none");
       if(hideChatBtn) hideChatBtn.style.display = "none";
     } else if(isAdminUser && currentChat){
       const targetUser = usersList.find(u => u.name === currentChat);
 
       if(targetUser){
-        if(blockBtn) blockBtn.style.display = targetUser.blocked ? "none" : "block";
-        if(unblockBtn) unblockBtn.style.display = targetUser.blocked ? "block" : "none";
-        if(muteBtn) muteBtn.style.display = targetUser.muted ? "none" : "block";
-        if(unmuteBtn) unmuteBtn.style.display = targetUser.muted ? "block" : "none";
+        setChatAdminBtn(blockBtn, targetUser.blocked ? "none" : "block");
+        setChatAdminBtn(unblockBtn, targetUser.blocked ? "block" : "none");
+        setChatAdminBtn(muteBtn, targetUser.muted ? "none" : "block");
+        setChatAdminBtn(unmuteBtn, targetUser.muted ? "block" : "none");
         if(hideChatBtn){
           hideChatBtn.style.display = "block";
           hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
         }
       }
     } else {
-      if(blockBtn) blockBtn.style.display = "none";
-      if(unblockBtn) unblockBtn.style.display = "none";
-      if(muteBtn) muteBtn.style.display = "none";
-      if(unmuteBtn) unmuteBtn.style.display = "none";
+      setChatAdminBtn(blockBtn, "none");
+      setChatAdminBtn(unblockBtn, "none");
+      setChatAdminBtn(muteBtn, "none");
+      setChatAdminBtn(unmuteBtn, "none");
       if(hideChatBtn){
         hideChatBtn.style.display = "block";
         hideChatBtn.innerText = isChatHidden(currentChat) ? "👁 Unhide Chat" : "🙈 Hide Chat";
