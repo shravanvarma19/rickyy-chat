@@ -679,15 +679,6 @@ body.amoled .pin-lock-screen{
   background:linear-gradient(135deg,rgba(16,185,129,.18),rgba(59,130,246,.12))!important;
 }
 
-
-/* Hide admin controls unless server verifies admin */
-.admin-only-ui{display:none!important}
-body.admin-verified .admin-only-ui{display:flex!important}
-body:not(.admin-verified) #profileLiveDashboardBtn,
-body:not(.admin-verified) #profileAdminBackupBtn{
-  display:none!important;
-}
-
 </style>
 </head>
 
@@ -1875,86 +1866,6 @@ function addAdminBackupShortcut(){
   actions.insertBefore(btn, actions.firstChild);
 }
 window.addEventListener("load", () => setTimeout(addAdminBackupShortcut, 900));
-</script>
-
-
-<script id="strict-profile-admin-ui-guard-js">
-(function(){
-  const adminKeywords = [
-    "admin","dashboard","backup all data","live admin","moderation","reports",
-    "strike","lock user","unlock user","broadcast"
-  ];
-
-  function getAuthToken(){
-    return localStorage.getItem("token") || localStorage.getItem("authToken") || "";
-  }
-
-  function getUserName(){
-    return localStorage.getItem("user") || "";
-  }
-
-  function markPossibleAdminControls(){
-    ["profileLiveDashboardBtn","profileAdminBackupBtn"].forEach(id => {
-      const el = document.getElementById(id);
-      if(el) el.classList.add("admin-only-ui");
-    });
-
-    document.querySelectorAll("button, a").forEach(el => {
-      const txt = (el.innerText || el.textContent || "").trim().toLowerCase();
-      if(!txt) return;
-      if(adminKeywords.some(k => txt.includes(k))){
-        el.classList.add("admin-only-ui");
-      }
-    });
-  }
-
-  function hideAdminControls(){
-    document.body.classList.remove("admin-verified");
-    markPossibleAdminControls();
-  }
-
-  function showAdminControls(){
-    document.body.classList.add("admin-verified");
-    markPossibleAdminControls();
-  }
-
-  async function verifyProfileAdminUI(){
-    try{
-      hideAdminControls();
-
-      const headers = {};
-      const token = getAuthToken();
-      if(token) headers.Authorization = "Bearer " + token;
-
-      const res = await fetch("/api/is-admin?user=" + encodeURIComponent(getUserName()), { headers });
-      const data = await res.json().catch(()=>null);
-
-      if(data && data.ok && data.isAdmin){
-        localStorage.setItem("role","admin");
-        showAdminControls();
-      }else{
-        localStorage.setItem("role","user");
-        hideAdminControls();
-      }
-    }catch(e){
-      hideAdminControls();
-    }
-  }
-
-  window.verifyProfileAdminUI = verifyProfileAdminUI;
-
-  document.addEventListener("DOMContentLoaded", () => {
-    hideAdminControls();
-    verifyProfileAdminUI();
-  });
-
-  window.addEventListener("load", () => {
-    hideAdminControls();
-    verifyProfileAdminUI();
-    setTimeout(verifyProfileAdminUI, 1200);
-    setTimeout(verifyProfileAdminUI, 3000);
-  });
-})();
 </script>
 
 </body>

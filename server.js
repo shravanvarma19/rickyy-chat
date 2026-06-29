@@ -401,9 +401,7 @@ const messageSchema = new mongoose.Schema({
   deleted: { type: Boolean, default: false },
   deletedAt: { type: Date, default: null },
   deletedBy: { type: String, default: null },
-  onceView: { type: Boolean, default: false },
-  onceViewOpenedBy: { type: [String], default: [] },
-  onceViewOpenedAt: { type: Date, default: null },
+
   createdAt: { type: Date, default: Date.now }
 });
 
@@ -1156,38 +1154,6 @@ app.get("/admin/backup-summary", requireAdmin, async (req, res) => {
   }
 });
 
-
-// ===== Strict Admin UI Verification =====
-app.get("/api/is-admin", async (req, res) => {
-  try {
-    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
-    const username = normalizeUsername(req.query.user || req.headers["x-user-name"] || "");
-
-    let user = null;
-
-    if (token) {
-      user = await User.findOne({ authToken: token }).select("name role approvalStatus blocked");
-    }
-
-    if (!user && username) {
-      user = await User.findOne({ name: username }).select("name role approvalStatus blocked");
-    }
-
-    const isAdmin = !!(
-      user &&
-      user.name === ADMIN_NAME &&
-      user.role === "admin" &&
-      user.approvalStatus === "approved" &&
-      !user.blocked
-    );
-
-    return res.json({ ok:true, isAdmin });
-  } catch (err) {
-    console.log("IS ADMIN CHECK ERROR:", err);
-    return res.json({ ok:true, isAdmin:false });
-  }
-});
-
 const io = new Server(server, {
   cors: {
     origin: true,
@@ -1641,40 +1607,12 @@ function canSendReadReceipt(ownerUser){
 }
 
 function safeNotificationBody(msg) {
-  if (msg?.onceView && msg?.fileType === "image") return "📷 Once View Photo";
-  if (msg?.onceView && msg?.fileType === "video") return "🎥 Once View Video";
   if (msg?.text) return String(msg.text).slice(0, 120);
   if (msg?.fileType === "image") return "📷 Photo";
   if (msg?.fileType === "video") return "🎥 Video";
   if (msg?.fileType === "audio") return "🎤 Voice message";
   if (msg?.fileType === "doc" || msg?.fileType === "file") return "📄 Document";
   return "New message";
-}
-
-function isAdminUserName(name){
-  return String(name || "").trim().toLowerCase() === ADMIN_NAME.toLowerCase();
-}
-
-function hideOnceViewFileForUser(msg, viewer){
-  if(!msg) return msg;
-
-  const obj = typeof msg.toObject === "function" ? msg.toObject() : { ...msg };
-
-  if(obj.onceView && !isAdminUserName(viewer)){
-    const opened = Array.isArray(obj.onceViewOpenedBy)
-      && obj.onceViewOpenedBy.includes(viewer);
-
-    if(opened || obj.from === viewer){
-      obj.file = "";
-      obj.onceViewExpired = true;
-    }
-  }
-
-  return obj;
-}
-
-function hideOnceViewListForUser(messages, viewer){
-  return (messages || []).map(m => hideOnceViewFileForUser(m, viewer));
 }
 
 async function sendPushToUser(username, payload) {
@@ -1789,76 +1727,6 @@ app.post("/upload-media", (req, res) => {
     }
   });
 });
-
-app.get("/api/once-view/:id", async (req, res) => {
-  try {
-    const messageId = String(req.params.id || "").trim();
-    const viewer = normalizeUsername(req.query.viewer || req.headers["x-viewer-user"]);
-
-    if (!messageId || !viewer) {
-      return res.status(400).json({ ok:false, msg:"Invalid request" });
-    }
-
-    const msg = await Message.findById(messageId);
-
-    if (!msg || !msg.onceView || !msg.file) {
-      return res.status(404).json({ ok:false, msg:"Once view media not found" });
-    }
-
-    const isPrivateMember = !msg.group && (msg.from === viewer || msg.to === viewer);
-
-    let isGroupMember = false;
-    if (msg.group) {
-      const group = await Group.findById(msg.group);
-      isGroupMember = !!group && (group.members || []).includes(viewer);
-    }
-
-    if (!isPrivateMember && !isGroupMember && !isAdminUserName(viewer)) {
-      return res.status(403).json({ ok:false, msg:"Not allowed" });
-    }
-
-    const isAdmin = isAdminUserName(viewer);
-
-    if (!isAdmin && msg.from === viewer) {
-      return res.status(403).json({
-        ok:false,
-        msg:"Sender cannot open once view media"
-      });
-    }
-
-    if (!isAdmin && (msg.onceViewOpenedBy || []).includes(viewer)) {
-      return res.status(410).json({
-        ok:false,
-        msg:"Already viewed"
-      });
-    }
-
-    if (!isAdmin) {
-      msg.onceViewOpenedBy = Array.from(new Set([...(msg.onceViewOpenedBy || []), viewer]));
-      msg.onceViewOpenedAt = new Date();
-      await msg.save();
-
-      if (msg.group) {
-        io.to(roomNameForGroup(msg.group)).emit("message-updated", hideOnceViewFileForUser(msg, viewer));
-      } else {
-        io.to(msg.from).emit("message-updated", hideOnceViewFileForUser(msg, msg.from));
-        io.to(msg.to).emit("message-updated", hideOnceViewFileForUser(msg, msg.to));
-      }
-    }
-
-    return res.json({
-      ok:true,
-      file: msg.file,
-      fileType: msg.fileType,
-      openedAt: msg.onceViewOpenedAt
-    });
-
-  } catch (err) {
-    console.log("ONCE VIEW OPEN ERROR:", err);
-    return res.status(500).json({ ok:false, msg:"Once view open failed" });
-  }
-});
-
 app.post("/chat/clear", async (req, res) => {
   try {
     const { type, me: user, peer, groupId } = req.body;
@@ -2663,9 +2531,6 @@ app.post("/api/notification-reply", async (req, res) => {
       text,
       file: null,
       fileType: null,
-      onceView: data.onceView === true || data.onceView === "true",
-      onceViewOpenedBy: [],
-      onceViewOpenedAt: null,
       replyTo: null,
       mentions: [],
       status: receiverOnline ? "delivered" : "sent",
@@ -5079,22 +4944,20 @@ socket.on("delete-message", async data => {
     }
   });
 
-    socket.on("load-history", async data => {
+  socket.on("load-history", async data => {
     try {
-      const viewer = normalizeUsername(data.from);
-
       const msgs = await Message.find({
         $or: [
           { from: data.from, to: data.to },
           { from: data.to, to: data.from }
         ]
-        }).sort({ createdAt: -1 }).limit(50);
+      }).sort({ createdAt: -1 }).limit(50);
 
-        socket.emit("history", hideOnceViewListForUser(msgs.reverse(), viewer));
-      } catch (err) {
-        console.log(err);
-      }
-    });
+      socket.emit("history", msgs.reverse());
+    } catch (err) {
+      console.log(err);
+    }
+  });
 
   socket.on("load-group-history", async groupId => {
     try {
