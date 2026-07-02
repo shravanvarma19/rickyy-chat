@@ -310,12 +310,17 @@ const userSchema = new mongoose.Schema({
   lastSeen: { type: Date, default: null },
   dp: { type: String, default: "/default.png" },
   coverImage: { type: String, default: "" },
+  profileMusic: { type: Object, default: null },
+  profileVideo: { type: Object, default: null },
+  birthday: { type: Date, default: null },
+  hideVisitors: { type: Boolean, default: false },
   role: { type: String, default: "user" },
   approvalStatus: { type: String, default: "pending" },
   blocked: { type: Boolean, default: false },
   muted: { type: Boolean, default: false },
   bio: { type: String, default: "" },
   about: { type: String, default: "" },
+  profileBorder: { type: String, default: "none" },
   loginAttempts: { type: Number, default: 0 },
   lockUntil: { type: Date, default: null },
   authToken: { type: String, default: null },
@@ -432,6 +437,16 @@ const statusSchema = new mongoose.Schema({
 
 statusSchema.index({ expiresAt: 1 }, { expireAfterSeconds: 0 });
 
+
+userSchema.post("save", function(doc) {
+  try {
+    if (doc && doc.approvalStatus === "pending" && !doc.__adminRequestNotifiedRuntime) {
+      doc.__adminRequestNotifiedRuntime = true;
+      setTimeout(() => notifyAdminNewUserRequest(doc), 300);
+    }
+  } catch (err) {}
+});
+
 const User = mongoose.model("User", userSchema);
 const Group = mongoose.model("Group", groupSchema);
 const Message = mongoose.model("Message", messageSchema);
@@ -479,6 +494,45 @@ const reportSchema = new mongoose.Schema({
 const ActivityLog = mongoose.models.ActivityLog || mongoose.model("ActivityLog", activityLogSchema);
 const Report = mongoose.models.Report || mongoose.model("Report", reportSchema);
 
+const profileVisitSchema = new mongoose.Schema({
+  profileUser: { type: String, default: "" },
+  visitor: { type: String, default: "" },
+  viewedAt: { type: Date, default: Date.now }
+});
+const ProfileVisit = mongoose.models.ProfileVisit || mongoose.model("ProfileVisit", profileVisitSchema);
+
+
+
+function isActive(user){
+  return !!(user && user.premium && user.premium.active && user.premium.expiresAt && new Date(user.premium.expiresAt) > new Date());
+}
+
+function serialize(user){
+  const active = isActive(user);
+  return {
+    active,
+    plan: active ? (user.premium?.plan || "RickyY ") : "Free",
+    amount: user.premium?.amount || 0,
+    purchasedAt: user.premium?.purchasedAt || null,
+    expiresAt: user.premium?.expiresAt || null,
+    paymentId: user.premium?.paymentId || ""
+  };
+}
+
+async function expireOlds(){
+  try{
+    await User.updateMany(
+      { "premium.active": true, "premium.expiresAt": { $lte: new Date() } },
+      { $set: { "premium.active": false, "premium.plan": "Free" } }
+    );
+  }catch(err){ console.log("PREMIUM EXPIRY ERROR:", err.message); }
+}
+
+function requireFeature(user, featureName = " feature"){
+  if(isActive(user)) return null;
+  return { ok:false, premiumRequired:true, msg:` ${featureName}. Upgrade ₹50 / 3 months to use this.` };
+}
+
 async function logActivity(type, actor, target, text = "", meta = {}) {
   try {
     await ActivityLog.create({
@@ -492,6 +546,56 @@ async function logActivity(type, actor, target, text = "", meta = {}) {
     console.log("ACTIVITY LOG ERROR:", err.message);
   }
 }
+
+
+async function notifyAdminNewUserRequest(user) {
+  try {
+    const adminName = ADMIN_NAME || "shravan";
+
+    const title = "New user request";
+    const body = `${user.name} is requesting access`;
+
+    await User.updateOne(
+      { name: adminName },
+      {
+        $push: {
+          notifications: {
+            text: body,
+            read: false,
+            createdAt: new Date()
+          }
+        }
+      }
+    ).catch(() => {});
+
+    if (typeof sendAppNotification === "function") {
+      await sendAppNotification(adminName, {
+        title,
+        body,
+        url: "/chat.html?admin=requests",
+        tag: `new-user-request-${user.name}-${Date.now()}`,
+        icon: "/icons/icon-192.png",
+        badge: "/icons/icon-192.png",
+        type: "admin",
+        notificationType: "user_request",
+        from: user.name,
+        user: user.name,
+        requireInteraction: true
+      });
+    }
+
+    if (typeof io !== "undefined") {
+      io.to(adminName).emit("admin-new-user-request", {
+        name: user.name,
+        msg: body,
+        at: new Date()
+      });
+    }
+  } catch (err) {
+    console.log("ADMIN REQUEST NOTIFICATION ERROR:", err.message);
+  }
+}
+
 
 app.post("/group/:id/polls", async (req, res) => {
   try {
@@ -562,6 +666,132 @@ app.post("/poll/:id/vote", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Vote failed" });
   }
 });
+
+
+
+// ================= RickyY v2 Birthday + Profile Visitors APIs =================
+app.post("/api/profile/birthday", async (req, res) => {
+  try {
+    const userName = normalizeUsername(req.body.user || req.body.username);
+    const birthday = req.body.birthday ? new Date(req.body.birthday) : null;
+
+    if (!isValidUsername(userName)) return res.status(400).json({ ok:false, msg:"Invalid user" });
+    if (!birthday || isNaN(birthday.getTime())) return res.status(400).json({ ok:false, msg:"Invalid birthday" });
+
+    const user = await User.findOne({ name:userName });
+    if (!user) return res.status(404).json({ ok:false, msg:"User not found" });
+
+    user.birthday = birthday;
+    await user.save();
+
+    await emitUsersToAll().catch(() => {});
+    return res.json({ ok:true, birthday:user.birthday });
+  } catch (err) {
+    console.log("SAVE BIRTHDAY ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Birthday save failed" });
+  }
+});
+
+app.post("/api/profile/visit", async (req, res) => {
+  try {
+    const profileUser = normalizeUsername(req.body.profileUser);
+    const visitor = normalizeUsername(req.body.visitor);
+
+    if (!isValidUsername(profileUser) || !isValidUsername(visitor)) {
+      return res.status(400).json({ ok:false, msg:"Invalid data" });
+    }
+    if (profileUser === visitor) return res.json({ ok:true, skipped:true });
+
+    const owner = await User.findOne({ name:profileUser }).select("name hideVisitors");
+    if (!owner) return res.status(404).json({ ok:false, msg:"Profile not found" });
+    if (owner.hideVisitors) return res.json({ ok:true, hidden:true });
+
+    const since = new Date(Date.now() - 15 * 60 * 1000);
+    const exists = await ProfileVisit.findOne({ profileUser, visitor, viewedAt:{ $gte: since } });
+    if (!exists) {
+      await ProfileVisit.create({ profileUser, visitor, viewedAt:new Date() });
+    }
+
+    io.to(profileUser).emit("profile-visited", { visitor, at:new Date() });
+    return res.json({ ok:true });
+  } catch (err) {
+    console.log("PROFILE VISIT ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Visit save failed" });
+  }
+});
+
+app.get("/api/profile/visitors", async (req, res) => {
+  try {
+    const userName = normalizeUsername(req.query.user);
+    if (!isValidUsername(userName)) return res.status(400).json({ ok:false, msg:"Invalid user" });
+
+    const now = new Date();
+    const startToday = new Date(now.getFullYear(), now.getMonth(), now.getDate());
+    const startWeek = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
+
+    const [today, week, total, visits] = await Promise.all([
+      ProfileVisit.countDocuments({ profileUser:userName, viewedAt:{ $gte:startToday } }),
+      ProfileVisit.countDocuments({ profileUser:userName, viewedAt:{ $gte:startWeek } }),
+      ProfileVisit.countDocuments({ profileUser:userName }),
+      ProfileVisit.find({ profileUser:userName }).sort({ viewedAt:-1 }).limit(30).lean()
+    ]);
+
+    const names = [...new Set(visits.map(v => v.visitor).filter(Boolean))];
+    const users = await User.find({ name:{ $in:names } }).select("name dp").lean();
+    const map = new Map(users.map(u => [u.name, u]));
+
+    const visitors = visits.map(v => {
+      const u = map.get(v.visitor) || {};
+      return {
+        visitor:v.visitor,
+        name:u.name || v.visitor,
+        dp:u.dp || "/default.png",
+        viewedAt:v.viewedAt
+      };
+    });
+
+    return res.json({ ok:true, counts:{ today, week, total }, visitors });
+  } catch (err) {
+    console.log("GET VISITORS ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Visitors load failed" });
+  }
+});
+
+app.post("/api/profile/hide-visitors", async (req, res) => {
+  try {
+    const userName = normalizeUsername(req.body.user || req.body.username);
+    const hide = !!req.body.hide;
+
+    if (!isValidUsername(userName)) return res.status(400).json({ ok:false, msg:"Invalid user" });
+
+    const user = await User.findOne({ name:userName });
+    if (!user) return res.status(404).json({ ok:false, msg:"User not found" });
+
+    user.hideVisitors = hide;
+    await user.save();
+
+    return res.json({ ok:true, hideVisitors:user.hideVisitors });
+  } catch (err) {
+    console.log("HIDE VISITORS ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Update failed" });
+  }
+});
+
+app.get("/api/birthdays/today", async (req, res) => {
+  try {
+    const users = await User.find({ birthday:{ $ne:null }, approvalStatus:"approved" }).select("name dp birthday").lean();
+    const today = users.filter(u => {
+      const d = new Date(u.birthday);
+      const n = new Date();
+      return !isNaN(d.getTime()) && d.getDate() === n.getDate() && d.getMonth() === n.getMonth();
+    });
+    return res.json({ ok:true, birthdays:today });
+  } catch (err) {
+    console.log("TODAY BIRTHDAYS ERROR:", err);
+    return res.status(500).json({ ok:false, birthdays:[] });
+  }
+});
+
 app.get("/", (req, res) => {
   res.sendFile(path.join(__dirname, "public", "index.html"));
 });
@@ -635,6 +865,78 @@ const upload = multer({
   limits: { fileSize: MAX_FILE_SIZE },
   fileFilter
 });
+
+
+// ================= RickyY v2 Profile Music + Video DP APIs =================
+app.post("/api/profile-media/upload", upload.single("file"), async (req, res) => {
+  try {
+    const userName = normalizeUsername(req.body.user || req.body.username);
+    const type = String(req.body.type || "").toLowerCase();
+
+    if (!isValidUsername(userName)) {
+      return res.status(400).json({ ok:false, msg:"Invalid user" });
+    }
+
+    if (!req.file) {
+      return res.status(400).json({ ok:false, msg:"File missing" });
+    }
+
+    const fileUrl = "/uploads/" + req.file.filename;
+    const original = String(req.file.originalname || req.file.filename || "file").slice(0, 120);
+
+    const user = await User.findOne({ name:userName });
+    if (!user) return res.status(404).json({ ok:false, msg:"User not found" });
+
+    if (type === "music") {
+      if (!String(req.file.mimetype || "").startsWith("audio/")) {
+        return res.status(400).json({ ok:false, msg:"Only audio file allowed" });
+      }
+      user.profileMusic = { url:fileUrl, name:original, uploadedAt:new Date() };
+      await user.save();
+      return res.json({ ok:true, profileMusic:user.profileMusic });
+    }
+
+    if (type === "video") {
+      if (!String(req.file.mimetype || "").startsWith("video/")) {
+        return res.status(400).json({ ok:false, msg:"Only video file allowed" });
+      }
+      user.profileVideo = { url:fileUrl, name:original, uploadedAt:new Date() };
+      await user.save();
+      return res.json({ ok:true, profileVideo:user.profileVideo });
+    }
+
+    return res.status(400).json({ ok:false, msg:"Invalid media type" });
+  } catch (err) {
+    console.log("PROFILE MEDIA UPLOAD ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Profile media upload failed" });
+  }
+});
+
+app.post("/api/profile-media/remove", async (req, res) => {
+  try {
+    const userName = normalizeUsername(req.body.user || req.body.username);
+    const type = String(req.body.type || "").toLowerCase();
+
+    if (!isValidUsername(userName)) {
+      return res.status(400).json({ ok:false, msg:"Invalid user" });
+    }
+
+    const user = await User.findOne({ name:userName });
+    if (!user) return res.status(404).json({ ok:false, msg:"User not found" });
+
+    if (type === "music") user.profileMusic = null;
+    else if (type === "video") user.profileVideo = null;
+    else return res.status(400).json({ ok:false, msg:"Invalid media type" });
+
+    await user.save();
+    return res.json({ ok:true });
+  } catch (err) {
+    console.log("PROFILE MEDIA REMOVE ERROR:", err);
+    return res.status(500).json({ ok:false, msg:"Remove failed" });
+  }
+});
+
+
 async function requireUser(req,res,next){
   const token = String(req.headers.authorization || "").replace("Bearer ","");
 
@@ -1297,9 +1599,100 @@ app.post("/api/webauthn/auth/verify", async (req, res) => {
     return res.status(500).json({ ok: false, msg: "Server error" });
   }
 });
+
+
+//  activation after UPI payment confirmation.
+// NOTE: For production, verify UTR with Razorpay/Cashfree webhook before activating.
+
+
+app.post("/api/profile-border", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const name = normalizeUsername(req.body.user || req.body.name || "");
+    let user = token ? await User.findOne({ authToken: token }) : null;
+    if (!user && name) user = await User.findOne({ name });
+    if (!user) return res.status(404).json({ ok: false, msg: "User not found" });
+    const blocked = requireFeature(user, " Profile Frame");
+    if (blocked) return res.status(403).json(blocked);
+    const allowed = ["none", "gold", "diamond", "rainbow", "neon", "fire", "heart", "green"];
+    const border = allowed.includes(String(req.body.border || "none")) ? String(req.body.border || "none") : "none";
+    user.profileBorder = border;
+    user.premiumSettings = { ...(user.premiumSettings || {}), profileFrame: border };
+    await user.save();
+    await emitUsersToAll();
+    return res.json({ ok: true, border });
+  } catch (err) {
+    console.log("PROFILE BORDER SAVE ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Border save failed" });
+  }
+});
+
+app.get("/api/profile-border", async (req, res) => {
+  try {
+    const name = normalizeUsername(req.query.user || req.query.name || "");
+    const user = name ? await User.findOne({ name }).select("profileBorder premiumSettings premium") : null;
+    if (!user) return res.json({ ok: true, border: "none" });
+    return res.json({ ok: true, border: isActive(user) ? (user.profileBorder || user.premiumSettings?.profileFrame || "none") : "none" });
+  } catch (err) {
+    return res.json({ ok: true, border: "none" });
+  }
+});
+
+app.get("/api/media-vault", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const name = normalizeUsername(req.query.user || "");
+    let userDoc = token ? await User.findOne({ authToken: token }) : null;
+    if (!userDoc && name) userDoc = await User.findOne({ name });
+    if (!userDoc) return res.status(404).json({ ok: false, msg: "User not found" });
+    const blocked = requireFeature(userDoc, "Media Vault");
+    if (blocked) return res.status(403).json(blocked);
+    const messages = await Message.find({
+      $or: [{ from: userDoc.name }, { to: userDoc.name }, { seenBy: userDoc.name }],
+      file: { $exists: true, $ne: null, $ne: "" }
+    }).sort({ createdAt: -1 }).limit(200);
+    return res.json({ ok: true, media: messages.map(m => ({ id: m._id, from: m.from, to: m.to, group: m.group, file: m.file, fileType: m.fileType, createdAt: m.createdAt })) });
+  } catch (err) {
+    console.log("MEDIA VAULT ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Media vault failed" });
+  }
+});
+
+app.post("/api/message/edit-premium", async (req, res) => {
+  try {
+    const token = String(req.headers.authorization || "").replace("Bearer ", "").trim();
+    const user = token ? await User.findOne({ authToken: token }) : await User.findOne({ name: normalizeUsername(req.body.user || "") });
+    if (!user) return res.status(401).json({ ok: false, msg: "Login required" });
+    const blocked = requireFeature(user, "Edit message up to 24 hours");
+    if (blocked) return res.status(403).json(blocked);
+    const msg = await Message.findById(req.body.messageId);
+    if (!msg) return res.status(404).json({ ok: false, msg: "Message not found" });
+    if (msg.from !== user.name) return res.status(403).json({ ok: false, msg: "Only your message can be edited" });
+    if (msg.file) return res.status(400).json({ ok: false, msg: "Media messages cannot be edited" });
+    if (Date.now() - new Date(msg.createdAt || 0).getTime() > 24 * 60 * 60 * 1000) {
+      return res.status(403).json({ ok: false, msg: "24 hours edit time expired" });
+    }
+    const cleanText = sanitizeText(req.body.text || "", 2000);
+    if (!cleanText) return res.status(400).json({ ok: false, msg: "Message text required" });
+    msg.text = cleanText;
+    msg.edited = true;
+    msg.editedAt = new Date();
+    await msg.save();
+    if (msg.group) io.to(roomNameForGroup(msg.group)).emit("message-admin-updated", { type: "edit", messageId: msg._id, groupId: msg.group });
+    else { io.to(msg.from).emit("message-admin-updated", { type: "edit", messageId: msg._id, userA: msg.from, userB: msg.to }); io.to(msg.to).emit("message-admin-updated", { type: "edit", messageId: msg._id, userA: msg.from, userB: msg.to }); }
+    return res.json({ ok: true, msg: "Message edited" });
+  } catch (err) {
+    console.log("PREMIUM MESSAGE EDIT ERROR:", err);
+    return res.status(500).json({ ok: false, msg: "Edit failed" });
+  }
+});
+
 app.get("/chat/export", async (req, res) => {
   try {
     const { type, me: user, peer, groupId } = req.query;
+    const exportUser = await User.findOne({ name: normalizeUsername(user) });
+    const blocked = requireFeature(exportUser, "Export Chats");
+    if (blocked) return res.status(403).send(blocked.msg);
     let messages = [];
 
     if (type === "private") {
@@ -2276,7 +2669,7 @@ app.get("/api/me", async (req, res) => {
       return res.status(401).json({ ok: false, msg: "No token" });
     }
 
-    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked");
+    const user = await User.findOne({ authToken: token }).select("name dp role approvalStatus blocked contact phone premium premiumSettings profileBorder");
 
     if (!user) {
       return res.status(401).json({ ok: false, msg: "Invalid token" });
@@ -2301,7 +2694,10 @@ app.get("/api/me", async (req, res) => {
       mobile: user.mobile || "",
       dp: user.dp,
       role: user.role || "user",
-      approvalStatus: user.approvalStatus || "approved"
+      approvalStatus: user.approvalStatus || "approved",
+      premium: serialize(user),
+      premiumSettings: user.premiumSettings || {},
+      profileBorder: user.profileBorder || user.premiumSettings?.profileFrame || "none"
       }
     });
   } catch (err) {
@@ -2475,7 +2871,7 @@ app.get("/users-data", async (req, res) => {
     const allUsers = await User.find({
       blocked: { $ne: true },
       approvalStatus: "approved"
-    }).select("name dp role online lastSeen muted bio about");
+    }).select("name dp role online lastSeen muted bio about premium premiumSettings profileBorder");
 
     res.json(allUsers);
   } catch (err) {
@@ -2487,7 +2883,7 @@ app.get("/users-data", async (req, res) => {
 app.get("/user/:name", async (req, res) => {
   try {
     const user = await User.findOne({ name: req.params.name }).select(
-      "name dp role online lastSeen muted blocked approvalStatus bio about"
+      "name dp role online lastSeen muted blocked approvalStatus bio about premium premiumSettings profileBorder"
     );
 
     if (!user) {
@@ -4859,6 +5255,9 @@ socket.on("delete-message", async data => {
   });
 });
 
+
+expireOlds();
+setInterval(expireOlds, 60 * 60 * 1000);
 
 const PORT = process.env.PORT || 5000;
 server.listen(PORT, "0.0.0.0", () => {

@@ -10,6 +10,16 @@
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="yes" name="mobile-web-app-capable"/>
 <meta content="black-translucent" name="apple-mobile-web-app-status-bar-style"/>
+
+<script>
+(function(){
+  try{
+    var t = localStorage.getItem("rickyyTheme") || "emerald";
+    document.documentElement.setAttribute("data-rickyy-theme", t);
+  }catch(e){}
+})();
+</script>
+
 <style>
 *{
   box-sizing:border-box;
@@ -3909,6 +3919,544 @@ body.mobile-chat-open .bottom-nav{
   display:none !important;
 }
 
+
+/* ================= RickyY Free Theme System ================= */
+:root{
+  --rt-bg:#000000;
+  --rt-panel:rgba(17,24,39,.92);
+  --rt-card:rgba(15,23,42,.88);
+  --rt-card-hover:rgba(255,255,255,.07);
+  --rt-border:rgba(255,255,255,.08);
+  --rt-text:#f8fafc;
+  --rt-muted:#9ca3af;
+  --rt-accent:#22c55e;
+  --rt-accent2:#06b6d4;
+  --rt-header:linear-gradient(135deg, rgba(16,185,129,.22), rgba(34,211,238,.10));
+  --rt-me:linear-gradient(135deg,#22c55e,#10b981);
+  --rt-other:linear-gradient(135deg,#111827,#1f2937);
+}
+
+body.theme-emerald{
+  --rt-bg:#020617;
+  --rt-panel:rgba(17,24,39,.92);
+  --rt-card:rgba(15,23,42,.88);
+  --rt-accent:#22c55e;
+  --rt-accent2:#06b6d4;
+  --rt-header:linear-gradient(135deg,#064e3b,#0f766e);
+  --rt-me:linear-gradient(135deg,#22c55e,#10b981);
+  --rt-other:linear-gradient(135deg,#0f172a,#1e293b);
+}
+body.theme-amoled{
+  --rt-bg:#000;
+  --rt-panel:#000;
+  --rt-card:#080808;
+  --rt-card-hover:#111;
+  --rt-border:rgba(255,255,255,.12);
+  --rt-accent:#22c55e;
+  --rt-accent2:#22c55e;
+  --rt-header:#000;
+  --rt-me:linear-gradient(135deg,#15803d,#16a34a);
+  --rt-other:linear-gradient(135deg,#111,#1a1a1a);
+}
+body.theme-ocean{
+  --rt-bg:#061826;
+  --rt-panel:rgba(8,47,73,.92);
+  --rt-card:rgba(12,74,110,.70);
+  --rt-accent:#38bdf8;
+  --rt-accent2:#0ea5e9;
+  --rt-header:linear-gradient(135deg,#075985,#0e7490);
+  --rt-me:linear-gradient(135deg,#0284c7,#06b6d4);
+  --rt-other:linear-gradient(135deg,#082f49,#164e63);
+}
+body.theme-neon{
+  --rt-bg:#11001f;
+  --rt-panel:rgba(46,16,101,.82);
+  --rt-card:rgba(76,29,149,.58);
+  --rt-accent:#a855f7;
+  --rt-accent2:#ec4899;
+  --rt-header:linear-gradient(135deg,#581c87,#7e22ce);
+  --rt-me:linear-gradient(135deg,#9333ea,#ec4899);
+  --rt-other:linear-gradient(135deg,#2e1065,#4c1d95);
+}
+body.theme-rose{
+  --rt-bg:#230713;
+  --rt-panel:rgba(80,7,36,.88);
+  --rt-card:rgba(131,24,67,.58);
+  --rt-accent:#fb7185;
+  --rt-accent2:#f472b6;
+  --rt-header:linear-gradient(135deg,#9f1239,#be185d);
+  --rt-me:linear-gradient(135deg,#e11d48,#f472b6);
+  --rt-other:linear-gradient(135deg,#4a1027,#831843);
+}
+body.theme-gold{
+  --rt-bg:#090806;
+  --rt-panel:rgba(24,20,12,.94);
+  --rt-card:rgba(35,29,14,.86);
+  --rt-accent:#fbbf24;
+  --rt-accent2:#f59e0b;
+  --rt-header:linear-gradient(135deg,#422006,#92400e,#f59e0b);
+  --rt-me:linear-gradient(135deg,#d97706,#fbbf24);
+  --rt-other:linear-gradient(135deg,#1c1917,#44403c);
+}
+body.theme-crimson{
+  --rt-bg:#1b0505;
+  --rt-panel:rgba(69,10,10,.90);
+  --rt-card:rgba(127,29,29,.58);
+  --rt-accent:#ef4444;
+  --rt-accent2:#fb7185;
+  --rt-header:linear-gradient(135deg,#7f1d1d,#dc2626);
+  --rt-me:linear-gradient(135deg,#dc2626,#f97316);
+  --rt-other:linear-gradient(135deg,#450a0a,#7f1d1d);
+}
+
+body[class*="theme-"]{
+  background:var(--rt-bg) !important;
+  color:var(--rt-text) !important;
+}
+body[class*="theme-"] .sidebar,
+body[class*="theme-"] .chat{
+  background:var(--rt-panel) !important;
+  border-color:var(--rt-border) !important;
+}
+body[class*="theme-"] .sidebar-header,
+body[class*="theme-"] .chat-header,
+body[class*="theme-"] .gallery-top,
+body[class*="theme-"] .groupDrawerHeader{
+  background:var(--rt-header) !important;
+}
+body[class*="theme-"] .status-section,
+body[class*="theme-"] .search-box,
+body[class*="theme-"] #users{
+  background:transparent !important;
+}
+body[class*="theme-"] .status-title,
+body[class*="theme-"] .logo{
+  color:var(--rt-text) !important;
+}
+body[class*="theme-"] .search-box input{
+  background:var(--rt-card) !important;
+  border-color:var(--rt-border) !important;
+  color:var(--rt-text) !important;
+}
+body[class*="theme-"] .user{
+  background:var(--rt-card) !important;
+  border-color:var(--rt-border) !important;
+}
+body[class*="theme-"] .user:hover{
+  background:var(--rt-card-hover) !important;
+  border-color:var(--rt-accent) !important;
+}
+body[class*="theme-"] .user.active{
+  background:linear-gradient(135deg, color-mix(in srgb, var(--rt-accent) 28%, transparent), color-mix(in srgb, var(--rt-accent2) 15%, transparent)) !important;
+  border-color:var(--rt-accent) !important;
+}
+body[class*="theme-"] .name-text-unique,
+body[class*="theme-"] .chat-title-rich .title-main{
+  background:linear-gradient(135deg,#fff,var(--rt-accent),var(--rt-accent2)) !important;
+  -webkit-background-clip:text !important;
+  background-clip:text !important;
+  color:transparent !important;
+}
+body[class*="theme-"] .nav-item.active,
+body[class*="theme-"] .group-sender-name{
+  color:var(--rt-accent) !important;
+}
+body[class*="theme-"] .bottom-nav,
+body[class*="theme-"] #mobileBottomNav{
+  background:var(--rt-card) !important;
+  border:1px solid var(--rt-border) !important;
+}
+body[class*="theme-"] .me{
+  background:var(--rt-me) !important;
+}
+body[class*="theme-"] .other{
+  background:var(--rt-other) !important;
+}
+body[class*="theme-"] .input-area{
+  background:var(--rt-panel) !important;
+  border-color:var(--rt-border) !important;
+}
+body[class*="theme-"] .input-area input,
+body[class*="theme-"] .attach-btn,
+body[class*="theme-"] .mic-btn{
+  background:var(--rt-card) !important;
+  color:var(--rt-text) !important;
+  border-color:var(--rt-border) !important;
+}
+body[class*="theme-"] .send-btn,
+body[class*="theme-"] .status-add-btn,
+body[class*="theme-"] .small-btn{
+  background:linear-gradient(135deg,var(--rt-accent),var(--rt-accent2)) !important;
+}
+.rickyy-theme-fab{
+  position:fixed;
+  right:18px;
+  top:92px;
+  z-index:40000;
+  width:48px;
+  height:48px;
+  border:0;
+  border-radius:16px;
+  background:linear-gradient(135deg,var(--rt-accent),var(--rt-accent2));
+  color:#fff;
+  font-size:22px;
+  box-shadow:0 14px 28px rgba(0,0,0,.30);
+}
+.rickyy-theme-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(0,0,0,.55);
+  z-index:60000;
+}
+.rickyy-theme-modal.show{display:flex}
+.rickyy-theme-sheet{
+  width:100%;
+  max-width:520px;
+  background:#0f172a;
+  color:#fff;
+  border-radius:26px 26px 0 0;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 -20px 50px rgba(0,0,0,.35);
+}
+.rickyy-theme-head{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:14px;
+}
+.rickyy-theme-head h3{margin:0;font-size:22px}
+.rickyy-theme-close{
+  border:0;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  border-radius:12px;
+  width:38px;
+  height:38px;
+  font-size:18px;
+}
+.rickyy-theme-grid{
+  display:grid;
+  grid-template-columns:repeat(2,1fr);
+  gap:10px;
+}
+.rickyy-theme-card{
+  min-height:82px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:18px;
+  color:#fff;
+  text-align:left;
+  padding:12px;
+  font-weight:900;
+  cursor:pointer;
+  position:relative;
+  overflow:hidden;
+}
+.rickyy-theme-card span{
+  display:block;
+  font-size:12px;
+  font-weight:700;
+  color:rgba(255,255,255,.78);
+  margin-top:5px;
+}
+.rickyy-theme-card.active{
+  outline:2px solid #fff;
+}
+.rickyy-theme-card.active::after{
+  content:"✓";
+  position:absolute;
+  right:12px;
+  top:10px;
+  width:24px;
+  height:24px;
+  border-radius:999px;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  background:rgba(255,255,255,.18);
+}
+.theme-card-emerald{background:linear-gradient(135deg,#064e3b,#0f766e)}
+.theme-card-amoled{background:linear-gradient(135deg,#000,#111)}
+.theme-card-ocean{background:linear-gradient(135deg,#075985,#0e7490)}
+.theme-card-neon{background:linear-gradient(135deg,#581c87,#ec4899)}
+.theme-card-rose{background:linear-gradient(135deg,#9f1239,#f472b6)}
+.theme-card-gold{background:linear-gradient(135deg,#422006,#f59e0b)}
+.theme-card-crimson{background:linear-gradient(135deg,#7f1d1d,#ef4444)}
+@media(max-width:768px){
+  .rickyy-theme-fab{
+    top:calc(74px + env(safe-area-inset-top));
+    right:14px;
+    width:44px;
+    height:44px;
+    border-radius:14px;
+  }
+}
+
+
+/* RickyY theme button position fix */
+.rickyy-theme-fab{
+  top:auto !important;
+  right:18px !important;
+  bottom:92px !important;
+  left:auto !important;
+  z-index:35000 !important;
+}
+
+body.chat-open .rickyy-theme-fab{
+  display:none !important;
+}
+
+@media(max-width:768px){
+  .rickyy-theme-fab{
+    top:auto !important;
+    right:14px !important;
+    bottom:92px !important;
+    width:46px !important;
+    height:46px !important;
+    border-radius:16px !important;
+  }
+
+  body.chat-open .rickyy-theme-fab{
+    display:none !important;
+  }
+}
+
+
+/* ================= RickyY Wallpaper Gallery ================= */
+:root{
+  --rickyy-chat-wallpaper:none;
+  --rickyy-chat-wallpaper-overlay:linear-gradient(180deg, rgba(0,0,0,.00), rgba(0,0,0,.00));
+}
+
+.chat.custom-wallpaper .messages,
+body.wallpaper-active .messages{
+  background-image:var(--rickyy-chat-wallpaper-overlay), var(--rickyy-chat-wallpaper) !important;
+  background-size:cover !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+}
+
+body.wallpaper-amoled .messages{
+  background:#000 !important;
+  background-image:none !important;
+}
+
+body.wallpaper-whatsapp .messages{
+  background-color:#0b141a !important;
+  background-image:
+    radial-gradient(circle at 12px 12px, rgba(255,255,255,.055) 1.5px, transparent 2px),
+    radial-gradient(circle at 38px 38px, rgba(255,255,255,.035) 1.5px, transparent 2px) !important;
+  background-size:52px 52px !important;
+}
+
+.rickyy-wallpaper-open-btn{
+  width:100%;
+  border:none;
+  background:transparent;
+  color:#fff;
+  display:flex;
+  align-items:center;
+  gap:10px;
+  text-align:left;
+  padding:12px 14px;
+  border-radius:14px;
+  cursor:pointer;
+  font-size:14px;
+  font-weight:800;
+}
+
+.rickyy-wallpaper-open-btn:hover{
+  background:rgba(255,255,255,.06);
+}
+
+.rickyy-wallpaper-modal{
+  position:fixed;
+  inset:0;
+  display:none;
+  align-items:flex-end;
+  justify-content:center;
+  background:rgba(0,0,0,.58);
+  z-index:65000;
+}
+
+.rickyy-wallpaper-modal.show{
+  display:flex;
+}
+
+.rickyy-wallpaper-sheet{
+  width:100%;
+  max-width:560px;
+  max-height:86vh;
+  overflow:auto;
+  background:#0f172a;
+  color:#fff;
+  border-radius:26px 26px 0 0;
+  padding:18px;
+  border:1px solid rgba(255,255,255,.08);
+  box-shadow:0 -20px 50px rgba(0,0,0,.35);
+}
+
+.rickyy-wallpaper-head{
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px;
+  margin-bottom:14px;
+}
+
+.rickyy-wallpaper-head h3{
+  margin:0;
+  font-size:22px;
+}
+
+.rickyy-wallpaper-close{
+  border:0;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  border-radius:12px;
+  width:38px;
+  height:38px;
+  font-size:18px;
+}
+
+.rickyy-wallpaper-grid{
+  display:grid;
+  grid-template-columns:repeat(2, minmax(0, 1fr));
+  gap:12px;
+}
+
+.rickyy-wallpaper-card{
+  position:relative;
+  height:112px;
+  border:1px solid rgba(255,255,255,.10);
+  border-radius:20px;
+  overflow:hidden;
+  cursor:pointer;
+  color:#fff;
+  display:flex;
+  align-items:flex-end;
+  padding:12px;
+  font-weight:900;
+  text-align:left;
+  box-shadow:0 12px 24px rgba(0,0,0,.20);
+}
+
+.rickyy-wallpaper-card span{
+  position:relative;
+  z-index:2;
+  text-shadow:0 4px 12px rgba(0,0,0,.55);
+}
+
+.rickyy-wallpaper-card::before{
+  content:"";
+  position:absolute;
+  inset:0;
+  background:linear-gradient(180deg, transparent 20%, rgba(0,0,0,.62) 100%);
+  z-index:1;
+}
+
+.rickyy-wallpaper-card.active{
+  outline:3px solid var(--rt-accent, #22c55e);
+}
+
+.rickyy-wallpaper-card.active::after{
+  content:"✓";
+  position:absolute;
+  right:10px;
+  top:10px;
+  z-index:3;
+  width:26px;
+  height:26px;
+  border-radius:999px;
+  background:rgba(255,255,255,.20);
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  backdrop-filter:blur(8px);
+}
+
+.wp-none{background:linear-gradient(135deg,#111827,#334155)}
+.wp-galaxy{background:radial-gradient(circle at 25% 25%,#f0abfc,transparent 18%),radial-gradient(circle at 78% 34%,#38bdf8,transparent 20%),linear-gradient(135deg,#020617,#312e81,#4c1d95)}
+.wp-forest{background:radial-gradient(circle at 35% 22%,rgba(134,239,172,.45),transparent 18%),linear-gradient(135deg,#052e16,#14532d,#064e3b)}
+.wp-ocean{background:radial-gradient(circle at 32% 28%,rgba(125,211,252,.55),transparent 19%),linear-gradient(135deg,#082f49,#075985,#0e7490)}
+.wp-sakura{background:radial-gradient(circle at 20% 25%,rgba(251,207,232,.80),transparent 18%),radial-gradient(circle at 78% 38%,rgba(244,114,182,.62),transparent 20%),linear-gradient(135deg,#500724,#9f1239,#f9a8d4)}
+.wp-city{background:linear-gradient(180deg,#111827 0%,#1e1b4b 45%,#020617 100%)}
+.wp-clouds{background:radial-gradient(circle at 22% 30%,#fff,transparent 18%),radial-gradient(circle at 62% 28%,#e0f2fe,transparent 20%),linear-gradient(135deg,#38bdf8,#93c5fd,#e0f2fe)}
+.wp-amoled{background:#000}
+.wp-whatsapp{background-color:#0b141a;background-image:radial-gradient(circle at 12px 12px,rgba(255,255,255,.15) 1.5px,transparent 2px);background-size:32px 32px}
+.wp-sunset{background:radial-gradient(circle at 35% 28%,#fde68a,transparent 16%),linear-gradient(135deg,#7f1d1d,#c2410c,#f97316)}
+.wp-diamond{background:linear-gradient(135deg,#0f172a,#164e63,#7c3aed,#f0abfc)}
+
+.rickyy-wallpaper-actions{
+  display:flex;
+  gap:10px;
+  margin-top:14px;
+}
+
+.rickyy-wallpaper-actions button{
+  flex:1;
+  border:0;
+  border-radius:15px;
+  min-height:46px;
+  color:#fff;
+  font-weight:900;
+  background:rgba(255,255,255,.08);
+}
+
+.rickyy-wallpaper-actions button.primary{
+  background:linear-gradient(135deg,var(--rt-accent,#22c55e),var(--rt-accent2,#06b6d4));
+}
+
+@media(max-width:768px){
+  .rickyy-wallpaper-grid{
+    grid-template-columns:repeat(2, minmax(0, 1fr));
+    gap:10px;
+  }
+  .rickyy-wallpaper-card{
+    height:96px;
+    border-radius:17px;
+  }
+}
+
+
+/* RickyY wallpaper strong messages fix */
+#messages.rickyy-wallpaper-force,
+.messages.rickyy-wallpaper-force{
+  background-size:cover !important;
+  background-position:center !important;
+  background-repeat:no-repeat !important;
+  background-attachment:local !important;
+}
+
+body.wallpaper-active #messages,
+body.wallpaper-active .messages{
+  background-color:transparent !important;
+}
+
+body.wallpaper-amoled #messages,
+body.wallpaper-amoled .messages{
+  background:#000 !important;
+  background-image:none !important;
+}
+
+body.wallpaper-whatsapp #messages,
+body.wallpaper-whatsapp .messages{
+  background-color:#0b141a !important;
+  background-image:
+    radial-gradient(circle at 12px 12px, rgba(255,255,255,.055) 1.5px, transparent 2px),
+    radial-gradient(circle at 38px 38px, rgba(255,255,255,.035) 1.5px, transparent 2px) !important;
+  background-size:52px 52px !important;
+}
+
+
+/* RickyY persistent theme fix */
+html, body{
+  transition:background .18s ease;
+}
+
 </style>
 </head>
 
@@ -4873,7 +5421,7 @@ function enforceAppLockIfNeeded(){
   }
 
   function getRoleBadge(role = ""){
-    return role === "admin" ? `<span class="name-badge">👑</span>` : "";
+    return role === "admin" ? `<span class="name-badge"></span>` : "";
   }
 
   function getRichNameTextOnly(name = "", role = ""){
@@ -5220,6 +5768,12 @@ function getUserListBottomText(u){
   }
 
   function showNoChatUI(){
+    // FIX: users/socket refresh lo active chat unte "Select a chat" screen ki reset avvakudadhu.
+    if(currentChat || currentGroup){
+      showChatUI();
+      return;
+    }
+
     document.getElementById("noChat").style.display = "flex";
     document.getElementById("messages").style.display = "none";
     document.getElementById("inputArea").style.display = "none";
@@ -5427,6 +5981,33 @@ function getUserListBottomText(u){
         await Notification.requestPermission();
       }catch(e){}
     }
+  }
+
+
+  if ("serviceWorker" in navigator) {
+    navigator.serviceWorker.addEventListener("message", event => {
+      const data = event.data || {};
+      if(data.type !== "OPEN_CHAT_FROM_NOTIFICATION") return;
+
+      const user = String(data.user || data.from || "").trim();
+      const group = String(data.group || data.groupId || "").trim();
+
+      if(user){
+        sessionStorage.setItem("rickyy_open_user_from_notification", user);
+        localStorage.setItem("rickyy_last_private_chat", user);
+        if(typeof openChat === "function"){
+          setTimeout(() => openChat(user), 80);
+        }
+      }
+
+      if(group){
+        sessionStorage.setItem("rickyy_open_group_from_notification", group);
+        localStorage.setItem("rickyy_last_group_chat", group);
+        if(typeof openGroup === "function"){
+          setTimeout(() => openGroup(group), 80);
+        }
+      }
+    });
   }
 
   async function enableNotifications() {
@@ -6623,7 +7204,7 @@ function getUserListBottomText(u){
       }
 
       await initNotifications();
-      await initPushNotifications(true);
+      await initPushNotifications(false);
       await loadGroups();
       await loadPrivateLastMessages();
 
@@ -6682,11 +7263,16 @@ function getUserListBottomText(u){
         : "";
     }
 
-    if(openUserFromUrl && !currentChat && !hasOpenedUserFromUrl){
-      const found = usersList.find(x => x.name === openUserFromUrl);
+    const pendingNotificationUser = sessionStorage.getItem("rickyy_open_user_from_notification") || "";
+    const lastPrivateChat = localStorage.getItem("rickyy_last_private_chat") || "";
+    const targetOpenUser = openUserFromUrl || pendingNotificationUser || lastPrivateChat;
+
+    if(targetOpenUser && !currentChat && !hasOpenedUserFromUrl){
+      const found = usersList.find(x => x.name === targetOpenUser);
       if(found){
+        sessionStorage.removeItem("rickyy_open_user_from_notification");
         hasOpenedUserFromUrl = true;
-        openChat(openUserFromUrl);
+        openChat(targetOpenUser);
       }
     }
   });
@@ -6912,6 +7498,15 @@ function getUserListBottomText(u){
     currentGroup = null;
     isGroupChat = false;
     hasOpenedUserFromUrl = true;
+    localStorage.setItem("rickyy_last_private_chat", name);
+    localStorage.removeItem("rickyy_last_group_chat");
+
+    try{
+      const cleanUrl = new URL(window.location.href);
+      cleanUrl.searchParams.set("user", name);
+      cleanUrl.searchParams.delete("group");
+      history.replaceState({}, "", cleanUrl.pathname + cleanUrl.search + cleanUrl.hash);
+    }catch(e){}
 
     privateHasMore = true;
     privateLoadingOld = false;
@@ -6929,7 +7524,7 @@ function getUserListBottomText(u){
         <span class="title-main" style="color:hsl(${getNameHue(name)} 78% 74%);">
           ${escapeHtml(name)}
         </span>
-        ${(u && u.role === "admin") ? '<span class="title-crown">👑</span>' : ''}
+        ${(u && u.role === "admin") ? '<span class="title-crown"></span>' : ''}
       </span>
     `;
 
@@ -7012,6 +7607,9 @@ function setUserTypingState(username, isTyping){
     currentChat = null;
     currentGroup = null;
     isGroupChat = false;
+    localStorage.removeItem("rickyy_last_private_chat");
+    localStorage.removeItem("rickyy_last_group_chat");
+    try{ history.replaceState({}, "", location.pathname); }catch(e){}
     document.getElementById("chatName").innerText = "Select a chat";
     document.getElementById("chatDp").src = "/default.png";
     document.getElementById("messages").innerHTML = "";
@@ -10147,7 +10745,7 @@ socket.on("stop-typing", user => {
   }
 
   function getRoleBadge(role = ""){
-    return role === "admin" ? `<span class="name-badge">👑</span>` : "";
+    return role === "admin" ? `<span class="name-badge"></span>` : "";
   }
 
   function getRichNameTextOnly(name = "", role = ""){
@@ -11816,7 +12414,7 @@ socket.on("stop-typing", user => {
 
   function getRoleBadge(role = ""){
     if(role === "admin"){
-      return `<span class="name-badge" title="Admin">👑</span>`;
+      return `<span class="name-badge" title="Admin"></span>`;
     }
     return "";
   }
@@ -14050,6 +14648,365 @@ body.rickyy-amoled .me{
   window.addEventListener('load',()=>setTimeout(forceOpenApp,2800));
   document.addEventListener('DOMContentLoaded',()=>setTimeout(forceOpenApp,3500));
   setTimeout(forceOpenApp,5000);
+})();
+</script>
+
+
+<button type="button" class="rickyy-theme-fab" onclick="openRickyYThemeModal()" title="Themes">🎨</button>
+
+<div id="rickyyThemeModal" class="rickyy-theme-modal" onclick="if(event.target===this)closeRickyYThemeModal()">
+  <div class="rickyy-theme-sheet">
+    <div class="rickyy-theme-head">
+      <h3>🎨 Choose Theme</h3>
+      <button class="rickyy-theme-close" onclick="closeRickyYThemeModal()">✕</button>
+    </div>
+
+    <div class="rickyy-theme-grid">
+      <button class="rickyy-theme-card theme-card-emerald" data-theme="emerald" onclick="setRickyYTheme('emerald')">🟢 Emerald<span>Default clean green</span></button>
+      <button class="rickyy-theme-card theme-card-amoled" data-theme="amoled" onclick="setRickyYTheme('amoled')">⚫ AMOLED<span>Pure black battery saver</span></button>
+      <button class="rickyy-theme-card theme-card-ocean" data-theme="ocean" onclick="setRickyYTheme('ocean')">🔵 Ocean<span>Blue glass style</span></button>
+      <button class="rickyy-theme-card theme-card-neon" data-theme="neon" onclick="setRickyYTheme('neon')">🟣 Neon<span>Purple glow look</span></button>
+      <button class="rickyy-theme-card theme-card-rose" data-theme="rose" onclick="setRickyYTheme('rose')">🌸 Rose<span>Pink soft theme</span></button>
+      <button class="rickyy-theme-card theme-card-gold" data-theme="gold" onclick="setRickyYTheme('gold')">🟡 Gold<span>Royal gold style</span></button>
+      <button class="rickyy-theme-card theme-card-crimson" data-theme="crimson" onclick="setRickyYTheme('crimson')">🔴 Crimson<span>Gaming red look</span></button>
+    </div>
+  </div>
+</div>
+
+<script id="rickyy-free-theme-js">
+const RICKYY_THEMES = ["emerald","amoled","ocean","neon","rose","gold","crimson"];
+
+function applyRickyYTheme(theme){
+  theme = RICKYY_THEMES.includes(theme) ? theme : "emerald";
+  document.body.classList.remove(...RICKYY_THEMES.map(t => "theme-" + t));
+  document.body.classList.add("theme-" + theme);
+
+  document.querySelectorAll(".rickyy-theme-card").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.theme === theme);
+  });
+}
+
+function setRickyYTheme(theme){
+  localStorage.setItem("rickyyTheme", theme);
+  applyRickyYTheme(theme);
+  if(window.forceApplySavedRickyYTheme) setTimeout(window.forceApplySavedRickyYTheme, 50);
+}
+
+function openRickyYThemeModal(){
+  applyRickyYTheme(localStorage.getItem("rickyyTheme") || "emerald");
+  document.getElementById("rickyyThemeModal")?.classList.add("show");
+}
+
+function closeRickyYThemeModal(){
+  document.getElementById("rickyyThemeModal")?.classList.remove("show");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyRickyYTheme(localStorage.getItem("rickyyTheme") || "emerald");
+});
+
+window.addEventListener("load", () => {
+  applyRickyYTheme(localStorage.getItem("rickyyTheme") || "emerald");
+});
+</script>
+
+
+<div id="rickyyWallpaperModal" class="rickyy-wallpaper-modal" onclick="if(event.target===this)closeRickyYWallpaperModal()">
+  <div class="rickyy-wallpaper-sheet">
+    <div class="rickyy-wallpaper-head">
+      <h3>🖼 Chat Wallpapers</h3>
+      <button class="rickyy-wallpaper-close" onclick="closeRickyYWallpaperModal()">✕</button>
+    </div>
+
+    <div class="rickyy-wallpaper-grid">
+      <button class="rickyy-wallpaper-card wp-none" data-wallpaper="none" onclick="setRickyYWallpaper('none')"><span>Default</span></button>
+      <button class="rickyy-wallpaper-card wp-galaxy" data-wallpaper="galaxy" onclick="setRickyYWallpaper('galaxy')"><span>🌌 Galaxy</span></button>
+      <button class="rickyy-wallpaper-card wp-forest" data-wallpaper="forest" onclick="setRickyYWallpaper('forest')"><span>🌲 Forest</span></button>
+      <button class="rickyy-wallpaper-card wp-ocean" data-wallpaper="ocean" onclick="setRickyYWallpaper('ocean')"><span>🌊 Ocean</span></button>
+      <button class="rickyy-wallpaper-card wp-sakura" data-wallpaper="sakura" onclick="setRickyYWallpaper('sakura')"><span>🌸 Sakura</span></button>
+      <button class="rickyy-wallpaper-card wp-city" data-wallpaper="city" onclick="setRickyYWallpaper('city')"><span>🌃 City Night</span></button>
+      <button class="rickyy-wallpaper-card wp-clouds" data-wallpaper="clouds" onclick="setRickyYWallpaper('clouds')"><span>☁ Clouds</span></button>
+      <button class="rickyy-wallpaper-card wp-amoled" data-wallpaper="amoled" onclick="setRickyYWallpaper('amoled')"><span>⚫ AMOLED</span></button>
+      <button class="rickyy-wallpaper-card wp-whatsapp" data-wallpaper="whatsapp" onclick="setRickyYWallpaper('whatsapp')"><span>🟢 WhatsApp Style</span></button>
+      <button class="rickyy-wallpaper-card wp-sunset" data-wallpaper="sunset" onclick="setRickyYWallpaper('sunset')"><span>🌅 Sunset</span></button>
+      <button class="rickyy-wallpaper-card wp-diamond" data-wallpaper="diamond" onclick="setRickyYWallpaper('diamond')"><span>💎 Diamond</span></button>
+    </div>
+
+    <div class="rickyy-wallpaper-actions">
+      <button onclick="setRickyYWallpaper('none')">Reset</button>
+      <button class="primary" onclick="closeRickyYWallpaperModal()">Done</button>
+    </div>
+  </div>
+</div>
+
+<script id="rickyy-wallpaper-js">
+const RICKYY_WALLPAPERS = {
+  none: "",
+  galaxy: "radial-gradient(circle at 25% 25%, rgba(240,171,252,.55), transparent 18%), radial-gradient(circle at 78% 34%, rgba(56,189,248,.55), transparent 20%), linear-gradient(135deg,#020617,#312e81,#4c1d95)",
+  forest: "radial-gradient(circle at 35% 22%, rgba(134,239,172,.35), transparent 18%), linear-gradient(135deg,#052e16,#14532d,#064e3b)",
+  ocean: "radial-gradient(circle at 32% 28%, rgba(125,211,252,.45), transparent 19%), linear-gradient(135deg,#082f49,#075985,#0e7490)",
+  sakura: "radial-gradient(circle at 20% 25%, rgba(251,207,232,.70), transparent 18%), radial-gradient(circle at 78% 38%, rgba(244,114,182,.55), transparent 20%), linear-gradient(135deg,#500724,#9f1239,#f9a8d4)",
+  city: "linear-gradient(180deg,#111827 0%,#1e1b4b 45%,#020617 100%)",
+  clouds: "radial-gradient(circle at 22% 30%, rgba(255,255,255,.85), transparent 18%), radial-gradient(circle at 62% 28%, rgba(224,242,254,.88), transparent 20%), linear-gradient(135deg,#38bdf8,#93c5fd,#e0f2fe)",
+  amoled: "amoled",
+  whatsapp: "whatsapp",
+  sunset: "radial-gradient(circle at 35% 28%, rgba(253,230,138,.72), transparent 16%), linear-gradient(135deg,#7f1d1d,#c2410c,#f97316)",
+  diamond: "linear-gradient(135deg,#0f172a,#164e63,#7c3aed,#f0abfc)"
+};
+
+function markRickyYWallpaperActive(name){
+  document.querySelectorAll(".rickyy-wallpaper-card").forEach(btn => {
+    btn.classList.toggle("active", btn.dataset.wallpaper === name);
+  });
+}
+
+function getRickyYMessagesBox(){
+  return document.getElementById("messages") || document.querySelector(".messages");
+}
+
+function clearRickyYMessageWallpaperInline(){
+  const box = getRickyYMessagesBox();
+  if(!box) return;
+  box.classList.remove("rickyy-wallpaper-force");
+  box.style.removeProperty("background");
+  box.style.removeProperty("background-image");
+  box.style.removeProperty("background-color");
+  box.style.removeProperty("background-size");
+  box.style.removeProperty("background-position");
+  box.style.removeProperty("background-repeat");
+}
+
+function forceApplyRickyYMessageWallpaper(name){
+  const box = getRickyYMessagesBox();
+  if(!box) return;
+
+  box.classList.add("rickyy-wallpaper-force");
+
+  if(name === "none"){
+    clearRickyYMessageWallpaperInline();
+    return;
+  }
+
+  if(name === "amoled"){
+    box.style.setProperty("background", "#000", "important");
+    box.style.setProperty("background-image", "none", "important");
+    return;
+  }
+
+  if(name === "whatsapp"){
+    box.style.setProperty("background-color", "#0b141a", "important");
+    box.style.setProperty(
+      "background-image",
+      "radial-gradient(circle at 12px 12px, rgba(255,255,255,.055) 1.5px, transparent 2px), radial-gradient(circle at 38px 38px, rgba(255,255,255,.035) 1.5px, transparent 2px)",
+      "important"
+    );
+    box.style.setProperty("background-size", "52px 52px", "important");
+    box.style.setProperty("background-position", "center", "important");
+    box.style.setProperty("background-repeat", "repeat", "important");
+    return;
+  }
+
+  const bg = RICKYY_WALLPAPERS[name] || "";
+  if(bg){
+    box.style.setProperty(
+      "background-image",
+      "linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.18)), " + bg,
+      "important"
+    );
+    box.style.setProperty("background-size", "cover", "important");
+    box.style.setProperty("background-position", "center", "important");
+    box.style.setProperty("background-repeat", "no-repeat", "important");
+  }
+}
+
+function applyRickyYWallpaper(name){
+  name = RICKYY_WALLPAPERS[name] !== undefined ? name : "none";
+
+  document.body.classList.remove("wallpaper-active","wallpaper-amoled","wallpaper-whatsapp");
+  const chat = document.querySelector(".chat");
+  if(chat) chat.classList.remove("custom-wallpaper");
+
+  if(name === "none"){
+    document.documentElement.style.setProperty("--rickyy-chat-wallpaper", "none");
+    clearRickyYMessageWallpaperInline();
+    markRickyYWallpaperActive(name);
+    return;
+  }
+
+  if(name === "amoled"){
+    document.body.classList.add("wallpaper-amoled");
+    forceApplyRickyYMessageWallpaper(name);
+    markRickyYWallpaperActive(name);
+    return;
+  }
+
+  if(name === "whatsapp"){
+    document.body.classList.add("wallpaper-whatsapp");
+    forceApplyRickyYMessageWallpaper(name);
+    markRickyYWallpaperActive(name);
+    return;
+  }
+
+  document.body.classList.add("wallpaper-active");
+  if(chat) chat.classList.add("custom-wallpaper");
+  document.documentElement.style.setProperty("--rickyy-chat-wallpaper", RICKYY_WALLPAPERS[name]);
+  document.documentElement.style.setProperty("--rickyy-chat-wallpaper-overlay", "linear-gradient(180deg, rgba(0,0,0,.10), rgba(0,0,0,.18))");
+  forceApplyRickyYMessageWallpaper(name);
+  markRickyYWallpaperActive(name);
+}
+
+function setRickyYWallpaper(name){
+  localStorage.setItem("rickyyChatWallpaper", name);
+  applyRickyYWallpaper(name);
+}
+
+function openRickyYWallpaperModal(){
+  applyRickyYWallpaper(localStorage.getItem("rickyyChatWallpaper") || "none");
+  document.getElementById("rickyyWallpaperModal")?.classList.add("show");
+}
+
+function closeRickyYWallpaperModal(){
+  document.getElementById("rickyyWallpaperModal")?.classList.remove("show");
+}
+
+document.addEventListener("DOMContentLoaded", () => {
+  applyRickyYWallpaper(localStorage.getItem("rickyyChatWallpaper") || "none");
+});
+
+window.addEventListener("load", () => {
+  applyRickyYWallpaper(localStorage.getItem("rickyyChatWallpaper") || "none");
+  setTimeout(() => applyRickyYWallpaper(localStorage.getItem("rickyyChatWallpaper") || "none"), 700);
+});
+</script>
+
+
+<script id="rickyy-video-dp-chat-js">
+function rickyyMediaUrl(v){
+  if(!v) return "";
+  v = String(v).trim();
+  if(/^https?:\/\//i.test(v)) return v;
+  if(v.startsWith("/")) return v;
+  if(v.startsWith("uploads/")) return "/" + v;
+  return "/uploads/" + v.replace(/^\/+/,"");
+}
+function enhanceVideoProfilePictures(){
+  const usersData = window.allUsers || window.users || window.usersData || [];
+  if(!Array.isArray(usersData) || !usersData.length) return;
+
+  document.querySelectorAll(".user").forEach(row => {
+    const txt = row.innerText || "";
+    const u = usersData.find(x => x && x.name && txt.includes(x.name));
+    const videoUrl = u && u.profileVideo && (u.profileVideo.url || u.profileVideo);
+    if(!videoUrl || row.querySelector(".rickyy-list-video-dp")) return;
+
+    const img = row.querySelector("img");
+    if(!img) return;
+
+    const video = document.createElement("video");
+    video.className = "rickyy-list-video-dp";
+    video.src = rickyyMediaUrl(videoUrl);
+    video.muted = true;
+    video.loop = true;
+    video.playsInline = true;
+    video.autoplay = true;
+    video.style.cssText = img.style.cssText;
+    video.style.width = getComputedStyle(img).width;
+    video.style.height = getComputedStyle(img).height;
+    video.style.borderRadius = getComputedStyle(img).borderRadius;
+    video.style.objectFit = "cover";
+    img.style.display = "none";
+    img.parentNode.insertBefore(video, img.nextSibling);
+    video.play().catch(()=>{});
+  });
+}
+setInterval(enhanceVideoProfilePictures, 1600);
+window.addEventListener("load", () => setTimeout(enhanceVideoProfilePictures, 1200));
+</script>
+
+
+<script id="rickyy-birthday-chat-js">
+function rickyyIsBirthdayToday(dateStr){
+  if(!dateStr) return false;
+  const d = new Date(dateStr);
+  if(isNaN(d.getTime())) return false;
+  const n = new Date();
+  return d.getDate() === n.getDate() && d.getMonth() === n.getMonth();
+}
+function addBirthdayBadgesInList(){
+  const usersData = window.allUsers || window.users || window.usersData || [];
+  if(!Array.isArray(usersData) || !usersData.length) return;
+  document.querySelectorAll(".user").forEach(row => {
+    if(row.querySelector(".birthday-mini-badge")) return;
+    const txt = row.innerText || "";
+    const u = usersData.find(x => x && x.name && txt.includes(x.name));
+    if(!u || !rickyyIsBirthdayToday(u.birthday || u.birthDate)) return;
+    const badge = document.createElement("span");
+    badge.className = "birthday-mini-badge";
+    badge.textContent = "🎂";
+    badge.title = "Birthday today";
+    badge.style.cssText = "display:inline-flex;margin-left:6px;font-size:16px;filter:drop-shadow(0 0 8px rgba(251,191,36,.8));";
+    const name = row.querySelector(".user-name") || row.querySelector(".name-text-unique");
+    if(name) name.appendChild(badge);
+  });
+}
+setInterval(addBirthdayBadgesInList, 1800);
+window.addEventListener("load", () => setTimeout(addBirthdayBadgesInList, 1400));
+</script>
+
+
+<script id="rickyy-admin-request-notify-js">
+(function(){
+  function isAdminUser(){
+    const u = String(localStorage.getItem("user") || "").toLowerCase();
+    const r = String(localStorage.getItem("role") || "").toLowerCase();
+    return u === "shravan" || r === "admin";
+  }
+  function showAdminRequestPopup(data){
+    if(!isAdminUser()) return;
+    const msg = (data && data.msg) || ((data && data.name ? data.name : "User") + " is requesting access");
+    if(typeof showToast === "function") showToast("🔔 " + msg, "success");
+    else alert("🔔 " + msg);
+    try{
+      if(navigator.vibrate) navigator.vibrate([180,80,180]);
+    }catch(e){}
+  }
+  function attachAdminRequestSocket(){
+    if(!isAdminUser()) return;
+    if(typeof socket !== "undefined" && socket && socket.on){
+      socket.off && socket.off("admin-new-user-request");
+      socket.on("admin-new-user-request", showAdminRequestPopup);
+    }
+  }
+  window.addEventListener("load", () => setTimeout(attachAdminRequestSocket, 1000));
+})();
+</script>
+
+
+<script id="rickyy-theme-persist-fix-js">
+(function(){
+  const themes = ["emerald","amoled","ocean","neon","rose","gold","crimson"];
+  function savedTheme(){
+    return localStorage.getItem("rickyyTheme") || localStorage.getItem("chatTheme") || "emerald";
+  }
+  window.forceApplySavedRickyYTheme = function(){
+    const t = themes.includes(savedTheme()) ? savedTheme() : "emerald";
+    document.body.classList.remove(...themes.map(x => "theme-" + x));
+    document.body.classList.add("theme-" + t);
+    localStorage.setItem("rickyyTheme", t);
+    document.querySelectorAll(".rickyy-theme-card").forEach(btn=>{
+      btn.classList.toggle("active", btn.dataset.theme === t);
+    });
+  };
+  window.addEventListener("DOMContentLoaded", () => {
+    forceApplySavedRickyYTheme();
+    setTimeout(forceApplySavedRickyYTheme, 300);
+    setTimeout(forceApplySavedRickyYTheme, 1200);
+  });
+  window.addEventListener("load", () => {
+    forceApplySavedRickyYTheme();
+    setTimeout(forceApplySavedRickyYTheme, 800);
+    setTimeout(forceApplySavedRickyYTheme, 2000);
+  });
 })();
 </script>
 
